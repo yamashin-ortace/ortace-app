@@ -1,26 +1,226 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
+
+/* ORT ACE デザインシステム（DESIGN.md 準拠） */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* shadcn/ui ↔ DESIGN.md 変数ブリッジ */
+  --color-background: var(--bg-base);
+  --color-foreground: var(--text-1);
+  --color-card: var(--bg-card);
+  --color-card-foreground: var(--text-1);
+  --color-popover: var(--bg-card);
+  --color-popover-foreground: var(--text-1);
+  --color-primary: var(--primary);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--bg-muted);
+  --color-secondary-foreground: var(--text-1);
+  --color-muted: var(--bg-muted);
+  --color-muted-foreground: var(--text-3);
+  --color-accent: var(--primary-soft);
+  --color-accent-foreground: var(--text-1);
+  --color-destructive: var(--error);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+
+  --font-sans: var(--font-noto-sans-jp), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============ ライト：テキスト・意味色（全カラーテーマで共通） ============ */
+html:not([data-theme]),
+[data-theme="pink"],
+[data-theme="lavender"],
+[data-theme="mint"],
+[data-theme="peach"],
+[data-theme="sky"] {
+  --navy: #2c3e5d;
+  --success: #4caf7a;
+  --error: #d84848;
+  --warn: #e8c27a;
+  --text-1: #1a1a1a;
+  --text-2: #3d3d3d;
+  --text-3: #6b6b6b;
+  --text-4: #b0b0b0;
+}
+
+/* ============ 各カラーテーマ（背景・主色は data-theme ごと） ============ */
+/* :root に --bg-base を置かない。:root は常に html に一致し、
+   他テーマ選択時にピンク背景へ引き戻す原因になる。 */
+html:not([data-theme]),
+[data-theme="pink"] {
+  --primary: #e8a5b8;
+  --primary-dark: #c98299;
+  --primary-soft: #f5eded;
+  --primary-shadow: rgba(201, 130, 153, 0.45);
+  --primary-shadow-soft: rgba(232, 165, 184, 0.3);
+
+  --bg-base: #fdf8f6;
+  --bg-card: #ffffff;
+  --bg-muted: #f5eded;
+  --border: #e5dde0;
+}
+
+[data-theme="lavender"] {
+  --primary: #b8a4d4;
+  --primary-dark: #9683b5;
+  --primary-soft: #efecf5;
+  --primary-shadow: rgba(150, 131, 181, 0.45);
+  --primary-shadow-soft: rgba(184, 164, 212, 0.3);
+
+  --bg-base: #f6f3fa;
+  --bg-card: #ffffff;
+  --bg-muted: #efecf5;
+  --border: #e2dbe8;
+}
+
+[data-theme="mint"] {
+  --primary: #8fcfb4;
+  --primary-dark: #6aab91;
+  --primary-soft: #e8f3ed;
+  --primary-shadow: rgba(106, 171, 145, 0.45);
+  --primary-shadow-soft: rgba(143, 207, 180, 0.3);
+
+  --bg-base: #f0f8f4;
+  --bg-card: #ffffff;
+  --bg-muted: #e8f3ed;
+  --border: #d5e4dc;
+}
+
+[data-theme="peach"] {
+  --primary: #f2b8a0;
+  --primary-dark: #d09481;
+  --primary-soft: #f7ebe4;
+  --primary-shadow: rgba(208, 148, 129, 0.45);
+  --primary-shadow-soft: rgba(242, 184, 160, 0.3);
+
+  --bg-base: #fcf7f2;
+  --bg-card: #ffffff;
+  --bg-muted: #f7ebe4;
+  --border: #e9ddd4;
+}
+
+[data-theme="sky"] {
+  --primary: #9cc4e0;
+  --primary-dark: #7aa3c3;
+  --primary-soft: #e7eef5;
+  --primary-shadow: rgba(122, 163, 195, 0.45);
+  --primary-shadow-soft: rgba(156, 196, 224, 0.3);
+
+  --bg-base: #f1f5fa;
+  --bg-card: #ffffff;
+  --bg-muted: #e7eef5;
+  --border: #d6e0ec;
+}
+
+/* ============ ダークモード（ニュートラル・色被りなし） ============ */
+.dark {
+  --bg-base: #0f0f10;
+  --bg-card: #1a1a1c;
+  --bg-muted: #262628;
+  --border: #2f2f32;
+
+  --text-1: #f2f2f2;
+  --text-2: #c4c4c4;
+  --text-3: #8a8a8a;
+  --text-4: #5a5a5c;
+
+  --navy: #a5b8d6;
+}
+
+/* ダーク × 各テーマは primary のみテーマ色を維持。背景は常にニュートラル。 */
+.dark[data-theme="pink"],
+.dark [data-theme="pink"] {
+  --primary-soft: #2a1e23;
+}
+.dark[data-theme="lavender"],
+.dark [data-theme="lavender"] {
+  --primary-soft: #221e2a;
+}
+.dark[data-theme="mint"],
+.dark [data-theme="mint"] {
+  --primary-soft: #1e2a24;
+}
+.dark[data-theme="peach"],
+.dark [data-theme="peach"] {
+  --primary-soft: #2a221e;
+}
+.dark[data-theme="sky"],
+.dark [data-theme="sky"] {
+  --primary-soft: #1e242a;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-size-adjust: 100%;
+  }
+  body {
+    background: var(--bg-base);
+    color: var(--text-1);
+    line-height: 1.7;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: var(--font-sans);
+    color: var(--text-1);
+    letter-spacing: -0.02em;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============ DESIGN.md 準拠ユーティリティ ============ */
+
+/* ボタン押下感（DESIGN.md：cubic-bezier(0.34,1.56,0.64,1) 450ms・オーバーシュート） */
+.btn-pressable {
+  transition: transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.btn-pressable:hover {
+  transform: translateY(-1px);
+}
+.btn-pressable:active {
+  transform: translateY(5px) scale(0.97);
+  transition-duration: 60ms;
+}
+
+.btn-primary-shadow {
+  box-shadow: 0 6px 0 var(--primary-shadow), 0 10px 20px var(--primary-shadow-soft);
+}
+.btn-primary-shadow:active {
+  box-shadow: 0 2px 0 var(--primary-shadow), 0 4px 8px var(--primary-shadow-soft);
+}
+
+/* 不正解時の震え */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.animate-shake {
+  animation: shake 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* セーフエリア（iOS ホームバー分） */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0px);
 }
