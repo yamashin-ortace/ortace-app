@@ -19,13 +19,18 @@ describe("getTimeSlotFromHour", () => {
       expect(getTimeSlotFromHour(h)).toBe("morning");
     }
   });
-  it("day は 11–16", () => {
-    for (const h of [11, 12, 13, 14, 15, 16]) {
+  it("day は 11–15", () => {
+    for (const h of [11, 12, 13, 14, 15]) {
       expect(getTimeSlotFromHour(h)).toBe("day");
     }
   });
-  it("evening は 17–21", () => {
-    for (const h of [17, 18, 19, 20, 21]) {
+  it("twilight は 16–18", () => {
+    for (const h of [16, 17, 18]) {
+      expect(getTimeSlotFromHour(h)).toBe("twilight");
+    }
+  });
+  it("evening は 19–21", () => {
+    for (const h of [19, 20, 21]) {
       expect(getTimeSlotFromHour(h)).toBe("evening");
     }
   });
@@ -59,7 +64,7 @@ describe("pickPooledGreeting", () => {
     expect(a.headline).toBe(b.headline);
   });
   it("各スロットのプールは空でない", () => {
-    for (const slot of ["wee_hours", "morning", "day", "evening", "night"] as const) {
+    for (const slot of ["wee_hours", "morning", "day", "twilight", "evening", "night"] as const) {
       expect(GREETING_POOLS[slot].length).toBeGreaterThan(0);
     }
   });
