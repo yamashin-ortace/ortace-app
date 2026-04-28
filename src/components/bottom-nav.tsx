@@ -20,7 +20,7 @@ export function BottomNav() {
       aria-label="メインナビゲーション"
       className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-border bg-[var(--bg-card)]/95 backdrop-blur"
     >
-      <ul className="mx-auto flex h-16 w-full max-w-[480px] items-stretch justify-around md:max-w-[960px]">
+      <ul className="mx-auto flex h-14 w-full max-w-[480px] items-stretch justify-around md:max-w-[960px]">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -29,14 +29,14 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] transition-colors",
+                  "flex h-full w-full flex-col items-center justify-center gap-0.5 text-[11px] transition-colors",
                   active
                     ? "text-[var(--primary-dark)]"
                     : "text-[var(--text-3)] hover:text-[var(--text-2)]"
                 )}
               >
                 <Icon
-                  className="h-[22px] w-[22px]"
+                  className="h-5 w-5 shrink-0"
                   strokeWidth={active ? 2.5 : 2}
                 />
                 <span

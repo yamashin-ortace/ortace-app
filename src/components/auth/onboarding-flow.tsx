@@ -13,7 +13,6 @@ const GRADES: { value: Grade; description: string }[] = [
   { value: "1年", description: "基礎を着実に積み上げる時期" },
   { value: "2年", description: "視能学・眼科学が本格化する時期" },
   { value: "3年", description: "実習と国試対策の橋渡し" },
-  { value: "4年", description: "受験前年・実習を経て総仕上げへ" },
   { value: "受験生", description: "本番まで全力で駆け抜ける" },
 ];
 

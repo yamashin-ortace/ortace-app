@@ -61,7 +61,9 @@ export default function RootLayout({
         <ThemeProvider>
           <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col md:max-w-[960px]">
             <AppHeader />
-            <main className="flex-1 px-5 pt-4 pb-28">{children}</main>
+            <main className="flex-1 px-5 pt-4 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]">
+              {children}
+            </main>
             <BottomNav />
           </div>
         </ThemeProvider>
