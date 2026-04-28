@@ -3,6 +3,14 @@ import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 const AUTH_ROUTES = ["/auth/", "/logout"];
+const ONBOARDED_COOKIE = "ortace_onboarded";
+const ONBOARDED_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 365, // 1年
+};
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,20 +42,29 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ログイン済み・/onboarding 以外で profiles 未完了 → /onboarding へ誘導
+  // ログイン済み・/onboarding 以外で profiles 完了状態を確認。
+  // オンボ済み Cookie があれば DB 問い合わせをスキップ（毎ページの遅延削減）。
   if (user && pathname !== "/onboarding") {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("nickname,grade,goal")
-      .eq("id", user.id)
-      .maybeSingle();
+    const onboardedCookie = request.cookies.get(ONBOARDED_COOKIE);
 
-    const onboarded = Boolean(profile?.nickname && profile?.grade && profile?.goal);
-    if (!onboarded) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      url.search = "";
-      return NextResponse.redirect(url);
+    if (!onboardedCookie) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("nickname,grade,goal")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const onboarded = Boolean(
+        profile?.nickname && profile?.grade && profile?.goal,
+      );
+      if (!onboarded) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/onboarding";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+      // オンボ済み → 次回以降の DB 問い合わせを省略するため Cookie に記録
+      response.cookies.set(ONBOARDED_COOKIE, "1", ONBOARDED_COOKIE_OPTIONS);
     }
   }
 

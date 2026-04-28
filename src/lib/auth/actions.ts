@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ActionResult =
@@ -79,6 +79,9 @@ export async function sendMagicLinkAction(email: string): Promise<ActionResult> 
 export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  // オンボ判定キャッシュ Cookie もクリア
+  const cookieStore = await cookies();
+  cookieStore.delete("ortace_onboarded");
   revalidatePath("/", "layout");
   redirect("/login");
 }
