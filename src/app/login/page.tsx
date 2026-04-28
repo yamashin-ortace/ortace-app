@@ -1,48 +1,28 @@
-"use client";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { LoginCard } from "@/components/auth/login-card";
+import { getSessionContext, isOnboarded } from "@/lib/auth/profile";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+export const metadata = {
+  title: "ログイン｜ORT ACE",
+};
 
-export default function LoginPage() {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleGoogle() {
-    setPending(true);
-    setError(null);
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) {
-      setPending(false);
-      setError(error.message);
-    }
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; sent?: string }>;
+}) {
+  const params = await searchParams;
+  const session = await getSessionContext();
+  if (session) {
+    redirect(isOnboarded(session.profile) ? "/" : "/onboarding");
   }
 
   return (
-    <div className="mx-auto max-w-sm pt-10">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[18px] font-bold">ログイン（動作確認用）</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-[13px] leading-6 text-[var(--text-2)]">
-            フェーズ2-2 の Google OAuth 動作確認ページです。
-          </p>
-          <Button onClick={handleGoogle} disabled={pending} className="w-full">
-            {pending ? "リダイレクト中..." : "Google でログイン"}
-          </Button>
-          {error ? (
-            <p className="text-[12px] text-destructive">{error}</p>
-          ) : null}
-        </CardContent>
-      </Card>
+    <div className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-sm items-center justify-center px-4 py-8">
+      <Suspense>
+        <LoginCard initialError={params.error} initialSent={params.sent} />
+      </Suspense>
     </div>
   );
 }
