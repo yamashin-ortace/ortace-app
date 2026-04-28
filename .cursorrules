@@ -1,0 +1,98 @@
+# ORT ACE — Cursor 用指示書
+
+このプロジェクトは Claude Code と Cursor を併用して開発しています。
+コードを書く前に、必ず以下のドキュメントを参照してください。
+
+## 最優先で読むべきドキュメント
+
+1. **CLAUDE.md** — プロジェクト全体指示・ルール・開発方針
+2. **ROADMAP.md** — 実装計画・現在のフェーズ・次のタスク
+3. **DESIGN.md** — デザインシステムの正典（色・フォント・コンポーネント）
+4. **RISKS.md** — リスク・改善提案メモ
+
+## 詳細仕様ドキュメント
+
+- docs/00_OVERVIEW.md — プロジェクト概要・市場規模
+- docs/01_TECH_STACK.md — 技術選定
+- docs/02_AUTH.md — 認証方針
+- docs/03_DATABASE.md — DB方針
+- docs/04_PWA.md — PWA対応
+- docs/05_PRICING.md — プラン・価格
+- docs/06_DOMAIN_BRAND.md — ドメイン・ブランド
+
+## 重要：Next.js 16 の破壊的変更
+
+このプロジェクトは **Next.js 16.2.4** です。学習データの Next.js 13/14/15 とは API・規約が違うため、推測で書かないこと。
+
+- ミドルウェアは `middleware.ts` ではなく **`src/proxy.ts`**（`export async function proxy(request)`）
+- `cookies()` は async（`await cookies()`）
+- 不明な点は `ortace-app/node_modules/next/dist/docs/` を読んでから書く
+
+## 触ってはいけないファイル（UIタスクで触る理由がなければ変更禁止）
+
+- `src/proxy.ts` — 全ページのルート保護。壊すと全画面が落ちる
+- `src/lib/auth/*.ts` — 認証 Server Actions（サーバー側処理）
+- `src/lib/supabase/*.ts` — Supabase クライアント・型定義
+  - 特に `database.types.ts` の `Row/Insert/Update` は **`type` で定義必須**。`interface` に変えると `update()` の引数型が `never` になり全部壊れる
+- `src/app/auth/callback/route.ts` — OAuth コールバック
+- `supabase/migrations/*.sql` — 適用済みマイグレーション。**過去ファイルは絶対に編集しない**（差分が出ると整合性が壊れる）。スキーマ変更が必要なら `0002_*.sql` を新規追加
+- `package.json` `tsconfig.json` `next.config.ts` `postcss.config.mjs` `components.json` などの設定ファイル
+- `.env.local` — Supabase の認証情報
+- `src/app/manifest.ts` — PWA マニフェスト
+
+## 絶対に守るルール
+
+1. **絵文字を UI に使わない** → すべて Lucide の SVG アイコンに置換する
+2. **shadcn/ui コンポーネントを優先** → スクラッチでボタン・入力欄を書かず `src/components/ui/*` を使う
+3. **色は CSS 変数経由** → `#FF99CC` のような直書き禁止。`var(--text-1)` `var(--bg-card)` `var(--bg-muted)` `var(--text-2)` `var(--text-3)` `text-primary` `bg-primary` などを使う（5色テーマ切替＆ダークモード対応のため）
+4. **DESIGN.md のルールを遵守** → 色・フォント・角丸・アニメーションはすべてここが正典
+5. **モバイルファースト** → 基本は 375px 幅想定で書き、必要なら `sm:` `md:` で拡張
+6. **決定事項を勝手に変えない** → docs/ の内容を変える前に必ずユーザーに確認
+7. **既存のプロトタイプを壊さない** → `ort-app/` `診断テスト_Web/` `過去問_Web/` はそのまま残す（参考資料）
+
+## コーディング規約
+
+- TypeScript で型安全に
+- ファイル名は kebab-case（例：`question-card.tsx`）
+- コンポーネント名は PascalCase（例：`QuestionCard`）
+- コメントは必要最小限（意図が非自明な場合のみ）
+- 日本語で質問・説明してOK
+
+## 作業の進め方
+
+1. 修正対象を理解するため、該当ファイルとその周辺（import 元・呼び出し元）を読む
+2. 変更は最小限。「ついでに」で他の箇所をリファクタリングしない
+3. 既存のコメント・unused に見える props を勝手に消さない（意図がある可能性）
+
+## 動作確認
+
+変更後は以下で確認すること（ortace-app/ 配下で実行）：
+
+```bash
+npm run lint    # ESLint
+npm run build   # 型チェック込みのビルド
+npm run test    # vitest（13テスト）
+npm run dev     # ローカル起動（127.0.0.1:3000）
+```
+
+## 技術スタック（確定済み）
+
+- **Next.js 16.2.4**（App Router）+ TypeScript + React 19
+- Tailwind CSS v4 + shadcn/ui（@base-ui/react ベース）
+- Lucide React（アイコン）
+- Framer Motion（アニメーション）
+- Supabase（認証・DB）
+- Stripe（課金・未着手）
+- Vercel（ホスティング・本番 https://ortace.jp）
+
+## ユーザーとのコミュニケーション
+
+- ユーザー（やましん）は技術詳細に強くない → 分かりやすく説明する
+- 勝手に大きな判断をしない → 選択肢を並べてユーザーに選んでもらう
+- 複雑な変更は Claude Code 側で設計判断してから Cursor で実装する流れが基本
+
+## Claude Code との分担
+
+- 大規模な新機能・フェーズ着手：Claude Code（Opus 4.7）
+- 小さな修正・タイポ・色調整・Tab補完：Cursor
+- 両者とも ROADMAP.md の進捗を更新する習慣をつける
