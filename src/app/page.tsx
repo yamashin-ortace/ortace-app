@@ -1,3 +1,4 @@
+import { AuthStatus } from "@/components/auth-status";
 import { HomeGreeting } from "@/components/home-greeting";
 import { HomeStatCard, StreakStatCard } from "@/components/home-stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { BookOpen, Target } from "lucide-react";
 export default function HomePage() {
   return (
     <div className="space-y-6 pt-2">
+      <AuthStatus />
       <HomeGreeting />
 
       <section>
