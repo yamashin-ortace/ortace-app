@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { LogOut, Settings } from "lucide-react";
+import { CreditCard, LogOut, Settings } from "lucide-react";
 import { getSessionContext } from "@/lib/auth/profile";
 import { signOutAction } from "@/lib/auth/actions";
 
@@ -27,11 +27,26 @@ export default async function MePage() {
           <ProfileRow label="学年" value={profile?.grade ?? "未設定"} />
           <Separator />
           <ProfileRow label="目標" value={profile?.goal ?? "未設定"} />
+          <Separator />
+          <ProfileRow
+            label="プラン"
+            value={profile?.plan === "exam" ? "国試対策パック" : profile?.plan === "low" ? "低学年プラン" : "無料"}
+          />
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="space-y-2 pt-4">
+          <Link
+            href="/plans"
+            className="btn-pressable flex items-center justify-between rounded-[10px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[14px] font-medium text-[var(--text-1)] hover:bg-[var(--bg-muted)]"
+          >
+            <span className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" strokeWidth={2} />
+              プラン・お支払い
+            </span>
+          </Link>
+
           <Link
             href="/settings"
             className="btn-pressable flex items-center justify-between rounded-[10px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[14px] font-medium text-[var(--text-1)] hover:bg-[var(--bg-muted)]"

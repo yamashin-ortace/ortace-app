@@ -1,0 +1,132 @@
+import { describe, expect, it } from "vitest";
+import {
+  createAnswerHistoryEntryKey,
+  mergeAnswerHistoryStores,
+  mergeBookmarksStores,
+  mergeDailyLimitRecords,
+  mergeNotesStores,
+} from ".";
+import type { AnswerHistoryRow } from "@/lib/supabase/database.types";
+
+describe("study sync helpers", () => {
+  it("daily limitは同じ日付なら大きいcountを採用する", () => {
+    expect(
+      mergeDailyLimitRecords(
+        { date: "2026-05-08", count: 3 },
+        {
+          user_id: "user-1",
+          date: "2026-05-08",
+          count: 8,
+          updated_at: "2026-05-08T00:00:00.000Z",
+        },
+      ),
+    ).toEqual({ date: "2026-05-08", count: 8 });
+  });
+
+  it("ブックマークはカテゴリを和集合にして追加日時は古い方を残す", () => {
+    const merged = mergeBookmarksStores(
+      {
+        version: 1,
+        items: {
+          "52-101": {
+            addedAt: "2026-05-08T01:00:00.000Z",
+            categories: ["weak"],
+          },
+        },
+      },
+      [
+        {
+          user_id: "user-1",
+          question_id: "52-101",
+          added_at: "2026-05-08T00:00:00.000Z",
+          updated_at: "2026-05-08T00:00:00.000Z",
+          categories: ["memorize"],
+        },
+      ],
+    );
+
+    expect(merged.items["52-101"]).toEqual({
+      addedAt: "2026-05-08T00:00:00.000Z",
+      categories: ["weak", "memorize"],
+    });
+  });
+
+  it("ノートはupdatedAtが新しい方を採用する", () => {
+    const merged = mergeNotesStores(
+      {
+        version: 1,
+        items: {
+          "52-101": {
+            text: "古いメモ",
+            updatedAt: "2026-05-08T00:00:00.000Z",
+          },
+        },
+      },
+      [
+        {
+          user_id: "user-1",
+          question_id: "52-101",
+          text: "新しいメモ",
+          updated_at: "2026-05-08T01:00:00.000Z",
+        },
+      ],
+    );
+
+    expect(merged.items["52-101"]).toEqual({
+      text: "新しいメモ",
+      updatedAt: "2026-05-08T01:00:00.000Z",
+    });
+  });
+
+  it("解答履歴はentry_key相当で重複を除き新しい順にする", () => {
+    const remote: AnswerHistoryRow = {
+      id: "00000000-0000-0000-0000-000000000001",
+      user_id: "user-1",
+      entry_key: "ignored",
+      question_id: "52-101",
+      answered_at: "2026-05-08T00:00:00.000Z",
+      result: "correct",
+      selected_answers: ["1"],
+      round: 52,
+      session: "pm",
+      display_number: 1,
+      major_category: "眼科疾患・神経眼科",
+      created_at: "2026-05-08T00:00:00.000Z",
+    };
+
+    const merged = mergeAnswerHistoryStores(
+      {
+        version: 1,
+        entries: [
+          {
+            id: "52-101",
+            answeredAt: "2026-05-08T00:00:00.000Z",
+            result: "correct",
+            selectedAnswers: ["1"],
+            round: 52,
+            session: "pm",
+            displayNumber: 1,
+            majorCategory: "眼科疾患・神経眼科",
+          },
+          {
+            id: "52-102",
+            answeredAt: "2026-05-08T01:00:00.000Z",
+            result: "incorrect",
+            selectedAnswers: ["2"],
+            round: 52,
+            session: "pm",
+            displayNumber: 2,
+            majorCategory: "眼科疾患・神経眼科",
+          },
+        ],
+      },
+      [remote],
+    );
+
+    expect(merged.entries).toHaveLength(2);
+    expect(merged.entries[0]?.id).toBe("52-102");
+    expect(createAnswerHistoryEntryKey(merged.entries[1]!)).toBe(
+      "52-101|2026-05-08T00:00:00.000Z|correct|1",
+    );
+  });
+});

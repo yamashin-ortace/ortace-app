@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware";
 
-const PUBLIC_PATHS = new Set(["/login"]);
+/** 未ログインでも閲覧可（LP とログイン画面のみ） */
+const PUBLIC_PATHS = new Set(["/", "/login"]);
 const AUTH_ROUTES = ["/auth/", "/logout"];
 const ONBOARDED_COOKIE = "ortace_onboarded";
 const ONBOARDED_COOKIE_OPTIONS = {

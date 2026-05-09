@@ -1,0 +1,739 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  Bookmark,
+  CheckCircle2,
+  FileText,
+  HelpCircle,
+  History,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getTokyoDateString } from "@/lib/daily-limit";
+import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
+import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import { useStudyItemsLists } from "@/lib/study-items/use-study-items";
+import {
+  BOOKMARK_CATEGORIES,
+  type BookmarkCategory,
+} from "@/lib/study-items";
+import { cn } from "@/lib/utils";
+
+export type QuestionSummary = {
+  id: string;
+  round: number;
+  session: "am" | "pm";
+  displayNumber: number;
+  questionText: string;
+  majorCategory: string;
+};
+
+type Props = {
+  questions: QuestionSummary[];
+};
+
+const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
+const RECORDS_SCROLL_KEY = "ortace.records.scrollY";
+const HISTORY_PAGE_SIZE = 50;
+type RecordsTab = "bookmarks" | "notes" | "history";
+type HistoryScope = "all" | "today";
+
+export function RecordsClient({ questions }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { bookmarks, notes, removeBookmark, removeNote } = useStudyItemsLists();
+  const { entries: answerHistory } = useAnswerHistoryList();
+  const [activeTab, setActiveTab] = useState<RecordsTab>(() =>
+    parseRecordsTab(searchParams.get("tab")),
+  );
+  const [categoryFilter, setCategoryFilter] = useState<BookmarkCategory | "all">(
+    () => {
+      const category = searchParams.get("category");
+      return isBookmarkCategory(category) ? category : "all";
+    },
+  );
+  const [historyScope, setHistoryScope] = useState<HistoryScope>(() =>
+    searchParams.get("range") === "today" ? "today" : "all",
+  );
+  const [visibleHistoryCount, setVisibleHistoryCount] =
+    useState(HISTORY_PAGE_SIZE);
+  const questionMap = new Map(questions.map((q) => [q.id, q]));
+  const filteredBookmarks = useMemo(
+    () =>
+      categoryFilter === "all"
+        ? bookmarks
+        : bookmarks.filter((item) => item.categories.includes(categoryFilter)),
+    [bookmarks, categoryFilter],
+  );
+  const displayedHistory = useMemo(
+    () =>
+      historyScope === "today"
+        ? answerHistory.filter((entry) => isAnsweredToday(entry))
+        : answerHistory,
+    [answerHistory, historyScope],
+  );
+  const fieldSummaries = useMemo(
+    () => calculateFieldSummaries(displayedHistory),
+    [displayedHistory],
+  );
+  const visibleHistory = displayedHistory.slice(0, visibleHistoryCount);
+  const hasMoreHistory = visibleHistory.length < displayedHistory.length;
+
+  useEffect(() => {
+    const savedScroll = window.sessionStorage.getItem(RECORDS_SCROLL_KEY);
+    if (!savedScroll) return;
+
+    window.sessionStorage.removeItem(RECORDS_SCROLL_KEY);
+    const top = Number(savedScroll);
+    if (!Number.isFinite(top)) return;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top });
+      });
+    });
+  }, []);
+
+  const updateRecordsUrl = useCallback(
+    (
+      nextTab: RecordsTab,
+      nextCategory: BookmarkCategory | "all",
+      nextHistoryScope: HistoryScope,
+    ) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", nextTab);
+      if (nextTab === "bookmarks" && nextCategory !== "all") {
+        params.set("category", nextCategory);
+      } else {
+        params.delete("category");
+      }
+      if (nextTab === "history" && nextHistoryScope === "today") {
+        params.set("range", "today");
+      } else {
+        params.delete("range");
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const handleTabChange = (value: string) => {
+    const nextTab = parseRecordsTab(value);
+    setActiveTab(nextTab);
+    updateRecordsUrl(nextTab, categoryFilter, historyScope);
+  };
+
+  const handleCategoryFilterChange = (nextCategory: BookmarkCategory | "all") => {
+    setCategoryFilter(nextCategory);
+    updateRecordsUrl(activeTab, nextCategory, historyScope);
+  };
+
+  const handleHistoryScopeChange = (nextScope: HistoryScope) => {
+    setHistoryScope(nextScope);
+    setVisibleHistoryCount(HISTORY_PAGE_SIZE);
+    updateRecordsUrl(activeTab, categoryFilter, nextScope);
+  };
+
+  const saveRecordsScroll = () => {
+    window.sessionStorage.setItem(RECORDS_SCROLL_KEY, String(window.scrollY));
+  };
+
+  return (
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <TabsList className="grid h-10 w-full grid-cols-3 rounded-[12px] bg-[var(--bg-muted)] p-1">
+        <TabsTrigger
+          value="bookmarks"
+          className="rounded-[10px] text-[13px] font-bold data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+        >
+          <Bookmark className="h-4 w-4" strokeWidth={2.5} />
+          ブックマーク
+        </TabsTrigger>
+        <TabsTrigger
+          value="notes"
+          className="rounded-[10px] text-[13px] font-bold data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+        >
+          <FileText className="h-4 w-4" strokeWidth={2.5} />
+          ノート
+        </TabsTrigger>
+        <TabsTrigger
+          value="history"
+          className="rounded-[10px] text-[13px] font-bold data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+        >
+          <History className="h-4 w-4" strokeWidth={2.5} />
+          履歴
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="bookmarks" className="space-y-3">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <FilterChip
+            selected={categoryFilter === "all"}
+            onClick={() => handleCategoryFilterChange("all")}
+          >
+            すべて
+          </FilterChip>
+          {BOOKMARK_CATEGORIES.map((category) => (
+            <FilterChip
+              key={category.id}
+              selected={categoryFilter === category.id}
+              onClick={() => handleCategoryFilterChange(category.id)}
+            >
+              {category.label}
+            </FilterChip>
+          ))}
+        </div>
+
+        {filteredBookmarks.length === 0 ? (
+          <EmptyState
+            title="ブックマークはまだありません"
+            description="演習中に保存した問題がここに並びます。"
+          />
+        ) : (
+          filteredBookmarks.map((item) => {
+            const question = questionMap.get(item.id);
+            if (!question) return null;
+            return (
+              <SavedQuestionCard
+                key={item.id}
+                mode="bookmark"
+                question={question}
+                date={item.addedAt}
+                categories={item.categories}
+                actionLabel="ブックマーク解除"
+                onRemove={() => removeBookmark(item.id)}
+                onOpenDetail={saveRecordsScroll}
+              />
+            );
+          })
+        )}
+      </TabsContent>
+
+      <TabsContent value="notes" className="space-y-3">
+        {notes.length === 0 ? (
+          <EmptyState
+            title="ノートはまだありません"
+            description="覚えておきたいことを書くと、ここから見返せます。"
+          />
+        ) : (
+          notes.map((item) => {
+            const question = questionMap.get(item.id);
+            if (!question) return null;
+            return (
+              <SavedQuestionCard
+                key={item.id}
+                mode="note"
+                question={question}
+                date={item.updatedAt}
+                noteBody={item.text}
+                actionLabel="ノート削除"
+                onRemove={() => removeNote(item.id)}
+                onOpenDetail={saveRecordsScroll}
+              />
+            );
+          })
+        )}
+      </TabsContent>
+
+      <TabsContent value="history" className="space-y-3">
+        {answerHistory.length === 0 ? (
+          <EmptyState
+            title="解答履歴はまだありません"
+            description="問題に解答すると、ここから見返せます。"
+          />
+        ) : (
+          <>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <FilterChip
+                selected={historyScope === "all"}
+                onClick={() => handleHistoryScopeChange("all")}
+              >
+                すべて
+              </FilterChip>
+              <FilterChip
+                selected={historyScope === "today"}
+                onClick={() => handleHistoryScopeChange("today")}
+              >
+                今日だけ
+              </FilterChip>
+            </div>
+
+            {displayedHistory.length === 0 ? (
+              <EmptyState
+                title="今日の解答はまだありません"
+                description="問題を解くと、今日の履歴がここに並びます。"
+              />
+            ) : (
+              <>
+                <FieldSummaryList summaries={fieldSummaries} />
+                {visibleHistory.map((entry) => {
+                  const question = questionMap.get(entry.id);
+                  if (!question) return null;
+                  return (
+                    <AnswerHistoryCard
+                      key={`${entry.id}-${entry.answeredAt}`}
+                      entry={entry}
+                      question={question}
+                      onOpenDetail={saveRecordsScroll}
+                    />
+                  );
+                })}
+                {hasMoreHistory ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVisibleHistoryCount((count) => count + HISTORY_PAGE_SIZE)
+                    }
+                    className="w-full rounded-[12px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[13px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
+                  >
+                    もっと見る（あと
+                    {displayedHistory.length - visibleHistory.length}件）
+                  </button>
+                ) : null}
+              </>
+            )}
+          </>
+        )}
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function SavedQuestionCard({
+  question,
+  date,
+  actionLabel,
+  onRemove,
+  categories,
+  mode,
+  noteBody,
+  onOpenDetail,
+}: {
+  question: QuestionSummary;
+  date: string;
+  actionLabel: string;
+  onRemove: () => void;
+  categories?: BookmarkCategory[];
+  mode: "bookmark" | "note";
+  noteBody?: string;
+  onOpenDetail: () => void;
+}) {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const stem = question.questionText.replace(/\s+/g, " ").trim();
+  const href =
+    mode === "note"
+      ? `/study/question/${question.id}?from=records&note=1`
+      : `/study/question/${question.id}?from=records`;
+  const deleteCopy =
+    mode === "note"
+      ? {
+          title: "ノートを削除しますか？",
+          description:
+            "保存したメモは元に戻せません。本当に削除してよいですか？",
+          confirm: "削除する",
+        }
+      : {
+          title: "ブックマークを解除しますか？",
+          description:
+            "この問題はブックマーク一覧から外れます。あとで見返す必要がある場合はキャンセルしてください。",
+          confirm: "解除する",
+        };
+
+  const handleConfirmRemove = () => {
+    onRemove();
+    setDeleteConfirmOpen(false);
+  };
+
+  const removeButton = (
+    <button
+      type="button"
+      onClick={() => setDeleteConfirmOpen(true)}
+      className="choice-pressable grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-[var(--bg-card)] text-[var(--text-3)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
+      aria-label={actionLabel}
+    >
+      <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+    </button>
+  );
+
+  return (
+    <>
+      <article className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          {mode === "note" ? (
+            <>
+              <Link
+                href={href}
+                className="min-w-0 flex-1 space-y-2"
+                onClick={onOpenDetail}
+              >
+                <div>
+                  <span className="rounded-[6px] bg-[var(--primary-soft)] px-2 py-1 text-[11px] font-bold text-[var(--primary-dark)]">
+                    第{question.round}回 {SESSION_LABEL[question.session]}{" "}
+                    {question.displayNumber}
+                  </span>
+                </div>
+                <p className="line-clamp-2 text-[14px] leading-6 font-medium text-[var(--text-1)] sm:line-clamp-3">
+                  {stem || "（問題文なし）"}
+                </p>
+                <p className="line-clamp-4 text-[14px] leading-6 font-medium text-[var(--text-1)]">
+                  {(noteBody ?? "").replace(/\s+/g, " ").trim() ||
+                    "（ノート未入力）"}
+                </p>
+                <p className="text-[11px] text-[var(--text-3)]">
+                  {formatDateTime(date)}
+                </p>
+              </Link>
+              {removeButton}
+            </>
+          ) : (
+            <>
+            <Link
+              href={href}
+              className="min-w-0 flex-1 space-y-2"
+              onClick={onOpenDetail}
+            >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-[6px] bg-[var(--primary-soft)] px-2 py-1 text-[11px] font-bold text-[var(--primary-dark)]">
+                    第{question.round}回 {SESSION_LABEL[question.session]}{" "}
+                    {question.displayNumber}
+                  </span>
+                {categories && categories.length > 0
+                  ? categories.map((category) => (
+                      <span
+                        key={category}
+                        className="rounded-full bg-[var(--bg-muted)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-3)]"
+                      >
+                        {getBookmarkCategoryLabel(category)}
+                      </span>
+                    ))
+                  : null}
+                </div>
+                <p className="line-clamp-2 text-[14px] leading-6 font-medium text-[var(--text-1)] sm:line-clamp-3">
+                  {stem || "（問題文なし）"}
+                </p>
+                <p className="text-[11px] text-[var(--text-3)]">
+                  {formatDateTime(date)}
+                </p>
+              </Link>
+              {removeButton}
+            </>
+          )}
+        </div>
+      </article>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent showCloseButton>
+          <DialogHeader>
+            <DialogTitle className="text-[var(--text-1)]">
+              {deleteCopy.title}
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-2)]">
+              {deleteCopy.description}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setDeleteConfirmOpen(false)}
+            >
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={handleConfirmRemove}
+            >
+              {deleteCopy.confirm}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function AnswerHistoryCard({
+  entry,
+  question,
+  onOpenDetail,
+}: {
+  entry: AnswerHistoryEntry;
+  question: QuestionSummary;
+  onOpenDetail: () => void;
+}) {
+  const stem = question.questionText.replace(/\s+/g, " ").trim();
+  const result = getAnswerResultDisplay(entry.result);
+  const ResultIcon = result.icon;
+
+  return (
+    <article className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-sm">
+      <Link
+        href={`/study/question/${question.id}?from=records`}
+        onClick={onOpenDetail}
+        className="block space-y-2"
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-[6px] bg-[var(--primary-soft)] px-2 py-1 text-[11px] font-bold text-[var(--primary-dark)]">
+            第{question.round}回 {SESSION_LABEL[question.session]}{" "}
+            {question.displayNumber}
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
+              result.className,
+            )}
+          >
+            <ResultIcon className="h-3 w-3" strokeWidth={2.5} />
+            {result.label}
+          </span>
+        </div>
+        <p className="line-clamp-2 text-[14px] leading-6 font-medium text-[var(--text-1)] sm:line-clamp-3">
+          {stem || "（問題文なし）"}
+        </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--text-3)]">
+          <span>{formatDateTime(entry.answeredAt)}</span>
+          {entry.selectedAnswers.length > 0 ? (
+            <span>選択: {entry.selectedAnswers.join(", ")}</span>
+          ) : null}
+        </div>
+      </Link>
+    </article>
+  );
+}
+
+function FieldSummaryList({
+  summaries,
+}: {
+  summaries: FieldSummary[];
+}) {
+  if (summaries.length === 0) return null;
+
+  return (
+    <section className="space-y-2.5 rounded-[14px] border border-border bg-[var(--bg-card)] p-3.5 shadow-sm">
+      <div className="space-y-0.5">
+        <h3 className="text-[15px] font-bold text-[var(--text-1)]">
+          分野別の成績
+        </h3>
+        <p className="text-[12px] text-[var(--text-3)]">
+          得意な分野と、もう一度見直したい分野がわかります
+        </p>
+      </div>
+      <div className="space-y-1.5">
+        {summaries.map((summary) => {
+          const accuracy = formatRate(summary.accuracy);
+          return (
+            <div
+              key={summary.majorCategory}
+              className="space-y-1.5 rounded-[12px] bg-[var(--bg-muted)]/45 px-3 py-2.5"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="min-w-0 text-[14px] leading-snug font-bold text-[var(--text-1)]">
+                  {summary.majorCategory}
+                </p>
+                <div className="grid h-9 w-[104px] shrink-0 grid-cols-[40px_1fr] items-center rounded-[12px] bg-[var(--bg-card)] px-2 text-center shadow-sm">
+                  <p className="grid h-full place-items-center text-[10px] leading-none font-bold text-[var(--text-3)]">
+                    正答率
+                  </p>
+                  <p className="grid h-full place-items-center text-[18px] leading-none font-extrabold tabular-nums text-[var(--primary-dark)]">
+                    {accuracy}%
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <MiniMetric label="解答数" value={summary.total} />
+                <MiniMetric label="正解数" value={summary.correct} />
+              </div>
+              {summary.noAnswer > 0 ? (
+                <p className="text-[11px] text-[var(--text-3)]">
+                  正答なし: {summary.noAnswer}問
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-end justify-between gap-2 rounded-[10px] bg-[var(--bg-card)] px-3 py-2 shadow-sm">
+      <p className="text-[10px] leading-none font-bold text-[var(--text-3)]">
+        {label}
+      </p>
+      <p className="text-[18px] leading-none font-extrabold tabular-nums text-[var(--text-1)]">
+        {value}
+        <span className="ml-0.5 text-[10px] font-bold text-[var(--text-3)]">
+          問
+        </span>
+      </p>
+    </div>
+  );
+}
+
+function FilterChip({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={
+        selected
+          ? "shrink-0 rounded-full border border-[var(--primary)] bg-[var(--primary-soft)] px-3 py-1.5 text-[11px] font-bold text-[var(--primary-dark)]"
+          : "shrink-0 rounded-full border border-border bg-[var(--bg-card)] px-3 py-1.5 text-[11px] font-semibold text-[var(--text-3)]"
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-[14px] border border-dashed border-border bg-[var(--bg-card)] px-4 py-8 text-center">
+      <p className="text-[14px] font-bold text-[var(--text-1)]">{title}</p>
+      <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-3)]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function getBookmarkCategoryLabel(id: BookmarkCategory): string {
+  return BOOKMARK_CATEGORIES.find((category) => category.id === id)?.label ?? id;
+}
+
+type FieldSummary = {
+  majorCategory: string;
+  total: number;
+  judged: number;
+  correct: number;
+  noAnswer: number;
+  accuracy: number | null;
+};
+
+function calculateFieldSummaries(entries: AnswerHistoryEntry[]): FieldSummary[] {
+  const map = new Map<string, FieldSummary>();
+
+  for (const entry of entries) {
+    const key = entry.majorCategory || "未分類";
+    const current =
+      map.get(key) ??
+      ({
+        majorCategory: key,
+        total: 0,
+        judged: 0,
+        correct: 0,
+        noAnswer: 0,
+        accuracy: null,
+      } satisfies FieldSummary);
+
+    current.total += 1;
+    if (entry.result === "no_answer") {
+      current.noAnswer += 1;
+    } else {
+      current.judged += 1;
+      if (entry.result === "correct") current.correct += 1;
+    }
+    current.accuracy =
+      current.judged === 0
+        ? null
+        : Math.round((current.correct / current.judged) * 100);
+    map.set(key, current);
+  }
+
+  return [...map.values()].sort((a, b) => {
+    if (b.total !== a.total) return b.total - a.total;
+    return a.majorCategory.localeCompare(b.majorCategory, "ja");
+  });
+}
+
+function isAnsweredToday(entry: AnswerHistoryEntry): boolean {
+  const date = new Date(entry.answeredAt);
+  if (Number.isNaN(date.getTime())) return false;
+  return getTokyoDateString(date) === getTokyoDateString();
+}
+
+function formatRate(value: number | null): string {
+  return value === null ? "--" : String(value);
+}
+
+function isBookmarkCategory(value: string | null): value is BookmarkCategory {
+  return BOOKMARK_CATEGORIES.some((category) => category.id === value);
+}
+
+function parseRecordsTab(value: string | null): RecordsTab {
+  if (value === "notes" || value === "history") return value;
+  return "bookmarks";
+}
+
+function getAnswerResultDisplay(result: AnswerHistoryEntry["result"]) {
+  if (result === "correct") {
+    return {
+      label: "正解",
+      icon: CheckCircle2,
+      className: "bg-green-500/10 text-[var(--success)]",
+    };
+  }
+  if (result === "incorrect") {
+    return {
+      label: "不正解",
+      icon: XCircle,
+      className: "bg-red-500/10 text-[var(--error)]",
+    };
+  }
+  return {
+    label: "正答なし",
+    icon: HelpCircle,
+    className: "bg-[var(--bg-muted)] text-[var(--text-3)]",
+  };
+}
+
+function formatDateTime(value: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("ja-JP", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}

@@ -1,22 +1,45 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DailyLimitBanner } from "@/components/study/daily-limit-banner";
+import { RandomModeCard } from "@/components/study/random-mode-card";
+import { RoundCard } from "@/components/study/round-card";
+import { getEffectivePlan } from "@/lib/billing/plans";
+import { getSessionContext } from "@/lib/auth/profile";
+import { EXAM_ROUNDS } from "@/lib/questions";
 
-export default function StudyPage() {
+export default async function StudyPage() {
+  const session = await getSessionContext();
+  const plan = session?.profile
+    ? getEffectivePlan({
+        plan: session.profile.plan,
+        status: session.profile.plan_status,
+        expiresAt: session.profile.plan_expires_at,
+      })
+    : "free";
+
   return (
-    <div className="space-y-4 pt-2">
+    <div className="space-y-6 pt-2">
       <h1 className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
         学習
       </h1>
-      <p className="text-sm text-[var(--text-3)]">
-        過去問・ランダム出題・復習モードをここから開きます（実装はフェーズ3）。
-      </p>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[16px]">準備中</CardTitle>
-        </CardHeader>
-        <CardContent className="text-[14px] text-[var(--text-2)]">
-          第47〜55回の過去問（1,350問）を移植予定。
-        </CardContent>
-      </Card>
+
+      <DailyLimitBanner plan={plan} />
+
+      <section className="space-y-2">
+        <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
+          年度から選ぶ
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          {[...EXAM_ROUNDS].reverse().map((round) => (
+            <RoundCard key={round} round={round} />
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
+          その他のモード
+        </h2>
+        <RandomModeCard />
+      </section>
     </div>
   );
 }

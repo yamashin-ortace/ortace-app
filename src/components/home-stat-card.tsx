@@ -6,10 +6,10 @@ import { Flame, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CARD_BOX =
-  "flex h-full min-h-0 w-full min-w-0 flex-col rounded-[14px] border border-border bg-[var(--bg-card)] p-3 text-left shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
+  "flex h-full min-h-0 w-full min-w-0 flex-col rounded-[14px] border border-border bg-[var(--bg-card)] p-3.5 text-left shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
 const ROW_LABEL =
-  "flex min-h-10 w-full items-center gap-1.5 text-[11px] font-medium text-[var(--text-3)]";
-const ROW_VALUE = "mt-1.5 flex w-full min-w-0 items-baseline justify-start gap-1";
+  "flex min-h-10 w-full items-center gap-1.5 text-[12px] font-semibold text-[var(--text-3)]";
+const ROW_VALUE = "mt-2 flex w-full min-w-0 items-baseline justify-start gap-1";
 
 type HomeStatCardProps = {
   icon: React.ReactNode;
@@ -36,10 +36,10 @@ export function HomeStatCard({ icon, label, value, unit, trailing }: HomeStatCar
         </div>
       </div>
       <div className={ROW_VALUE}>
-        <span className="text-[22px] font-extrabold leading-none tracking-tight text-[var(--text-1)] tabular-nums">
+        <span className="text-[26px] font-extrabold leading-none tracking-tight text-[var(--text-1)] tabular-nums">
           {value}
         </span>
-        <span className="shrink-0 text-[11px] text-[var(--text-3)]">{unit}</span>
+        <span className="shrink-0 text-[12px] text-[var(--text-3)]">{unit}</span>
       </div>
     </div>
   );

@@ -1,46 +1,36 @@
+import type { Metadata } from "next";
 import { HomeGreeting } from "@/components/home-greeting";
-import { HomeStatCard, StreakStatCard } from "@/components/home-stat-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Target } from "lucide-react";
+import { HomeDashboard } from "@/components/home-dashboard";
+import { LandingPage } from "@/components/landing/landing-page";
+import { getSessionContext } from "@/lib/auth/profile";
 
-export default function HomePage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getSessionContext();
+  if (session) {
+    return {
+      title: "ホーム｜ORT ACE",
+      description:
+        "今日の学習・記録の概要。視能訓練士国家試験対策アプリ ORT ACE。",
+    };
+  }
+  return {
+    title: "ORT ACE — 視能訓練士国家試験対策",
+    description:
+      "合格の、一歩上へ。過去問1,500問（第47〜56回）、解説・ノート・ブックマーク・連続学習と分野別統計でORT国家試験の学習をサポート。無料プランですぐにはじめられます。",
+  };
+}
+
+export default async function HomePage() {
+  const session = await getSessionContext();
+
+  if (!session) {
+    return <LandingPage />;
+  }
+
   return (
     <div className="space-y-6 pt-2">
       <HomeGreeting />
-
-      <section>
-        <div className="grid grid-cols-3 items-stretch gap-3">
-          <StreakStatCard />
-          <HomeStatCard
-            icon={<BookOpen className="h-5 w-5" strokeWidth={2} />}
-            label="今日の解答"
-            value="0"
-            unit="問"
-          />
-          <HomeStatCard
-            icon={<Target className="h-5 w-5" strokeWidth={2} />}
-            label="正答率"
-            value="--"
-            unit="%"
-          />
-        </div>
-      </section>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[18px] font-bold">セットアップ中</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-[14px] leading-7 text-[var(--text-2)]">
-          <p>フェーズ1：基盤構築の表示確認ページです。</p>
-          <p>
-            右上の
-            <span className="mx-1 rounded bg-[var(--bg-muted)] px-1.5 py-0.5 text-[12px]">
-              設定
-            </span>
-            からテーマ5色切替・ダークモードを試せます。
-          </p>
-        </CardContent>
-      </Card>
+      <HomeDashboard />
     </div>
   );
 }
