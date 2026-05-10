@@ -2,28 +2,28 @@
 
 import type { ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
-import {
-  BookOpen,
-  CheckCircle2,
-  Flame,
-  HelpCircle,
-  Info,
-  Target,
-  XCircle,
-} from "lucide-react";
+import { BookOpen, Flame, Info, Target } from "lucide-react";
 import { HomeStatCard } from "@/components/home-stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTokyoDateString } from "@/lib/daily-limit";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import type { Field } from "@/lib/questions";
 import { cn } from "@/lib/utils";
 
-const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
+type QuestionTotals = {
+  total: number;
+  fields: Record<Field, number>;
+};
 
-export function HomeDashboard() {
+type Props = {
+  questionTotals: QuestionTotals;
+};
+
+export function HomeDashboard({ questionTotals }: Props) {
   const { entries } = useAnswerHistoryList();
   const stats = calculateHomeStats(entries);
-  const recent = entries.slice(0, 3);
+  const progress = calculateLearningProgress(entries, questionTotals);
 
   return (
     <>
@@ -82,26 +82,43 @@ export function HomeDashboard() {
             学習ダッシュボード
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {recent.length === 0 ? (
-            <p className="text-[14px] leading-7 text-[var(--text-2)]">
-              問題を解くと、今日の解答数・正答率・連続学習日数がここに反映されます。
-            </p>
-          ) : (
-            <>
-              <p className="text-[12px] font-semibold text-[var(--text-3)]">
-                最近の解答
-              </p>
-              <div className="space-y-2">
-                {recent.map((entry) => (
-                  <RecentAnswerRow
-                    key={`${entry.id}-${entry.answeredAt}`}
-                    entry={entry}
-                  />
-                ))}
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[12px] font-semibold text-[var(--text-3)]">
+                  過去問の到達度
+                </p>
+                <p className="mt-0.5 text-[13px] text-[var(--text-2)]">
+                  {progress.answeredUniqueCount} / {questionTotals.total}問
+                </p>
               </div>
-            </>
-          )}
+              <p className="text-[22px] font-extrabold text-[var(--text-1)]">
+                {progress.totalRate}%
+              </p>
+            </div>
+            <ProgressBar value={progress.totalRate} />
+          </div>
+
+          <div className="rounded-[14px] border border-border bg-[var(--bg-muted)]/35 px-3 py-3">
+            <p className="text-[11px] font-semibold text-[var(--text-3)]">
+              次にやる目安
+            </p>
+            <p className="mt-1 text-[14px] font-bold leading-6 text-[var(--text-1)]">
+              {progress.nextAction}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-[12px] font-semibold text-[var(--text-3)]">
+              手薄な分野
+            </p>
+            <div className="space-y-2">
+              {progress.priorityFields.map((field) => (
+                <FieldProgressRow key={field.name} field={field} />
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </>
@@ -153,29 +170,41 @@ function InfoPopover({
   );
 }
 
-function RecentAnswerRow({ entry }: { entry: AnswerHistoryEntry }) {
-  const result = getAnswerResultDisplay(entry.result);
-  const ResultIcon = result.icon;
-
+function FieldProgressRow({
+  field,
+}: {
+  field: ReturnType<typeof calculateLearningProgress>["priorityFields"][number];
+}) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[12px] border border-border bg-[var(--bg-muted)]/35 px-3 py-2.5">
-      <div className="min-w-0">
-        <p className="truncate text-[13px] font-bold text-[var(--text-1)]">
-          第{entry.round}回 {SESSION_LABEL[entry.session]} {entry.displayNumber}
+    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-[13px] font-bold text-[var(--text-1)]">
+          {field.name}
         </p>
-        <p className="mt-0.5 text-[11px] text-[var(--text-3)]">
-          {formatDateTime(entry.answeredAt)}
+        <p className="shrink-0 text-[11px] font-medium text-[var(--text-3)]">
+          {field.answered} / {field.total}問
         </p>
       </div>
-      <span
-        className={cn(
-          "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
-          result.className,
-        )}
-      >
-        <ResultIcon className="h-3 w-3" strokeWidth={2.5} />
-        {result.label}
-      </span>
+      <div className="mt-2 flex items-center gap-2">
+        <ProgressBar value={field.rate} />
+        <span className="w-10 text-right text-[11px] font-bold text-[var(--text-2)]">
+          {field.rate}%
+        </span>
+      </div>
+      <p className="mt-1 text-[11px] text-[var(--text-3)]">
+        正答率 {formatRate(field.accuracy)}%
+      </p>
+    </div>
+  );
+}
+
+function ProgressBar({ value }: { value: number }) {
+  return (
+    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--bg-muted)]">
+      <div
+        className="h-full rounded-full bg-[var(--primary)] transition-[width]"
+        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      />
     </div>
   );
 }
@@ -191,6 +220,49 @@ function calculateHomeStats(entries: AnswerHistoryEntry[]) {
     todayAccuracy: calculateAccuracy(todayEntries),
     totalAccuracy: calculateAccuracy(entries),
     streakDays: calculateStreakDays(entries, today),
+  };
+}
+
+function calculateLearningProgress(
+  entries: AnswerHistoryEntry[],
+  questionTotals: QuestionTotals,
+) {
+  const answeredUniqueIds = new Set(entries.map((entry) => entry.id));
+  const totalRate =
+    questionTotals.total === 0
+      ? 0
+      : Math.round((answeredUniqueIds.size / questionTotals.total) * 100);
+
+  const priorityFields = Object.entries(questionTotals.fields)
+    .map(([name, total]) => {
+      const fieldEntries = entries.filter((entry) => entry.majorCategory === name);
+      const answered = new Set(fieldEntries.map((entry) => entry.id)).size;
+      const rate = total === 0 ? 0 : Math.round((answered / total) * 100);
+      return {
+        name,
+        total,
+        answered,
+        remaining: Math.max(0, total - answered),
+        rate,
+        accuracy: calculateAccuracy(fieldEntries),
+      };
+    })
+    .sort((a, b) => {
+      if (a.rate !== b.rate) return a.rate - b.rate;
+      return b.remaining - a.remaining;
+    })
+    .slice(0, 4);
+
+  const first = priorityFields[0];
+  const nextAction = first
+    ? `まずは「${first.name}」を20問。未着手が多い分野から埋めると、全体の抜けが見えやすくなります。`
+    : "問題を解くと、未着手の分野と次に進めたい範囲がここに表示されます。";
+
+  return {
+    answeredUniqueCount: answeredUniqueIds.size,
+    totalRate,
+    priorityFields,
+    nextAction,
   };
 }
 
@@ -218,38 +290,4 @@ function calculateStreakDays(entries: AnswerHistoryEntry[], today: string): numb
 
 function formatRate(value: number | null): string {
   return value === null ? "--" : String(value);
-}
-
-function getAnswerResultDisplay(result: AnswerHistoryEntry["result"]) {
-  if (result === "correct") {
-    return {
-      label: "正解",
-      icon: CheckCircle2,
-      className: "bg-green-500/10 text-[var(--success)]",
-    };
-  }
-  if (result === "incorrect") {
-    return {
-      label: "不正解",
-      icon: XCircle,
-      className: "bg-red-500/10 text-[var(--error)]",
-    };
-  }
-  return {
-    label: "正答なし",
-    icon: HelpCircle,
-    className: "bg-[var(--bg-muted)] text-[var(--text-3)]",
-  };
-}
-
-function formatDateTime(value: string): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("ja-JP", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
 }

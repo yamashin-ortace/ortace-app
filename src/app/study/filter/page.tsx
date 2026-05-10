@@ -5,12 +5,11 @@ import { loadAllQuestions } from "@/lib/questions/loader";
 
 export default async function FilterModePage() {
   const questions = await loadAllQuestions();
-  const countsByField = Object.fromEntries(
-    FIELDS.map((field) => [
-      field,
-      questions.filter((question) => question.majorCategory === field).length,
-    ]),
-  ) as Record<Field, number>;
+  const summaries = questions.map((question) => ({
+    round: question.round,
+    session: question.session,
+    field: question.majorCategory as Field,
+  }));
 
   return (
     <div className="space-y-6 pt-2">
@@ -27,7 +26,7 @@ export default async function FilterModePage() {
       <FilterSettingsClient
         rounds={EXAM_ROUNDS}
         fields={FIELDS}
-        countsByField={countsByField}
+        questions={summaries}
       />
     </div>
   );

@@ -16,6 +16,9 @@ import { shuffle } from "@/lib/quiz";
 type Props = {
   searchParams: Promise<{
     count?: string;
+    rounds?: string;
+    sessions?: string;
+    fields?: string;
     round?: string;
     session?: string;
     field?: string;
@@ -29,15 +32,16 @@ export default async function FilteredQuizPage({ searchParams }: Props) {
   const count = Number(params.count ?? 20);
   if (!ALLOWED_COUNTS.has(count)) notFound();
 
-  const round = parseRound(params.round);
-  const session = parseSession(params.session);
-  const field = parseField(params.field);
+  const rounds = parseRounds(params.rounds ?? params.round);
+  const sessions = parseSessions(params.sessions ?? params.session);
+  const fields = parseFields(params.fields ?? params.field);
   const allQuestions = await loadAllQuestions();
   const filtered = allQuestions.filter((question) => {
-    if (round !== "all" && question.round !== round) return false;
-    if (session !== "all" && question.session !== session) return false;
-    if (field !== "all" && question.majorCategory !== field) return false;
-    return true;
+    return (
+      rounds.includes(question.round) &&
+      sessions.includes(question.session) &&
+      fields.includes(question.majorCategory as Field)
+    );
   });
 
   if (filtered.length === 0) notFound();
@@ -68,20 +72,29 @@ export default async function FilteredQuizPage({ searchParams }: Props) {
   );
 }
 
-function parseRound(value: string | undefined): "all" | ExamRound {
-  if (!value || value === "all") return "all";
-  const round = Number(value);
-  return (EXAM_ROUNDS as readonly number[]).includes(round)
-    ? (round as ExamRound)
-    : "all";
+function parseRounds(value: string | undefined): ExamRound[] {
+  if (!value || value === "all") return [...EXAM_ROUNDS];
+  const rounds = value
+    .split(",")
+    .map((item) => Number(item))
+    .filter((round): round is ExamRound =>
+      (EXAM_ROUNDS as readonly number[]).includes(round),
+    );
+  return rounds.length > 0 ? rounds : [...EXAM_ROUNDS];
 }
 
-function parseSession(value: string | undefined): "all" | Session {
-  if (value === "am" || value === "pm") return value;
-  return "all";
+function parseSessions(value: string | undefined): Session[] {
+  if (!value || value === "all") return ["am", "pm"];
+  const sessions = value
+    .split(",")
+    .filter((session): session is Session => session === "am" || session === "pm");
+  return sessions.length > 0 ? sessions : ["am", "pm"];
 }
 
-function parseField(value: string | undefined): "all" | Field {
-  if (!value || value === "all") return "all";
-  return (FIELDS as readonly string[]).includes(value) ? (value as Field) : "all";
+function parseFields(value: string | undefined): Field[] {
+  if (!value || value === "all") return [...FIELDS];
+  const fields = value
+    .split("|")
+    .filter((field): field is Field => (FIELDS as readonly string[]).includes(field));
+  return fields.length > 0 ? fields : [...FIELDS];
 }

@@ -10,47 +10,86 @@ import type { ExamRound, Field, Session } from "@/lib/questions";
 
 const COUNT_OPTIONS = [10, 20, 50, 100] as const;
 const FILTER_HISTORY_KEY = "ortace.filterHistory";
-type Count = (typeof COUNT_OPTIONS)[number];
-type RoundOption = "all" | ExamRound;
-type SessionOption = "all" | Session;
-type FieldOption = "all" | Field;
-type FilterHistoryItem = {
-  round: RoundOption;
-  session: SessionOption;
-  field: FieldOption;
-  count: Count;
-  label: string;
-  savedAt: string;
-};
-
-const SESSION_OPTIONS: { id: SessionOption; label: string }[] = [
-  { id: "all", label: "全問" },
+const SESSION_OPTIONS: { id: Session; label: string }[] = [
   { id: "am", label: "午前" },
   { id: "pm", label: "午後" },
 ];
 
+type Count = (typeof COUNT_OPTIONS)[number];
+type FilterQuestionSummary = {
+  round: ExamRound;
+  session: Session;
+  field: Field;
+};
+type FilterSelection = {
+  rounds: ExamRound[];
+  sessions: Session[];
+  fields: Field[];
+  count: Count;
+};
+type FilterHistoryItem = FilterSelection & {
+  label: string;
+  savedAt: string;
+};
+
+type LegacyFilterHistoryItem = {
+  round?: "all" | ExamRound;
+  session?: "all" | Session;
+  field?: "all" | Field;
+  count?: Count;
+  label?: string;
+  savedAt?: string;
+};
+
 type Props = {
   rounds: readonly ExamRound[];
   fields: readonly Field[];
-  countsByField: Record<Field, number>;
+  questions: readonly FilterQuestionSummary[];
 };
 
-export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
+export function FilterSettingsClient({ rounds, fields, questions }: Props) {
   const router = useRouter();
-  const [round, setRound] = useState<RoundOption>("all");
-  const [session, setSession] = useState<SessionOption>("all");
-  const [field, setField] = useState<FieldOption>("all");
+  const allRounds = useMemo(() => [...rounds].reverse(), [rounds]);
+  const allFields = useMemo(() => [...fields], [fields]);
+  const [selectedRounds, setSelectedRounds] = useState<ExamRound[]>(allRounds);
+  const [selectedSessions, setSelectedSessions] = useState<Session[]>(["am", "pm"]);
+  const [selectedFields, setSelectedFields] = useState<Field[]>(allFields);
   const [count, setCount] = useState<Count>(20);
   const [history, setHistory] = useState<FilterHistoryItem[]>([]);
 
-  const selectedFieldCount = useMemo(() => {
-    if (field === "all") return null;
-    return countsByField[field];
-  }, [countsByField, field]);
+  const matchingCount = useMemo(
+    () =>
+      questions.filter(
+        (question) =>
+          selectedRounds.includes(question.round) &&
+          selectedSessions.includes(question.session) &&
+          selectedFields.includes(question.field),
+      ).length,
+    [questions, selectedFields, selectedRounds, selectedSessions],
+  );
+
+  const fieldCounts = useMemo(() => {
+    return Object.fromEntries(
+      fields.map((field) => [
+        field,
+        questions.filter((question) => question.field === field).length,
+      ]),
+    ) as Record<Field, number>;
+  }, [fields, questions]);
+
+  const selection: FilterSelection = {
+    rounds: selectedRounds,
+    sessions: selectedSessions,
+    fields: selectedFields,
+    count,
+  };
+
+  const canStart = matchingCount > 0;
 
   const handleStart = () => {
-    const item = createHistoryItem({ round, session, field, count });
-    const nextHistory = saveFilterHistory(item);
+    if (!canStart) return;
+    const item = createHistoryItem(selection, allRounds.length, allFields.length);
+    const nextHistory = saveFilterHistory(item, allRounds, allFields);
     setHistory(nextHistory);
     const params = buildParams(item);
     startNavigationPending();
@@ -58,11 +97,11 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
   };
 
   const handleHistoryStart = (item: FilterHistoryItem) => {
-    setRound(item.round);
-    setSession(item.session);
-    setField(item.field);
+    setSelectedRounds(item.rounds);
+    setSelectedSessions(item.sessions);
+    setSelectedFields(item.fields);
     setCount(item.count);
-    const nextHistory = saveFilterHistory(item);
+    const nextHistory = saveFilterHistory(item, allRounds, allFields);
     setHistory(nextHistory);
     startNavigationPending();
     router.push(`/study/filter/play?${buildParams(item).toString()}`);
@@ -71,10 +110,10 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const timer = setTimeout(() => {
-      setHistory(readFilterHistory());
+      setHistory(readFilterHistory(allRounds, allFields));
     }, 0);
     return () => clearTimeout(timer);
-  }, []);
+  }, [allFields, allRounds]);
 
   return (
     <div className="space-y-6">
@@ -84,19 +123,13 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
         </SectionTitle>
 
         <div className="space-y-4">
-          <ControlGroup label="回">
+          <ControlGroup label="回" hint={`${selectedRounds.length}件選択中`}>
             <div className="grid grid-cols-3 gap-2">
-              <OptionButton
-                selected={round === "all"}
-                onClick={() => setRound("all")}
-              >
-                全回
-              </OptionButton>
-              {[...rounds].reverse().map((item) => (
+              {allRounds.map((item) => (
                 <OptionButton
                   key={item}
-                  selected={round === item}
-                  onClick={() => setRound(item)}
+                  selected={selectedRounds.includes(item)}
+                  onClick={() => setSelectedRounds(toggleSelected(selectedRounds, item))}
                 >
                   第{item}回
                 </OptionButton>
@@ -104,13 +137,13 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
             </div>
           </ControlGroup>
 
-          <ControlGroup label="午前・午後">
-            <div className="grid grid-cols-3 gap-2">
+          <ControlGroup label="午前・午後" hint={formatSessionSummary(selectedSessions)}>
+            <div className="grid grid-cols-2 gap-2">
               {SESSION_OPTIONS.map((item) => (
                 <OptionButton
                   key={item.id}
-                  selected={session === item.id}
-                  onClick={() => setSession(item.id)}
+                  selected={selectedSessions.includes(item.id)}
+                  onClick={() => setSelectedSessions(toggleSelected(selectedSessions, item.id))}
                 >
                   {item.label}
                 </OptionButton>
@@ -118,26 +151,17 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
             </div>
           </ControlGroup>
 
-          <ControlGroup
-            label="分野"
-            hint={selectedFieldCount ? `${selectedFieldCount}問` : undefined}
-          >
+          <ControlGroup label="分野" hint={`${selectedFields.length}件選択中`}>
             <div className="grid gap-2">
-              <OptionButton
-                selected={field === "all"}
-                onClick={() => setField("all")}
-              >
-                すべての分野
-              </OptionButton>
-              {fields.map((item) => (
+              {allFields.map((item) => (
                 <OptionButton
                   key={item}
-                  selected={field === item}
-                  onClick={() => setField(item)}
+                  selected={selectedFields.includes(item)}
+                  onClick={() => setSelectedFields(toggleSelected(selectedFields, item))}
                 >
                   <span className="flex-1 text-left">{item}</span>
                   <span className="text-[10px] text-[var(--text-3)]">
-                    {countsByField[item]}問
+                    {fieldCounts[item]}問
                   </span>
                 </OptionButton>
               ))}
@@ -160,6 +184,18 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
         </div>
       </section>
 
+      <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-4 py-3">
+        <p className="text-[11px] font-semibold text-[var(--text-3)]">
+          選択中の条件に合う問題
+        </p>
+        <p className="mt-1 text-[24px] font-extrabold text-[var(--text-1)]">
+          {matchingCount}
+          <span className="ml-1 text-[13px] font-bold text-[var(--text-3)]">
+            問
+          </span>
+        </p>
+      </div>
+
       {history.length > 0 ? (
         <section className="space-y-2">
           <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
@@ -168,7 +204,7 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
           <div className="grid gap-2">
             {history.map((item) => (
               <button
-                key={`${item.round}-${item.session}-${item.field}-${item.count}`}
+                key={getHistorySignature(item)}
                 type="button"
                 onClick={() => handleHistoryStart(item)}
                 className="choice-pressable rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-3 text-left text-[13px] font-bold text-[var(--text-1)] hover:border-[var(--text-3)]"
@@ -180,7 +216,7 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
         </section>
       ) : null}
 
-      <PrimaryCta onClick={handleStart}>
+      <PrimaryCta onClick={handleStart} disabled={!canStart}>
         <Play className="h-4 w-4" strokeWidth={2.5} />
         出題開始
       </PrimaryCta>
@@ -188,49 +224,61 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
   );
 }
 
-function buildParams(item: Pick<FilterHistoryItem, "round" | "session" | "field" | "count">) {
+function toggleSelected<T>(current: T[], value: T): T[] {
+  return current.includes(value)
+    ? current.filter((item) => item !== value)
+    : [...current, value];
+}
+
+function buildParams(item: FilterSelection) {
   return new URLSearchParams({
     count: String(item.count),
-    round: String(item.round),
-    session: item.session,
-    field: item.field,
+    rounds: item.rounds.join(","),
+    sessions: item.sessions.join(","),
+    fields: item.fields.join("|"),
   });
 }
 
-function createHistoryItem({
-  round,
-  session,
-  field,
-  count,
-}: Pick<FilterHistoryItem, "round" | "session" | "field" | "count">): FilterHistoryItem {
-  const roundLabel = round === "all" ? "全回" : `第${round}回`;
-  const sessionLabel =
-    SESSION_OPTIONS.find((item) => item.id === session)?.label ?? "全問";
-  const fieldLabel = field === "all" ? "すべての分野" : field;
+function createHistoryItem(
+  selection: FilterSelection,
+  totalRoundCount: number,
+  totalFieldCount: number,
+): FilterHistoryItem {
   return {
-    round,
-    session,
-    field,
-    count,
-    label: `${roundLabel} / ${sessionLabel} / ${fieldLabel} / ${count}問`,
+    ...selection,
+    label: `${formatRoundsSummary(selection.rounds, totalRoundCount)} / ${formatSessionSummary(
+      selection.sessions,
+    )} / ${formatFieldsSummary(selection.fields, totalFieldCount)} / ${selection.count}問`,
     savedAt: new Date().toISOString(),
   };
 }
 
-function readFilterHistory(): FilterHistoryItem[] {
+function readFilterHistory(
+  allRounds: ExamRound[],
+  allFields: Field[],
+): FilterHistoryItem[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(FILTER_HISTORY_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as FilterHistoryItem[];
-    return Array.isArray(parsed) ? parsed.filter(isFilterHistoryItem).slice(0, 5) : [];
+    const parsed = JSON.parse(raw) as unknown[];
+    return Array.isArray(parsed)
+      ? parsed
+          .map((item) => normalizeHistoryItem(item, allRounds, allFields))
+          .filter((item): item is FilterHistoryItem => item !== null)
+          .slice(0, 5)
+      : [];
   } catch {
     return [];
   }
 }
 
-function saveFilterHistory(item: FilterHistoryItem): FilterHistoryItem[] {
-  const current = readFilterHistory();
+function saveFilterHistory(
+  item: FilterHistoryItem,
+  allRounds: ExamRound[],
+  allFields: Field[],
+): FilterHistoryItem[] {
+  const current = readFilterHistory(allRounds, allFields);
   const signature = getHistorySignature(item);
   const next = [
     { ...item, savedAt: new Date().toISOString() },
@@ -242,21 +290,86 @@ function saveFilterHistory(item: FilterHistoryItem): FilterHistoryItem[] {
   return next;
 }
 
-function getHistorySignature(item: FilterHistoryItem): string {
-  return `${item.round}|${item.session}|${item.field}|${item.count}`;
+function normalizeHistoryItem(
+  value: unknown,
+  allRounds: ExamRound[],
+  allFields: Field[],
+): FilterHistoryItem | null {
+  if (!value || typeof value !== "object") return null;
+  const item = value as Partial<FilterHistoryItem> & LegacyFilterHistoryItem;
+  const count = COUNT_OPTIONS.includes(item.count as Count)
+    ? (item.count as Count)
+    : 20;
+
+  if (Array.isArray(item.rounds) && Array.isArray(item.sessions) && Array.isArray(item.fields)) {
+    const rounds = item.rounds.filter((round): round is ExamRound =>
+      allRounds.includes(round as ExamRound),
+    );
+    const sessions = item.sessions.filter((session): session is Session =>
+      session === "am" || session === "pm",
+    );
+    const fields = item.fields.filter((field): field is Field =>
+      allFields.includes(field as Field),
+    );
+    if (rounds.length === 0 || sessions.length === 0 || fields.length === 0) return null;
+    return {
+      rounds,
+      sessions,
+      fields,
+      count,
+      label:
+        typeof item.label === "string"
+          ? item.label
+          : createHistoryItem({ rounds, sessions, fields, count }, allRounds.length, allFields.length)
+              .label,
+      savedAt: typeof item.savedAt === "string" ? item.savedAt : new Date().toISOString(),
+    };
+  }
+
+  const legacy = item as LegacyFilterHistoryItem;
+  const rounds =
+    legacy.round === "all" || typeof legacy.round === "undefined"
+      ? allRounds
+      : allRounds.includes(legacy.round)
+        ? [legacy.round]
+        : allRounds;
+  const sessions =
+    legacy.session === "all" || typeof legacy.session === "undefined"
+      ? (["am", "pm"] as Session[])
+      : legacy.session === "am" || legacy.session === "pm"
+        ? [legacy.session]
+        : (["am", "pm"] as Session[]);
+  const fields =
+    legacy.field === "all" || typeof legacy.field === "undefined"
+      ? allFields
+      : allFields.includes(legacy.field)
+        ? [legacy.field]
+        : allFields;
+
+  return createHistoryItem({ rounds, sessions, fields, count }, allRounds.length, allFields.length);
 }
 
-function isFilterHistoryItem(value: unknown): value is FilterHistoryItem {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Partial<FilterHistoryItem>;
-  return (
-    (item.round === "all" || typeof item.round === "number") &&
-    (item.session === "all" || item.session === "am" || item.session === "pm") &&
-    (item.field === "all" || typeof item.field === "string") &&
-    COUNT_OPTIONS.includes(item.count as Count) &&
-    typeof item.label === "string" &&
-    typeof item.savedAt === "string"
-  );
+function getHistorySignature(item: FilterSelection): string {
+  return `${item.rounds.join(",")}|${item.sessions.join(",")}|${item.fields.join("|")}|${item.count}`;
+}
+
+function formatRoundsSummary(rounds: ExamRound[], totalCount: number): string {
+  if (rounds.length === totalCount) return "全回";
+  if (rounds.length === 1) return `第${rounds[0]}回`;
+  return `第${rounds[0]}回ほか${rounds.length - 1}回`;
+}
+
+function formatSessionSummary(sessions: Session[]): string {
+  if (sessions.length === 2) return "午前・午後";
+  if (sessions[0] === "am") return "午前";
+  if (sessions[0] === "pm") return "午後";
+  return "未選択";
+}
+
+function formatFieldsSummary(fields: Field[], totalCount: number): string {
+  if (fields.length === totalCount) return "全分野";
+  if (fields.length === 1) return fields[0];
+  return `分野${fields.length}つ`;
 }
 
 function SectionTitle({

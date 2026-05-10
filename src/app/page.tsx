@@ -3,6 +3,8 @@ import { HomeGreeting } from "@/components/home-greeting";
 import { HomeDashboard } from "@/components/home-dashboard";
 import { LandingPage } from "@/components/landing/landing-page";
 import { getSessionContext } from "@/lib/auth/profile";
+import { FIELDS, type Field } from "@/lib/questions";
+import { loadAllQuestions } from "@/lib/questions/loader";
 
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getSessionContext();
@@ -27,10 +29,23 @@ export default async function HomePage() {
     return <LandingPage />;
   }
 
+  const questions = await loadAllQuestions();
+  const fieldTotals = Object.fromEntries(
+    FIELDS.map((field) => [
+      field,
+      questions.filter((question) => question.majorCategory === field).length,
+    ]),
+  ) as Record<Field, number>;
+
   return (
     <div className="space-y-6 pt-2">
       <HomeGreeting />
-      <HomeDashboard />
+      <HomeDashboard
+        questionTotals={{
+          total: questions.length,
+          fields: fieldTotals,
+        }}
+      />
     </div>
   );
 }

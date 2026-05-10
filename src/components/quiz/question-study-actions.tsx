@@ -47,6 +47,7 @@ type Props = {
 };
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
+const SAVE_FEEDBACK_DURATION_MS = 1500;
 
 export function QuestionStudyActions({ question, initialOpen }: Props) {
   const [bookmarkOpen, setBookmarkOpen] = useState(false);
@@ -79,7 +80,10 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
     setBookmarkOpen(true);
   };
 
-  const showSaveFeedback = (message: string, durationMs = 2800) => {
+  const showSaveFeedback = (
+    message: string,
+    durationMs = SAVE_FEEDBACK_DURATION_MS,
+  ) => {
     if (saveFeedbackTimerRef.current) {
       clearTimeout(saveFeedbackTimerRef.current);
     }
@@ -94,7 +98,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
     saveBookmarkCategories(bookmarkDraft);
     showSaveFeedback(
       isBookmarked && bookmarkDraft.length === 0 ? "解除しました" : "保存しました",
-      2000,
+      SAVE_FEEDBACK_DURATION_MS,
     );
     if (bookmarkCloseTimerRef.current) {
       clearTimeout(bookmarkCloseTimerRef.current);
@@ -103,7 +107,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
       setSaveFeedbackText(null);
       setBookmarkOpen(false);
       bookmarkCloseTimerRef.current = null;
-    }, 2000);
+    }, SAVE_FEEDBACK_DURATION_MS);
   };
 
   const toggleBookmarkCategory = (category: BookmarkCategory) => {
@@ -136,25 +140,25 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
   };
 
   const handleConfirmDelete = () => {
+    if (saveFeedbackTimerRef.current) {
+      clearTimeout(saveFeedbackTimerRef.current);
+      saveFeedbackTimerRef.current = null;
+    }
+
     if (deleteConfirmTarget === "bookmark") {
       removeBookmark();
       setBookmarkDraft([]);
       setBookmarkOpen(false);
-      showSaveFeedback("解除しました", 2000);
+      showSaveFeedback("解除しました");
     }
 
     if (deleteConfirmTarget === "note") {
       removeNote();
       setDraft(null);
       setNoteOpen(false);
-      showSaveFeedback("削除しました", 2000);
+      showSaveFeedback("削除しました");
     }
 
-    setSaveFeedbackText(null);
-    if (saveFeedbackTimerRef.current) {
-      clearTimeout(saveFeedbackTimerRef.current);
-      saveFeedbackTimerRef.current = null;
-    }
     setDeleteConfirmTarget(null);
   };
 
@@ -228,12 +232,12 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
           side="bottom"
           className="max-h-[88vh] rounded-t-[16px] border-border bg-[var(--bg-card)]"
         >
-          {isBookmarked ? (
-            <SheetDeleteIconButton
-              label="ブックマークを解除"
-              onClick={() => setDeleteConfirmTarget("bookmark")}
-            />
-          ) : null}
+          <SheetDeleteIconButton
+            label="ブックマークを解除"
+            disabled={!isBookmarked && bookmarkDraft.length === 0}
+            className="top-3 right-14"
+            onClick={() => setDeleteConfirmTarget("bookmark")}
+          />
           <SheetHeader className="border-b border-border pr-12">
             <SheetTitle className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[17px] font-bold text-[var(--text-1)]">
               <span>ブックマーク</span>
@@ -309,15 +313,9 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
         }}
       >
         <SheetContent
-          side="top"
-          className="max-h-[78vh] rounded-b-[16px] border-border bg-[var(--bg-card)]"
+          side="bottom"
+          className="max-h-[82vh] rounded-t-[16px] border-border bg-[var(--bg-card)]"
         >
-          {hasNote ? (
-            <SheetDeleteIconButton
-              label="ノートを削除"
-              onClick={() => setDeleteConfirmTarget("note")}
-            />
-          ) : null}
           <SheetHeader className="border-b border-border pr-12">
             <SheetTitle className="text-[17px] font-bold text-[var(--text-1)]">
               ノート
@@ -328,28 +326,36 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
           </SheetHeader>
 
           <div className="space-y-3 px-4">
-            <Textarea
-              value={draft ?? noteText}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                if (saveFeedbackText) {
-                  setSaveFeedbackText(null);
-                  if (saveFeedbackTimerRef.current) {
-                    clearTimeout(saveFeedbackTimerRef.current);
-                    saveFeedbackTimerRef.current = null;
+            <div className="relative">
+              <SheetDeleteIconButton
+                label="ノートを削除"
+                disabled={!hasNote && !(draft ?? noteText).trim()}
+                className="top-2 right-2 shadow-none"
+                onClick={() => setDeleteConfirmTarget("note")}
+              />
+              <Textarea
+                value={draft ?? noteText}
+                onChange={(e) => {
+                  setDraft(e.target.value);
+                  if (saveFeedbackText) {
+                    setSaveFeedbackText(null);
+                    if (saveFeedbackTimerRef.current) {
+                      clearTimeout(saveFeedbackTimerRef.current);
+                      saveFeedbackTimerRef.current = null;
+                    }
                   }
-                }
-              }}
-              placeholder="覚えておきたいこと、間違えた理由、次に見るポイントを書いておく"
-              className="min-h-[160px]"
-            />
+                }}
+                placeholder="覚えておきたいこと、間違えた理由、次に見るポイントを書いておく"
+                className="min-h-[220px] pr-12"
+              />
+            </div>
           </div>
 
           <SheetFooter className="border-t border-border bg-[var(--bg-muted)]/40 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-sm transition-colors hover:bg-[var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-sm transition-colors hover:bg-[var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               <Save className="h-4 w-4" strokeWidth={2.5} />
               保存
@@ -428,17 +434,25 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
 
 function SheetDeleteIconButton({
   label,
+  disabled = false,
+  className,
   onClick,
 }: {
   label: string;
+  disabled?: boolean;
+  className?: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
-      className="absolute top-12 right-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-[var(--bg-card)] text-[var(--text-3)] shadow-sm transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+      className={cn(
+        "absolute z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-[var(--bg-card)] text-[var(--text-3)] shadow-sm transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:pointer-events-none disabled:opacity-35",
+        className,
+      )}
     >
       <Trash2 className="h-4 w-4" strokeWidth={2.5} />
     </button>
