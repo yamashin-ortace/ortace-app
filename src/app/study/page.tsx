@@ -1,4 +1,5 @@
 import { DailyLimitBanner } from "@/components/study/daily-limit-banner";
+import { FilterModeCard } from "@/components/study/filter-mode-card";
 import { RandomModeCard } from "@/components/study/random-mode-card";
 import { RoundCard } from "@/components/study/round-card";
 import { getEffectivePlan } from "@/lib/billing/plans";
@@ -38,7 +39,10 @@ export default async function StudyPage() {
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
           その他のモード
         </h2>
-        <RandomModeCard />
+        <div className="space-y-2.5">
+          <FilterModeCard />
+          <RandomModeCard />
+        </div>
       </section>
     </div>
   );
