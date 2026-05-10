@@ -58,7 +58,12 @@ export default async function FilteredQuizPage({ searchParams }: Props) {
         href="/study/filter"
         label={`絞り込み演習 ${picked.length}問`}
       />
-      <QuizPlayer questions={picked} mode="random" plan={plan} />
+      <QuizPlayer
+        questions={picked}
+        mode="random"
+        plan={plan}
+        resumeLabel={`絞り込み演習 ${picked.length}問`}
+      />
     </div>
   );
 }

@@ -31,7 +31,12 @@ export default async function RandomQuizPage({ searchParams }: Props) {
   return (
     <div className="space-y-4 pt-2">
       <BackLink href="/study/random" label={`ランダム出題 ${count}問`} />
-      <QuizPlayer questions={picked} mode="random" plan={plan} />
+      <QuizPlayer
+        questions={picked}
+        mode="random"
+        plan={plan}
+        resumeLabel={`ランダム出題 ${count}問`}
+      />
     </div>
   );
 }

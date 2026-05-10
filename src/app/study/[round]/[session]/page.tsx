@@ -44,7 +44,11 @@ export default async function QuizPage({ params }: Props) {
         href={`/study/${round}`}
         label={`第${round}回 ${SESSION_LABELS[session]}`}
       />
-      <QuizPlayer questions={questions} plan={plan} />
+      <QuizPlayer
+        questions={questions}
+        plan={plan}
+        resumeLabel={`第${round}回 ${SESSION_LABELS[session]}`}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { DailyLimitBanner } from "@/components/study/daily-limit-banner";
+import { ContinueQuizCard } from "@/components/study/continue-quiz-card";
 import { FilterModeCard } from "@/components/study/filter-mode-card";
 import { RandomModeCard } from "@/components/study/random-mode-card";
 import { RoundCard } from "@/components/study/round-card";
@@ -23,6 +24,7 @@ export default async function StudyPage() {
       </h1>
 
       <DailyLimitBanner plan={plan} />
+      <ContinueQuizCard />
 
       <section className="space-y-2">
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">

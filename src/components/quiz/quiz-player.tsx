@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Crown, LoaderCircle, LockKeyhole } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import {
@@ -12,6 +13,11 @@ import {
 import { useAnswerHistory } from "@/lib/answer-history/use-answer-history";
 import { DAILY_LIMIT, type PlanType } from "@/lib/daily-limit";
 import { useDailyLimit } from "@/lib/daily-limit/use-daily-limit";
+import {
+  clearLastQuizProgress,
+  readLastQuizProgress,
+  writeLastQuizProgress,
+} from "@/lib/quiz-progress";
 import { ChoiceCard, type ChoiceState } from "./choice-card";
 import { QuestionView } from "./question-view";
 import { QuestionStudyActions } from "./question-study-actions";
@@ -26,6 +32,8 @@ type Props = {
   mode?: "round" | "random";
   initialStudyAction?: "note";
   plan?: PlanType;
+  resumeLabel?: string;
+  saveProgress?: boolean;
 };
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
@@ -43,7 +51,11 @@ export function QuizPlayer({
   mode = "round",
   initialStudyAction,
   plan = "free",
+  resumeLabel,
+  saveProgress = questions.length > 1,
 }: Props) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [states, setStates] = useState<Record<string, QuestionState>>({});
   const [isFinished, setIsFinished] = useState(false);
@@ -53,6 +65,10 @@ export function QuizPlayer({
   const quizTopRef = useRef<HTMLDivElement | null>(null);
   const dailyLimit = useDailyLimit(plan);
   const { recordAnswer } = useAnswerHistory();
+  const quizHref = useMemo(() => {
+    const query = searchParams.toString();
+    return query ? `${pathname}?${query}` : pathname;
+  }, [pathname, searchParams]);
 
   const current = questions[currentIndex];
   const currentState: QuestionState = useMemo(
@@ -181,6 +197,45 @@ export function QuizPlayer({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!saveProgress) return;
+    const progress = readLastQuizProgress();
+    if (!progress || progress.href !== quizHref) return;
+    const nextIndex = Math.min(
+      Math.max(progress.index, 0),
+      Math.max(questions.length - 1, 0),
+    );
+    const timer = setTimeout(() => setCurrentIndex(nextIndex), 0);
+    return () => clearTimeout(timer);
+  }, [questions.length, quizHref, saveProgress]);
+
+  useEffect(() => {
+    if (!saveProgress || isFinished || !current) return;
+    writeLastQuizProgress({
+      href: quizHref,
+      label: resumeLabel ?? "前回の演習",
+      index: currentIndex,
+      total: questions.length,
+      savedAt: new Date().toISOString(),
+    });
+  }, [
+    current,
+    currentIndex,
+    isFinished,
+    questions.length,
+    quizHref,
+    resumeLabel,
+    saveProgress,
+  ]);
+
+  useEffect(() => {
+    if (!isFinished || !saveProgress) return;
+    const progress = readLastQuizProgress();
+    if (progress?.href === quizHref) {
+      clearLastQuizProgress();
+    }
+  }, [isFinished, quizHref, saveProgress]);
 
   if (isFinished) {
     return (

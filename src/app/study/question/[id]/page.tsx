@@ -42,6 +42,7 @@ export default async function SavedQuestionPage({ params, searchParams }: Props)
         mode="random"
         plan={plan}
         initialStudyAction={query.note === "1" ? "note" : undefined}
+        saveProgress={false}
       />
     </div>
   );
