@@ -7,7 +7,6 @@ type Props = {
   canPrev: boolean;
   canNext: boolean;
   isLast: boolean;
-  isAnswered: boolean;
   onPrev: () => void;
   onNext: () => void;
   onFinish: () => void;
@@ -27,7 +26,6 @@ export function QuizControls({
   canPrev,
   canNext,
   isLast,
-  isAnswered,
   onPrev,
   onNext,
   onFinish,
@@ -67,9 +65,7 @@ export function QuizControls({
           disabled={!canNext}
           className={cn(
             BTN_BASE,
-            isAnswered
-              ? "bg-[var(--primary)] text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
-              : "border border-border bg-[var(--bg-card)] text-[var(--text-1)]",
+            "border border-border bg-[var(--bg-card)] text-[var(--text-1)]",
           )}
           aria-label="次の問題へ"
         >

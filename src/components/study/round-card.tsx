@@ -26,13 +26,13 @@ export function RoundCard({ round, year = YEAR_BY_ROUND[round] }: Props) {
   return (
     <Link
       href={`/study/${round}`}
-      className="group flex items-center justify-between rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+      className="group flex min-h-[74px] items-center justify-between rounded-[12px] border border-border bg-[var(--bg-card)] px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
     >
       <div className="flex flex-col">
-        <span className="text-[16px] font-bold tracking-tight text-[var(--text-1)]">
+        <span className="text-[15px] font-bold tracking-tight text-[var(--text-1)]">
           第{round}回
         </span>
-        <span className="mt-0.5 text-[11px] text-[var(--text-3)]">
+        <span className="mt-0.5 text-[10px] text-[var(--text-3)]">
           {year ? `${year}年実施 / ` : ""}150問
         </span>
       </div>

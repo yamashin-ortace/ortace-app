@@ -27,7 +27,7 @@ export default async function StudyPage() {
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
           年度から選ぶ
         </h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           {[...EXAM_ROUNDS].reverse().map((round) => (
             <RoundCard key={round} round={round} />
           ))}

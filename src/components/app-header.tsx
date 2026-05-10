@@ -2,18 +2,36 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 import { HeaderUserMenu } from "@/components/header-user-menu";
 import { getSessionContext } from "@/lib/auth/profile";
+import { getEffectivePlan, PLAN_DEFINITIONS } from "@/lib/billing/plans";
 
 export async function AppHeader() {
   const session = await getSessionContext();
   const nickname = session?.profile?.nickname ?? null;
+  const plan = session?.profile
+    ? getEffectivePlan({
+        plan: session.profile.plan,
+        status: session.profile.plan_status,
+        expiresAt: session.profile.plan_expires_at,
+      })
+    : "free";
+  const planLabel = getHeaderPlanLabel(plan);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-[var(--bg-base)]/90 px-5 backdrop-blur">
-      <Link href="/" className="flex items-baseline">
-        <span className="text-[20px] font-extrabold tracking-tight text-[var(--primary)]">
-          ORT ACE
-        </span>
-      </Link>
+      <div className="flex min-w-0 items-center gap-2">
+        <Link href="/" className="flex items-baseline">
+          <span className="text-[20px] font-extrabold tracking-tight text-[var(--primary)]">
+            ORT ACE
+          </span>
+        </Link>
+        <Link
+          href="/plans"
+          className="shrink-0 rounded-full border border-[var(--primary)]/30 bg-[var(--primary-soft)] px-2 py-1 text-[10px] font-bold text-[var(--primary-dark)]"
+          aria-label={`現在のプラン: ${PLAN_DEFINITIONS[plan].name}`}
+        >
+          {planLabel}
+        </Link>
+      </div>
       <div className="flex items-center gap-1">
         {nickname ? <HeaderUserMenu nickname={nickname} /> : null}
         <Link
@@ -26,4 +44,10 @@ export async function AppHeader() {
       </div>
     </header>
   );
+}
+
+function getHeaderPlanLabel(plan: keyof typeof PLAN_DEFINITIONS): string {
+  if (plan === "exam") return "国試";
+  if (plan === "low") return "低学年";
+  return "無料";
 }

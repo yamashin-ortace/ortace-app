@@ -269,8 +269,8 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
         }}
       >
         <SheetContent
-          side="bottom"
-          className="max-h-[88vh] rounded-t-[16px] border-border bg-[var(--bg-card)]"
+          side="top"
+          className="max-h-[78vh] rounded-b-[16px] border-border bg-[var(--bg-card)]"
         >
           <SheetHeader className="border-b border-border pr-12">
             <SheetTitle className="text-[17px] font-bold text-[var(--text-1)]">
@@ -295,16 +295,15 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
                 }
               }}
               placeholder="覚えておきたいこと、間違えた理由、次に見るポイントを書いておく"
-              className="min-h-[180px]"
-              autoFocus
+              className="min-h-[160px]"
             />
           </div>
 
-          <SheetFooter className="grid grid-cols-[1fr_auto] gap-2 border-t border-border bg-[var(--bg-muted)]/40">
+          <SheetFooter className="grid grid-cols-[1fr_auto] gap-2 border-t border-border bg-[var(--bg-muted)]/40 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-sm transition-colors hover:bg-[var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-sm transition-colors hover:bg-[var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               <Save className="h-4 w-4" strokeWidth={2.5} />
               保存
@@ -313,7 +312,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
               <button
                 type="button"
                 onClick={() => setDeleteConfirmOpen(true)}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-4 text-[14px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-4 text-[14px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
               >
                 <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                 削除
@@ -351,6 +350,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
               className="w-full sm:w-auto"
               onClick={handleConfirmDeleteNote}
             >
+              <Trash2 className="h-4 w-4" strokeWidth={2.5} />
               削除する
             </Button>
           </DialogFooter>

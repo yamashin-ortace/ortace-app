@@ -465,6 +465,7 @@ function SavedQuestionCard({
               className="w-full sm:w-auto"
               onClick={handleConfirmRemove}
             >
+              <Trash2 className="h-4 w-4" strokeWidth={2.5} />
               {deleteCopy.confirm}
             </Button>
           </DialogFooter>
