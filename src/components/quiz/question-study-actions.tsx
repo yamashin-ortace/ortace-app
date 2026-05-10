@@ -54,7 +54,9 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
   const [noteOpen, setNoteOpen] = useState(initialOpen === "note");
   const [draft, setDraft] = useState<string | null>(null);
   const [saveFeedbackText, setSaveFeedbackText] = useState<string | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<
+    "bookmark" | "note" | null
+  >(null);
   const saveFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bookmarkCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -65,6 +67,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
     noteText,
     hasNote,
     saveBookmarkCategories,
+    removeBookmark,
     saveNote,
     removeNote,
   } = useQuestionStudyItems(question.id);
@@ -132,17 +135,43 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
     showSaveFeedback("保存しました");
   };
 
-  const handleConfirmDeleteNote = () => {
-    removeNote();
-    setDraft(null);
+  const handleConfirmDelete = () => {
+    if (deleteConfirmTarget === "bookmark") {
+      removeBookmark();
+      setBookmarkDraft([]);
+      setBookmarkOpen(false);
+      showSaveFeedback("解除しました", 2000);
+    }
+
+    if (deleteConfirmTarget === "note") {
+      removeNote();
+      setDraft(null);
+      setNoteOpen(false);
+      showSaveFeedback("削除しました", 2000);
+    }
+
     setSaveFeedbackText(null);
     if (saveFeedbackTimerRef.current) {
       clearTimeout(saveFeedbackTimerRef.current);
       saveFeedbackTimerRef.current = null;
     }
-    setDeleteConfirmOpen(false);
-    setNoteOpen(false);
+    setDeleteConfirmTarget(null);
   };
+
+  const deleteCopy =
+    deleteConfirmTarget === "bookmark"
+      ? {
+          title: "ブックマークを解除しますか？",
+          description:
+            "この問題はブックマークから外れます。あとで見返したい場合はキャンセルしてください。",
+          confirm: "解除する",
+        }
+      : {
+          title: "ノートを削除しますか？",
+          description:
+            "保存したメモは元に戻せません。本当に削除してよいですか？",
+          confirm: "削除する",
+        };
 
   return (
     <>
@@ -190,12 +219,21 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
             clearTimeout(bookmarkCloseTimerRef.current);
             bookmarkCloseTimerRef.current = null;
           }
+          if (!open && deleteConfirmTarget === "bookmark") {
+            setDeleteConfirmTarget(null);
+          }
         }}
       >
         <SheetContent
           side="bottom"
           className="max-h-[88vh] rounded-t-[16px] border-border bg-[var(--bg-card)]"
         >
+          {isBookmarked ? (
+            <SheetDeleteIconButton
+              label="ブックマークを解除"
+              onClick={() => setDeleteConfirmTarget("bookmark")}
+            />
+          ) : null}
           <SheetHeader className="border-b border-border pr-12">
             <SheetTitle className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[17px] font-bold text-[var(--text-1)]">
               <span>ブックマーク</span>
@@ -259,7 +297,9 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
         onOpenChange={(open) => {
           setNoteOpen(open);
           if (!open) {
-            setDeleteConfirmOpen(false);
+            if (deleteConfirmTarget === "note") {
+              setDeleteConfirmTarget(null);
+            }
             setSaveFeedbackText(null);
             if (saveFeedbackTimerRef.current) {
               clearTimeout(saveFeedbackTimerRef.current);
@@ -272,6 +312,12 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
           side="top"
           className="max-h-[78vh] rounded-b-[16px] border-border bg-[var(--bg-card)]"
         >
+          {hasNote ? (
+            <SheetDeleteIconButton
+              label="ノートを削除"
+              onClick={() => setDeleteConfirmTarget("note")}
+            />
+          ) : null}
           <SheetHeader className="border-b border-border pr-12">
             <SheetTitle className="text-[17px] font-bold text-[var(--text-1)]">
               ノート
@@ -299,40 +345,32 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
             />
           </div>
 
-          <SheetFooter className="grid grid-cols-[1fr_auto] gap-2 border-t border-border bg-[var(--bg-muted)]/40 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+          <SheetFooter className="border-t border-border bg-[var(--bg-muted)]/40 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-sm transition-colors hover:bg-[var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-sm transition-colors hover:bg-[var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
             >
               <Save className="h-4 w-4" strokeWidth={2.5} />
               保存
             </button>
-            {hasNote ? (
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmOpen(true)}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-4 text-[14px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
-              >
-                <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-                削除
-              </button>
-            ) : null}
           </SheetFooter>
         </SheetContent>
       </Sheet>
 
       <Dialog
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
+        open={deleteConfirmTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmTarget(null);
+        }}
       >
         <DialogContent showCloseButton>
           <DialogHeader>
             <DialogTitle className="text-[var(--text-1)]">
-              ノートを削除しますか？
+              {deleteCopy.title}
             </DialogTitle>
             <DialogDescription className="text-[var(--text-2)]">
-              保存したメモは元に戻せません。本当に削除してよいですか？
+              {deleteCopy.description}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -340,7 +378,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
-              onClick={() => setDeleteConfirmOpen(false)}
+              onClick={() => setDeleteConfirmTarget(null)}
             >
               キャンセル
             </Button>
@@ -348,10 +386,10 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
               type="button"
               variant="destructive"
               className="w-full sm:w-auto"
-              onClick={handleConfirmDeleteNote}
+              onClick={handleConfirmDelete}
             >
               <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-              削除する
+              {deleteCopy.confirm}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -385,6 +423,25 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
           )
         : null}
     </>
+  );
+}
+
+function SheetDeleteIconButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="absolute top-12 right-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-[var(--bg-card)] text-[var(--text-3)] shadow-sm transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+    >
+      <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+    </button>
   );
 }
 
