@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Play, SlidersHorizontal } from "lucide-react";
 import { PrimaryCta } from "@/components/ui/primary-cta";
+import { startNavigationPending } from "@/lib/navigation-pending";
 import { cn } from "@/lib/utils";
 import type { ExamRound, Field, Session } from "@/lib/questions";
 
@@ -52,6 +53,7 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
     const nextHistory = saveFilterHistory(item);
     setHistory(nextHistory);
     const params = buildParams(item);
+    startNavigationPending();
     router.push(`/study/filter/play?${params.toString()}`);
   };
 
@@ -62,6 +64,7 @@ export function FilterSettingsClient({ rounds, fields, countsByField }: Props) {
     setCount(item.count);
     const nextHistory = saveFilterHistory(item);
     setHistory(nextHistory);
+    startNavigationPending();
     router.push(`/study/filter/play?${buildParams(item).toString()}`);
   };
 

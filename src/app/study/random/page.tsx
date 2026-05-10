@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Shuffle } from "lucide-react";
 import { BackLink } from "@/components/study/back-link";
 import { PrimaryCta } from "@/components/ui/primary-cta";
+import { startNavigationPending } from "@/lib/navigation-pending";
 import { cn } from "@/lib/utils";
 
 const COUNT_OPTIONS = [10, 20, 50, 100] as const;
@@ -15,6 +16,7 @@ export default function RandomModePage() {
   const [count, setCount] = useState<Count>(20);
 
   const handleStart = () => {
+    startNavigationPending();
     router.push(`/study/random/play?count=${count}`);
   };
 

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Crown, LoaderCircle, LockKeyhole } from "lucide-react";
+import { Crown, LockKeyhole } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import {
   type AnswerJudgement,
@@ -59,9 +59,7 @@ export function QuizPlayer({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [states, setStates] = useState<Record<string, QuestionState>>({});
   const [isFinished, setIsFinished] = useState(false);
-  const [judgingQuestionId, setJudgingQuestionId] = useState<string | null>(null);
   const consumingQuestionIdsRef = useRef<Set<string>>(new Set());
-  const judgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quizTopRef = useRef<HTMLDivElement | null>(null);
   const dailyLimit = useDailyLimit(plan);
   const { recordAnswer } = useAnswerHistory();
@@ -77,7 +75,6 @@ export function QuizPlayer({
     [current, states],
   );
   const isAnswered = currentState.judgement !== undefined;
-  const isJudging = judgingQuestionId === current?.id;
   const expectedCount = current ? getExpectedSelectionCount(current) : 1;
 
   const scrollToQuestionTop = useCallback(() => {
@@ -92,7 +89,6 @@ export function QuizPlayer({
   const handleSelect = useCallback(
     (key: ChoiceKey) => {
       if (!current || isAnswered) return;
-      if (isJudging) return;
       if (!dailyLimit.isLoaded || dailyLimit.isLimitReached) return;
 
       const cur = currentState;
@@ -120,62 +116,45 @@ export function QuizPlayer({
       if (consumingQuestionIdsRef.current.has(current.id)) return;
       consumingQuestionIdsRef.current.add(current.id);
 
+      const consumed = dailyLimit.consumeQuestion();
+      if (!consumed) {
+        consumingQuestionIdsRef.current.delete(current.id);
+        return;
+      }
+
+      // 必要数に達した瞬間に判定
+      const judgement = judgeAnswer(current, next);
+      recordAnswer({
+        question: current,
+        result: judgement,
+        selectedAnswers: next,
+      });
       setStates((prev) => ({
         ...prev,
-        [current.id]: { selected: next },
+        [current.id]: { selected: next, judgement },
       }));
-      setJudgingQuestionId(current.id);
-
-      if (judgeTimerRef.current) {
-        clearTimeout(judgeTimerRef.current);
-      }
-      judgeTimerRef.current = setTimeout(() => {
-        const consumed = dailyLimit.consumeQuestion();
-        if (!consumed) {
-          consumingQuestionIdsRef.current.delete(current.id);
-          setJudgingQuestionId(null);
-          return;
-        }
-
-        // 必要数に達したあと、短い判定中フィードバックを挟んで結果を表示する。
-        const judgement = judgeAnswer(current, next);
-        recordAnswer({
-          question: current,
-          result: judgement,
-          selectedAnswers: next,
-        });
-        setStates((prev) => ({
-          ...prev,
-          [current.id]: { selected: next, judgement },
-        }));
-        setJudgingQuestionId(null);
-        judgeTimerRef.current = null;
-      }, 180);
     },
     [
       current,
       currentState,
       dailyLimit,
       isAnswered,
-      isJudging,
       expectedCount,
       recordAnswer,
     ],
   );
 
   const handlePrev = useCallback(() => {
-    if (isJudging) return;
     if (currentIndex === 0) return;
     setCurrentIndex((i) => i - 1);
     scrollToQuestionTop();
-  }, [currentIndex, isJudging, scrollToQuestionTop]);
+  }, [currentIndex, scrollToQuestionTop]);
 
   const handleNext = useCallback(() => {
-    if (isJudging) return;
     if (currentIndex >= questions.length - 1) return;
     setCurrentIndex((i) => i + 1);
     scrollToQuestionTop();
-  }, [currentIndex, isJudging, questions.length, scrollToQuestionTop]);
+  }, [currentIndex, questions.length, scrollToQuestionTop]);
 
   const handleFinish = useCallback(() => {
     setIsFinished(true);
@@ -185,18 +164,9 @@ export function QuizPlayer({
     setCurrentIndex(0);
     setStates({});
     setIsFinished(false);
-    setJudgingQuestionId(null);
     consumingQuestionIdsRef.current.clear();
     scrollToQuestionTop();
   }, [scrollToQuestionTop]);
-
-  useEffect(() => {
-    return () => {
-      if (judgeTimerRef.current) {
-        clearTimeout(judgeTimerRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!saveProgress) return;
@@ -262,7 +232,7 @@ export function QuizPlayer({
   const isLast = currentIndex === questions.length - 1;
   const correctSet = new Set(current.correctAnswers);
   const isNewAnswerBlocked =
-    !isAnswered && (!dailyLimit.isLoaded || dailyLimit.isLimitReached || isJudging);
+    !isAnswered && (!dailyLimit.isLoaded || dailyLimit.isLimitReached);
 
   return (
     <div ref={quizTopRef} className="scroll-mt-20 space-y-4">
@@ -309,13 +279,6 @@ export function QuizPlayer({
         })}
       </div>
 
-      {isJudging ? (
-        <div className="flex items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[13px] font-bold text-[var(--text-2)]">
-          <LoaderCircle className="h-4 w-4 animate-spin" strokeWidth={2.5} />
-          判定中
-        </div>
-      ) : null}
-
       {isAnswered && currentState.judgement ? (
         <AnswerFeedback
           question={current}
@@ -333,8 +296,8 @@ export function QuizPlayer({
       ) : null}
 
       <QuizControls
-        canPrev={!isJudging && currentIndex > 0}
-        canNext={!isJudging && currentIndex < questions.length - 1}
+        canPrev={currentIndex > 0}
+        canNext={currentIndex < questions.length - 1}
         isLast={isLast}
         onPrev={handlePrev}
         onNext={handleNext}

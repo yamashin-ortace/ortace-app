@@ -3,6 +3,7 @@ import { Inter, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
+import { NavigationPendingIndicator } from "@/components/navigation-pending-indicator";
 import { AppHeader } from "@/components/app-header";
 import { MarketingHeader } from "@/components/marketing-header";
 import { getSessionContext } from "@/lib/auth/profile";
@@ -77,6 +78,7 @@ export default async function RootLayout({
             >
               {children}
             </main>
+            <NavigationPendingIndicator />
             {showAppChrome ? <BottomNav /> : null}
           </div>
         </ThemeProvider>
