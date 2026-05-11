@@ -51,9 +51,9 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
   const router = useRouter();
   const allRounds = useMemo(() => [...rounds].reverse(), [rounds]);
   const allFields = useMemo(() => [...fields], [fields]);
-  const [selectedRounds, setSelectedRounds] = useState<ExamRound[]>(allRounds);
-  const [selectedSessions, setSelectedSessions] = useState<Session[]>(["am", "pm"]);
-  const [selectedFields, setSelectedFields] = useState<Field[]>(allFields);
+  const [selectedRounds, setSelectedRounds] = useState<ExamRound[]>([]);
+  const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
+  const [selectedFields, setSelectedFields] = useState<Field[]>([]);
   const [count, setCount] = useState<Count>(20);
   const [history, setHistory] = useState<FilterHistoryItem[]>([]);
 
@@ -123,7 +123,16 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
         </SectionTitle>
 
         <div className="space-y-4">
-          <ControlGroup label="回" hint={`${selectedRounds.length}件選択中`}>
+          <ControlGroup
+            label="回"
+            hint={`${selectedRounds.length}件選択中`}
+            actions={
+              <SelectionActions
+                onSelectAll={() => setSelectedRounds(allRounds)}
+                onClear={() => setSelectedRounds([])}
+              />
+            }
+          >
             <div className="grid grid-cols-3 gap-2">
               {allRounds.map((item) => (
                 <OptionButton
@@ -137,7 +146,7 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
             </div>
           </ControlGroup>
 
-          <ControlGroup label="午前・午後" hint={formatSessionSummary(selectedSessions)}>
+          <ControlGroup label="午前/午後">
             <div className="grid grid-cols-2 gap-2">
               {SESSION_OPTIONS.map((item) => (
                 <OptionButton
@@ -151,7 +160,16 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
             </div>
           </ControlGroup>
 
-          <ControlGroup label="分野" hint={`${selectedFields.length}件選択中`}>
+          <ControlGroup
+            label="分野"
+            hint={`${selectedFields.length}件選択中`}
+            actions={
+              <SelectionActions
+                onSelectAll={() => setSelectedFields(allFields)}
+                onClear={() => setSelectedFields([])}
+              />
+            }
+          >
             <div className="grid gap-2">
               {allFields.map((item) => (
                 <OptionButton
@@ -390,21 +408,53 @@ function SectionTitle({
 function ControlGroup({
   label,
   hint,
+  actions,
   children,
 }: {
   label: string;
   hint?: string;
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-[12px] font-bold text-[var(--text-2)]">{label}</p>
-        {hint ? (
-          <p className="text-[11px] font-medium text-[var(--text-3)]">{hint}</p>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {hint ? (
+            <p className="text-[11px] font-medium text-[var(--text-3)]">{hint}</p>
+          ) : null}
+          {actions}
+        </div>
       </div>
       {children}
+    </div>
+  );
+}
+
+function SelectionActions({
+  onSelectAll,
+  onClear,
+}: {
+  onSelectAll: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={onSelectAll}
+        className="choice-pressable rounded-full border border-border bg-[var(--bg-card)] px-2.5 py-1 text-[11px] font-bold text-[var(--text-2)] hover:bg-[var(--bg-muted)]"
+      >
+        全選択
+      </button>
+      <button
+        type="button"
+        onClick={onClear}
+        className="choice-pressable rounded-full border border-border bg-[var(--bg-card)] px-2.5 py-1 text-[11px] font-bold text-[var(--text-2)] hover:bg-[var(--bg-muted)]"
+      >
+        全解除
+      </button>
     </div>
   );
 }

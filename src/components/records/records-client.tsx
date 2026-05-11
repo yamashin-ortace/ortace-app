@@ -160,24 +160,24 @@ export function RecordsClient({ questions }: Props) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-      <TabsList className="grid h-10 w-full grid-cols-3 rounded-[12px] bg-[var(--bg-muted)] p-1">
+      <TabsList className="grid h-11 w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1">
         <TabsTrigger
           value="bookmarks"
-          className="rounded-[10px] text-[13px] font-bold data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
         >
           <Bookmark className="h-4 w-4" strokeWidth={2.5} />
           ブックマーク
         </TabsTrigger>
         <TabsTrigger
           value="notes"
-          className="rounded-[10px] text-[13px] font-bold data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
         >
           <FileText className="h-4 w-4" strokeWidth={2.5} />
           ノート
         </TabsTrigger>
         <TabsTrigger
           value="history"
-          className="rounded-[10px] text-[13px] font-bold data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
         >
           <History className="h-4 w-4" strokeWidth={2.5} />
           履歴

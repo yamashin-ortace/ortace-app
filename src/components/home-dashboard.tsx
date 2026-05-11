@@ -111,10 +111,10 @@ export function HomeDashboard({ questionTotals }: Props) {
 
           <div className="space-y-2">
             <p className="text-[12px] font-semibold text-[var(--text-3)]">
-              手薄な分野
+              分野別の進捗（過去問）
             </p>
             <div className="space-y-2">
-              {progress.priorityFields.map((field) => (
+              {progress.fields.map((field) => (
                 <FieldProgressRow key={field.name} field={field} />
               ))}
             </div>
@@ -173,7 +173,7 @@ function InfoPopover({
 function FieldProgressRow({
   field,
 }: {
-  field: ReturnType<typeof calculateLearningProgress>["priorityFields"][number];
+  field: ReturnType<typeof calculateLearningProgress>["fields"][number];
 }) {
   return (
     <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
@@ -233,7 +233,7 @@ function calculateLearningProgress(
       ? 0
       : Math.round((answeredUniqueIds.size / questionTotals.total) * 100);
 
-  const priorityFields = Object.entries(questionTotals.fields)
+  const fields = Object.entries(questionTotals.fields)
     .map(([name, total]) => {
       const fieldEntries = entries.filter((entry) => entry.majorCategory === name);
       const answered = new Set(fieldEntries.map((entry) => entry.id)).size;
@@ -246,12 +246,12 @@ function calculateLearningProgress(
         rate,
         accuracy: calculateAccuracy(fieldEntries),
       };
-    })
+    });
+  const priorityFields = [...fields]
     .sort((a, b) => {
       if (a.rate !== b.rate) return a.rate - b.rate;
       return b.remaining - a.remaining;
-    })
-    .slice(0, 4);
+    });
 
   const first = priorityFields[0];
   const nextAction = first
@@ -261,7 +261,7 @@ function calculateLearningProgress(
   return {
     answeredUniqueCount: answeredUniqueIds.size,
     totalRate,
-    priorityFields,
+    fields,
     nextAction,
   };
 }

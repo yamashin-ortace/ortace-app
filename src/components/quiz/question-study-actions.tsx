@@ -235,10 +235,10 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
           <SheetDeleteIconButton
             label="ブックマークを解除"
             disabled={!isBookmarked && bookmarkDraft.length === 0}
-            className="top-3 right-14"
+            className="top-14 right-4 sm:top-3 sm:right-14"
             onClick={() => setDeleteConfirmTarget("bookmark")}
           />
-          <SheetHeader className="border-b border-border pr-12">
+          <SheetHeader className="border-b border-border pr-12 sm:pr-12">
             <SheetTitle className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[17px] font-bold text-[var(--text-1)]">
               <span>ブックマーク</span>
               <span className="text-[11px] font-medium text-[var(--text-3)]">
