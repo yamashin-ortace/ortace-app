@@ -25,12 +25,12 @@ type Props = {
   }>;
 };
 
-const ALLOWED_COUNTS = new Set([10, 20, 50, 100]);
+const ALLOWED_COUNT_PARAMS = new Set(["10", "20", "50", "all"]);
 
 export default async function FilteredQuizPage({ searchParams }: Props) {
   const params = await searchParams;
-  const count = Number(params.count ?? 20);
-  if (!ALLOWED_COUNTS.has(count)) notFound();
+  const countParam = params.count ?? "all";
+  if (!ALLOWED_COUNT_PARAMS.has(countParam)) notFound();
 
   const rounds = parseRounds(params.rounds ?? params.round);
   const sessions = parseSessions(params.sessions ?? params.session);
@@ -46,7 +46,8 @@ export default async function FilteredQuizPage({ searchParams }: Props) {
 
   if (filtered.length === 0) notFound();
 
-  const picked = shuffle(filtered).slice(0, Math.min(count, filtered.length));
+  const limit = countParam === "all" ? filtered.length : Number(countParam);
+  const picked = shuffle(filtered).slice(0, Math.min(limit, filtered.length));
   const sessionContext = await getSessionContext();
   const plan = sessionContext?.profile
     ? getEffectivePlan({

@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Play, SlidersHorizontal } from "lucide-react";
+import { Play } from "lucide-react";
 import { PrimaryCta } from "@/components/ui/primary-cta";
 import { startNavigationPending } from "@/lib/navigation-pending";
 import { cn } from "@/lib/utils";
 import type { ExamRound, Field, Session } from "@/lib/questions";
 
-const COUNT_OPTIONS = [10, 20, 50, 100] as const;
+const COUNT_OPTIONS = [10, 20, 50, "all"] as const;
 const FILTER_HISTORY_KEY = "ortace.filterHistory";
 const SESSION_OPTIONS: { id: Session; label: string }[] = [
   { id: "am", label: "午前" },
@@ -16,6 +16,10 @@ const SESSION_OPTIONS: { id: Session; label: string }[] = [
 ];
 
 type Count = (typeof COUNT_OPTIONS)[number];
+
+function formatCount(value: Count): string {
+  return value === "all" ? "すべて" : String(value);
+}
 type FilterQuestionSummary = {
   round: ExamRound;
   session: Session;
@@ -49,23 +53,28 @@ type Props = {
 
 export function FilterSettingsClient({ rounds, fields, questions }: Props) {
   const router = useRouter();
-  const allRounds = useMemo(() => [...rounds].reverse(), [rounds]);
+  const allRounds = useMemo(() => [...rounds], [rounds]);
   const allFields = useMemo(() => [...fields], [fields]);
+  const allSessions = useMemo<Session[]>(() => ["am", "pm"], []);
   const [selectedRounds, setSelectedRounds] = useState<ExamRound[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
   const [selectedFields, setSelectedFields] = useState<Field[]>([]);
-  const [count, setCount] = useState<Count>(20);
+  const [count, setCount] = useState<Count | null>(null);
   const [history, setHistory] = useState<FilterHistoryItem[]>([]);
+
+  const effectiveRounds = selectedRounds.length > 0 ? selectedRounds : allRounds;
+  const effectiveSessions = selectedSessions.length > 0 ? selectedSessions : allSessions;
+  const effectiveFields = selectedFields.length > 0 ? selectedFields : allFields;
 
   const matchingCount = useMemo(
     () =>
       questions.filter(
         (question) =>
-          selectedRounds.includes(question.round) &&
-          selectedSessions.includes(question.session) &&
-          selectedFields.includes(question.field),
+          effectiveRounds.includes(question.round) &&
+          effectiveSessions.includes(question.session) &&
+          effectiveFields.includes(question.field),
       ).length,
-    [questions, selectedFields, selectedRounds, selectedSessions],
+    [questions, effectiveFields, effectiveRounds, effectiveSessions],
   );
 
   const fieldCounts = useMemo(() => {
@@ -77,17 +86,16 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
     ) as Record<Field, number>;
   }, [fields, questions]);
 
-  const selection: FilterSelection = {
-    rounds: selectedRounds,
-    sessions: selectedSessions,
-    fields: selectedFields,
-    count,
-  };
-
-  const canStart = matchingCount > 0;
+  const canStart = matchingCount > 0 && count !== null;
 
   const handleStart = () => {
-    if (!canStart) return;
+    if (!canStart || count === null) return;
+    const selection: FilterSelection = {
+      rounds: effectiveRounds,
+      sessions: effectiveSessions,
+      fields: effectiveFields,
+      count,
+    };
     const item = createHistoryItem(selection, allRounds.length, allFields.length);
     const nextHistory = saveFilterHistory(item, allRounds, allFields);
     setHistory(nextHistory);
@@ -117,97 +125,91 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-3">
-        <SectionTitle icon={<SlidersHorizontal className="h-4 w-4" />}>
-          条件
-        </SectionTitle>
+      <section className="space-y-4">
+        <ControlGroup
+          label="回"
+          hint={`${selectedRounds.length}件選択中`}
+          actions={
+            <SelectionActions
+              onSelectAll={() => setSelectedRounds(allRounds)}
+              onClear={() => setSelectedRounds([])}
+            />
+          }
+        >
+          <div className="grid grid-cols-3 gap-2">
+            {allRounds.map((item) => (
+              <OptionButton
+                key={item}
+                selected={selectedRounds.includes(item)}
+                onClick={() => setSelectedRounds(toggleSelected(selectedRounds, item))}
+              >
+                第{item}回
+              </OptionButton>
+            ))}
+          </div>
+        </ControlGroup>
 
-        <div className="space-y-4">
-          <ControlGroup
-            label="回"
-            hint={`${selectedRounds.length}件選択中`}
-            actions={
-              <SelectionActions
-                onSelectAll={() => setSelectedRounds(allRounds)}
-                onClear={() => setSelectedRounds([])}
-              />
-            }
-          >
-            <div className="grid grid-cols-3 gap-2">
-              {allRounds.map((item) => (
-                <OptionButton
-                  key={item}
-                  selected={selectedRounds.includes(item)}
-                  onClick={() => setSelectedRounds(toggleSelected(selectedRounds, item))}
-                >
-                  第{item}回
-                </OptionButton>
-              ))}
-            </div>
-          </ControlGroup>
+        <ControlGroup label="午前/午後">
+          <div className="grid grid-cols-2 gap-2">
+            {SESSION_OPTIONS.map((item) => (
+              <OptionButton
+                key={item.id}
+                selected={selectedSessions.includes(item.id)}
+                onClick={() => setSelectedSessions(toggleSelected(selectedSessions, item.id))}
+              >
+                {item.label}
+              </OptionButton>
+            ))}
+          </div>
+        </ControlGroup>
 
-          <ControlGroup label="午前/午後">
-            <div className="grid grid-cols-2 gap-2">
-              {SESSION_OPTIONS.map((item) => (
-                <OptionButton
-                  key={item.id}
-                  selected={selectedSessions.includes(item.id)}
-                  onClick={() => setSelectedSessions(toggleSelected(selectedSessions, item.id))}
-                >
-                  {item.label}
-                </OptionButton>
-              ))}
-            </div>
-          </ControlGroup>
+        <ControlGroup
+          label="分野"
+          hint={`${selectedFields.length}件選択中`}
+          actions={
+            <SelectionActions
+              onSelectAll={() => setSelectedFields(allFields)}
+              onClear={() => setSelectedFields([])}
+            />
+          }
+        >
+          <div className="grid gap-2">
+            {allFields.map((item) => (
+              <OptionButton
+                key={item}
+                selected={selectedFields.includes(item)}
+                onClick={() => setSelectedFields(toggleSelected(selectedFields, item))}
+              >
+                <span className="flex-1 text-left">{item}</span>
+                <span className="text-[10px] text-[var(--text-3)]">
+                  {fieldCounts[item]}問
+                </span>
+              </OptionButton>
+            ))}
+          </div>
+        </ControlGroup>
 
-          <ControlGroup
-            label="分野"
-            hint={`${selectedFields.length}件選択中`}
-            actions={
-              <SelectionActions
-                onSelectAll={() => setSelectedFields(allFields)}
-                onClear={() => setSelectedFields([])}
-              />
-            }
-          >
-            <div className="grid gap-2">
-              {allFields.map((item) => (
-                <OptionButton
-                  key={item}
-                  selected={selectedFields.includes(item)}
-                  onClick={() => setSelectedFields(toggleSelected(selectedFields, item))}
-                >
-                  <span className="flex-1 text-left">{item}</span>
-                  <span className="text-[10px] text-[var(--text-3)]">
-                    {fieldCounts[item]}問
-                  </span>
-                </OptionButton>
-              ))}
-            </div>
-          </ControlGroup>
-
-          <ControlGroup label="問題数">
-            <div className="grid grid-cols-4 gap-2">
-              {COUNT_OPTIONS.map((item) => (
-                <OptionButton
-                  key={item}
-                  selected={count === item}
-                  onClick={() => setCount(item)}
-                >
-                  {item}
-                </OptionButton>
-              ))}
-            </div>
-          </ControlGroup>
-        </div>
+        <ControlGroup label="問題数">
+          <div className="grid grid-cols-4 gap-2">
+            {COUNT_OPTIONS.map((item) => (
+              <OptionButton
+                key={item}
+                selected={count === item}
+                onClick={() => setCount(item)}
+              >
+                {formatCount(item)}
+              </OptionButton>
+            ))}
+          </div>
+        </ControlGroup>
       </section>
 
       <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-4 py-3">
         <p className="text-[11px] font-semibold text-[var(--text-3)]">
-          選択中の条件に合う問題
+          条件に合う問題
         </p>
         <p className="mt-1 text-[24px] font-extrabold text-[var(--text-1)]">
-          {matchingCount}
+          {matchingCount.toLocaleString()}
           <span className="ml-1 text-[13px] font-bold text-[var(--text-3)]">
             問
           </span>
@@ -266,7 +268,9 @@ function createHistoryItem(
     ...selection,
     label: `${formatRoundsSummary(selection.rounds, totalRoundCount)} / ${formatSessionSummary(
       selection.sessions,
-    )} / ${formatFieldsSummary(selection.fields, totalFieldCount)} / ${selection.count}問`,
+    )} / ${formatFieldsSummary(selection.fields, totalFieldCount)} / ${formatCount(selection.count)}${
+      selection.count === "all" ? "" : "問"
+    }`,
     savedAt: new Date().toISOString(),
   };
 }
@@ -315,9 +319,11 @@ function normalizeHistoryItem(
 ): FilterHistoryItem | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Partial<FilterHistoryItem> & LegacyFilterHistoryItem;
-  const count = COUNT_OPTIONS.includes(item.count as Count)
+  const count = (COUNT_OPTIONS as readonly (number | string)[]).includes(
+    item.count as number | string,
+  )
     ? (item.count as Count)
-    : 20;
+    : "all";
 
   if (Array.isArray(item.rounds) && Array.isArray(item.sessions) && Array.isArray(item.fields)) {
     const rounds = item.rounds.filter((round): round is ExamRound =>
@@ -378,7 +384,7 @@ function formatRoundsSummary(rounds: ExamRound[], totalCount: number): string {
 }
 
 function formatSessionSummary(sessions: Session[]): string {
-  if (sessions.length === 2) return "午前・午後";
+  if (sessions.length === 2) return "午前/午後";
   if (sessions[0] === "am") return "午前";
   if (sessions[0] === "pm") return "午後";
   return "未選択";
@@ -388,21 +394,6 @@ function formatFieldsSummary(fields: Field[], totalCount: number): string {
   if (fields.length === totalCount) return "全分野";
   if (fields.length === 1) return fields[0];
   return `分野${fields.length}つ`;
-}
-
-function SectionTitle({
-  icon,
-  children,
-}: {
-  icon: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <h2 className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-3)]">
-      {icon}
-      {children}
-    </h2>
-  );
 }
 
 function ControlGroup({

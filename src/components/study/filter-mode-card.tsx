@@ -15,7 +15,7 @@ export function FilterModeCard() {
           絞り込み演習
         </span>
         <span className="mt-0.5 text-[11px] text-[var(--text-3)]">
-          回・午前午後・分野・問題数を指定
+          回・午前/午後・分野・問題数を指定
         </span>
       </div>
       <ChevronRight

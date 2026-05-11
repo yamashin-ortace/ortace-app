@@ -10,7 +10,9 @@ import {
   parseAnswerHistoryStore,
   recordAnswerHistory,
   serializeAnswerHistoryStore,
+  updateAnswerConfidence,
   type AnswerHistoryStore,
+  type ConfidenceLevel,
 } from ".";
 import {
   pushAnswerHistoryEntryToDatabase,
@@ -26,6 +28,7 @@ export function useAnswerHistory() {
       question: Question;
       result: AnswerJudgement;
       selectedAnswers: readonly ChoiceKey[];
+      confidence?: ConfidenceLevel | null;
     }) => {
       const now = new Date();
       const next = recordAnswerHistory(readAnswerHistoryStore(), {
@@ -46,7 +49,22 @@ export function useAnswerHistory() {
     [],
   );
 
-  return { recordAnswer };
+  const setConfidence = useCallback(
+    (params: {
+      questionId: string;
+      answeredAt?: string;
+      confidence: ConfidenceLevel | null;
+    }) => {
+      const current = readAnswerHistoryStore();
+      const next = updateAnswerConfidence(current, params);
+      if (next === current) return;
+      writeAnswerHistoryStore(next);
+      notifyAnswerHistoryUpdated();
+    },
+    [],
+  );
+
+  return { recordAnswer, setConfidence };
 }
 
 export function useAnswerHistoryList() {

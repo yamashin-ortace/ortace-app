@@ -1,18 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Trophy, RotateCw, Home } from "lucide-react";
-import type { Question } from "@/lib/questions";
+import { ChevronDown, ChevronUp, Home, RotateCw, Trophy } from "lucide-react";
+import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
 import { PrimaryCta } from "@/components/ui/primary-cta";
+import { QuestionReviewItem } from "./question-review-item";
 
 type Props = {
   questions: Question[];
   judgements: Record<string, AnswerJudgement>;
+  selectedAnswers: Record<string, ChoiceKey[]>;
   onRestart: () => void;
 };
 
-export function QuizResultScreen({ questions, judgements, onRestart }: Props) {
+export function QuizResultScreen({
+  questions,
+  judgements,
+  selectedAnswers,
+  onRestart,
+}: Props) {
+  const [reviewOpen, setReviewOpen] = useState(true);
   const total = questions.length;
   const correct = questions.filter(
     (q) => judgements[q.id] === "correct",
@@ -63,6 +72,40 @@ export function QuizResultScreen({ questions, judgements, onRestart }: Props) {
           colorClass="text-amber-700 dark:text-amber-400"
         />
       </div>
+
+      <section className="space-y-2">
+        <button
+          type="button"
+          onClick={() => setReviewOpen((v) => !v)}
+          aria-expanded={reviewOpen}
+          className="flex w-full items-center justify-between rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5 text-left"
+        >
+          <span className="text-[13px] font-semibold text-[var(--text-2)]">
+            問題ごとに見直す（{total}問）
+          </span>
+          <span className="text-[var(--text-3)]">
+            {reviewOpen ? (
+              <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
+            ) : (
+              <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+            )}
+          </span>
+        </button>
+        {reviewOpen ? (
+          <div className="space-y-2">
+            {questions.map((question, index) => (
+              <QuestionReviewItem
+                key={question.id}
+                index={index}
+                total={total}
+                question={question}
+                judgement={judgements[question.id]}
+                selected={selectedAnswers[question.id] ?? []}
+              />
+            ))}
+          </div>
+        ) : null}
+      </section>
 
       <div className="space-y-3">
         <PrimaryCta onClick={onRestart}>

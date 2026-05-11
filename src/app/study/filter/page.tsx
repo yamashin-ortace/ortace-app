@@ -19,7 +19,7 @@ export default async function FilterModePage() {
           絞り込み演習
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          回・午前午後・分野・問題数を選んで出題します
+          回・午前/午後・分野・問題数を選んで出題します
         </p>
       </div>
 

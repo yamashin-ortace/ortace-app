@@ -43,7 +43,7 @@ function FeedbackBanner({
         className={cn(
           "animate-feedback-in",
           "flex items-center justify-center gap-2 rounded-full px-6 py-3 text-center",
-          "bg-[#4CAF7A] text-white shadow-[0_4px_14px_rgba(76,175,122,0.35)]",
+          "bg-[var(--success)] text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--success)_42%,transparent)]",
         )}
       >
         <CheckCircle2 className="h-6 w-6 shrink-0" strokeWidth={2.5} />
@@ -58,7 +58,7 @@ function FeedbackBanner({
         className={cn(
           "animate-feedback-in",
           "flex items-center justify-center gap-3 rounded-full px-6 py-3 text-center",
-          "bg-[#D84848] text-white shadow-[0_4px_14px_rgba(216,72,72,0.35)]",
+          "bg-[var(--error)] text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--error)_42%,transparent)]",
         )}
       >
         <XCircle className="h-6 w-6 shrink-0" strokeWidth={2.5} />

@@ -1,8 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Popover } from "@base-ui/react/popover";
-import { BookOpen, Flame, Info, Target } from "lucide-react";
+import {
+  BookOpen,
+  ChevronRight,
+  Flame,
+  Gauge,
+  HelpCircle,
+  Info,
+  Target,
+} from "lucide-react";
 import { HomeStatCard } from "@/components/home-stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTokyoDateString } from "@/lib/daily-limit";
@@ -87,7 +96,7 @@ export function HomeDashboard({ questionTotals }: Props) {
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-[12px] font-semibold text-[var(--text-3)]">
-                  過去問の到達度
+                  全体で解いた割合
                 </p>
                 <p className="mt-0.5 text-[13px] text-[var(--text-2)]">
                   {progress.answeredUniqueCount} / {questionTotals.total}問
@@ -100,18 +109,47 @@ export function HomeDashboard({ questionTotals }: Props) {
             <ProgressBar value={progress.totalRate} />
           </div>
 
-          <div className="rounded-[14px] border border-border bg-[var(--bg-muted)]/35 px-3 py-3">
-            <p className="text-[11px] font-semibold text-[var(--text-3)]">
-              次にやる目安
-            </p>
-            <p className="mt-1 text-[14px] font-bold leading-6 text-[var(--text-1)]">
-              {progress.nextAction}
-            </p>
-          </div>
+          {progress.nextField ? (
+            <div className="flex items-center gap-2 rounded-[14px] border border-[var(--primary)]/35 bg-[var(--primary-soft)] px-3 py-3 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
+              <Link
+                href={buildFieldStudyHref(progress.nextField.name)}
+                className="group flex min-w-0 flex-1 items-center gap-3"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-[11px] font-semibold text-[var(--text-3)]">
+                    次にやる目安
+                  </p>
+                  <p className="text-[14px] font-bold leading-snug text-[var(--text-1)]">
+                    「{progress.nextField.name}」を解く
+                    <span className="ml-1 text-[11px] font-medium text-[var(--text-3)]">
+                      （未着手の問題から）
+                    </span>
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-[var(--text-2)]">
+                    分野の穴を1つずつ埋める提案です
+                  </p>
+                </div>
+                <ChevronRight
+                  className="h-4 w-4 shrink-0 text-[var(--primary-dark)] transition-transform duration-200 group-hover:translate-x-0.5"
+                  strokeWidth={2.5}
+                />
+              </Link>
+              <NextFieldReasonInfo field={progress.nextField} />
+            </div>
+          ) : (
+            <div className="rounded-[14px] border border-border bg-[var(--bg-muted)]/35 px-3 py-3">
+              <p className="text-[11px] font-semibold text-[var(--text-3)]">
+                次にやる目安
+              </p>
+              <p className="mt-1 text-[14px] font-bold leading-6 text-[var(--text-1)]">
+                {progress.nextAction}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <p className="text-[12px] font-semibold text-[var(--text-3)]">
-              分野別の進捗（過去問）
+              分野別（タップで未着手の問題を解く）
             </p>
             <div className="space-y-2">
               {progress.fields.map((field) => (
@@ -154,7 +192,7 @@ function InfoPopover({
         >
           <Popover.Popup
             className={cn(
-              "w-[var(--positioner-width)] max-w-[min(20rem,calc(100vw-1.5rem))] rounded-[12px] border border-border",
+              "w-[var(--positioner-width)] min-w-[15rem] max-w-[min(20rem,calc(100vw-1.5rem))] rounded-[12px] border border-border",
               "bg-[var(--bg-card)] p-3 text-[13px] leading-relaxed text-[var(--text-2)] shadow-lg",
               "origin-[var(--transform-origin)] transition-[transform,scale,opacity]",
               "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
@@ -170,37 +208,167 @@ function InfoPopover({
   );
 }
 
+function NextFieldReasonInfo({
+  field,
+}: {
+  field: NonNullable<ReturnType<typeof calculateLearningProgress>["nextField"]>;
+}) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        type="button"
+        className={cn(
+          "grid h-10 w-10 shrink-0 place-items-center rounded-[12px] border border-border bg-[var(--bg-card)] text-[var(--primary-dark)] shadow-sm transition-[transform,colors,box-shadow]",
+          "hover:bg-[var(--bg-muted)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
+        )}
+        aria-label="次にやる目安の選び方"
+      >
+        <HelpCircle className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner
+          className="z-50 max-w-[min(22rem,calc(100vw-1.5rem))]"
+          side="bottom"
+          align="end"
+          sideOffset={8}
+        >
+          <Popover.Popup
+            className={cn(
+              "w-[var(--positioner-width)] min-w-[17rem] max-w-[min(22rem,calc(100vw-1.5rem))] rounded-[14px] border border-border",
+              "bg-[var(--bg-card)] p-4 text-[12px] leading-relaxed text-[var(--text-2)] shadow-lg",
+              "origin-[var(--transform-origin)] transition-[transform,scale,opacity]",
+              "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+              "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            )}
+            initialFocus={false}
+          >
+            <p className="text-[13px] font-bold text-[var(--text-1)]">
+              次にやる目安の理由
+            </p>
+            <div className="mt-2 space-y-2">
+              <p>
+                全体の穴を1つずつ埋めるために、次に取り組む分野を1つだけ提案しています。
+                何から進めるか迷う時間を減らすための目安です。
+              </p>
+              <p>
+                分野ごとの解いた割合と未着手数を見て、
+                <strong className="font-bold text-[var(--text-1)]">
+                  まだ伸ばせる分野
+                </strong>
+                を優先しています。
+                今回は「{field.name}」が、解いた割合 {field.rate}%・未着手{" "}
+                {field.remaining}問でした。
+                {field.accuracy !== null
+                  ? ` 直近の正答率は ${field.accuracy}% です。`
+                  : " 直近の解答実績はまだ少なめです。"}
+              </p>
+              <p>
+                まず未着手を減らすと、分野ごとの抜けが見えやすくなります。
+                この分野の中から、まだ解いていない問題を優先して出題します（出題数は10／15／20問から選べます）。
+              </p>
+            </div>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
 function FieldProgressRow({
   field,
 }: {
   field: ReturnType<typeof calculateLearningProgress>["fields"][number];
 }) {
   return (
-    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-[13px] font-bold text-[var(--text-1)]">
-          {field.name}
-        </p>
-        <p className="shrink-0 text-[11px] font-medium text-[var(--text-3)]">
-          {field.answered} / {field.total}問
-        </p>
+    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
+      <div className="flex items-end gap-2">
+        <Link
+          href={buildFieldStudyHref(field.name)}
+          className="group min-w-0 flex-1 text-left"
+          aria-label={`${field.name}：タップで未着手の問題を解く`}
+        >
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="min-w-0 text-[13px] font-bold text-[var(--text-1)]">
+              {field.name}
+            </span>
+            <span className="text-[12px] leading-snug text-[var(--text-2)]">
+              解いた割合{" "}
+              <span className="font-semibold tabular-nums text-[var(--text-1)]">
+                {field.rate}%
+              </span>
+              <span className="text-[var(--text-3)]">
+                （{field.answered}/{field.total}問）
+              </span>
+            </span>
+          </div>
+        </Link>
+        <div className="flex shrink-0 items-center pb-0.5">
+          <FieldAccuracyInfo field={field} />
+        </div>
       </div>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-1.5">
         <ProgressBar value={field.rate} />
-        <span className="w-10 text-right text-[11px] font-bold text-[var(--text-2)]">
-          {field.rate}%
-        </span>
       </div>
-      <p className="mt-1 text-[11px] text-[var(--text-3)]">
-        正答率 {formatRate(field.accuracy)}%
-      </p>
     </div>
   );
 }
 
+function FieldAccuracyInfo({
+  field,
+}: {
+  field: ReturnType<typeof calculateLearningProgress>["fields"][number];
+}) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        type="button"
+        aria-label={`${field.name}の正答率を表示`}
+        className={cn(
+          "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--text-3)] transition-colors",
+          "hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
+        )}
+      >
+        <Gauge className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner
+          className="z-50 max-w-[min(20rem,calc(100vw-1.5rem))]"
+          side="top"
+          align="end"
+          sideOffset={6}
+        >
+          <Popover.Popup
+            className={cn(
+              "w-[var(--positioner-width)] min-w-[15rem] max-w-[min(20rem,calc(100vw-1.5rem))] rounded-[12px] border border-border",
+              "bg-[var(--bg-card)] p-3 text-[12px] leading-relaxed text-[var(--text-2)] shadow-lg",
+              "origin-[var(--transform-origin)] transition-[transform,scale,opacity]",
+              "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+              "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            )}
+            initialFocus={false}
+          >
+            <p className="text-[13px] font-bold text-[var(--text-1)]">
+              正答率 {formatRate(field.accuracy)}%
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--text-3)]">
+              解答済 {field.answered}問のうち、最新の解答が正解だった割合です。
+            </p>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function buildFieldStudyHref(field: string): string {
+  return `/study/field/${encodeURIComponent(field)}`;
+}
+
 function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--bg-muted)]">
+    <div className="h-2 w-full min-w-0 shrink-0 overflow-hidden rounded-full bg-[var(--bg-muted)]">
       <div
         className="h-full rounded-full bg-[var(--primary)] transition-[width]"
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
@@ -254,8 +422,16 @@ function calculateLearningProgress(
     });
 
   const first = priorityFields[0];
+  const nextField = first
+    ? {
+        name: first.name,
+        rate: first.rate,
+        remaining: first.remaining,
+        accuracy: first.accuracy,
+      }
+    : null;
   const nextAction = first
-    ? `まずは「${first.name}」を20問。未着手が多い分野から埋めると、全体の抜けが見えやすくなります。`
+    ? `まずは「${first.name}」から。未着手が多い分野を埋めると、全体の抜けが見えやすくなります。`
     : "問題を解くと、未着手の分野と次に進めたい範囲がここに表示されます。";
 
   return {
@@ -263,6 +439,7 @@ function calculateLearningProgress(
     totalRate,
     fields,
     nextAction,
+    nextField,
   };
 }
 

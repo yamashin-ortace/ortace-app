@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { HomeGreeting } from "@/components/home-greeting";
 import { HomeDashboard } from "@/components/home-dashboard";
+import { HomeEstimatedScore } from "@/components/home-estimated-score";
+import { HomeExamCountdown } from "@/components/home-exam-countdown";
+import { HomeTodayCta } from "@/components/home-today-cta";
+import { DiagnosticBanner } from "@/components/onboarding/diagnostic-banner";
 import { LandingPage } from "@/components/landing/landing-page";
 import { getSessionContext } from "@/lib/auth/profile";
 import { FIELDS, type Field } from "@/lib/questions";
@@ -40,6 +44,10 @@ export default async function HomePage() {
   return (
     <div className="space-y-6 pt-2">
       <HomeGreeting />
+      <DiagnosticBanner />
+      <HomeExamCountdown totalQuestions={questions.length} />
+      <HomeEstimatedScore questions={questions} />
+      <HomeTodayCta totalQuestions={questions.length} />
       <HomeDashboard
         questionTotals={{
           total: questions.length,

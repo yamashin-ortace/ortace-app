@@ -101,8 +101,51 @@ describe("answer-history", () => {
       now: new Date("2026-05-08T00:00:00.000Z"),
     });
 
-    expect(serializeAnswerHistoryStore(store)).toBe(
-      '{"version":1,"entries":[{"id":"56-101","answeredAt":"2026-05-08T00:00:00.000Z","result":"correct","selectedAnswers":["1"],"round":56,"session":"pm","displayNumber":1,"majorCategory":"視能検査・検査機器"}]}',
-    );
+    // 間隔反復で nextReviewAt は実行時タイムゾーンに依存するため、構造のみ検証する。
+    const parsed = JSON.parse(serializeAnswerHistoryStore(store));
+    expect(parsed).toMatchObject({
+      version: 1,
+      entries: [
+        {
+          id: "56-101",
+          answeredAt: "2026-05-08T00:00:00.000Z",
+          result: "correct",
+          selectedAnswers: ["1"],
+          round: 56,
+          session: "pm",
+          displayNumber: 1,
+          majorCategory: "視能検査・検査機器",
+          confidence: null,
+          streak: 1,
+        },
+      ],
+    });
+    expect(parsed.entries[0].nextReviewAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("正解で連続正解数が増え、誤答で 0 にリセットされる", () => {
+    let store = recordAnswerHistory(createAnswerHistoryStore(), {
+      question,
+      result: "correct",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-01T01:00:00.000Z"),
+    });
+    expect(store.entries[0].streak).toBe(1);
+
+    store = recordAnswerHistory(store, {
+      question,
+      result: "correct",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-04T01:00:00.000Z"),
+    });
+    expect(store.entries[0].streak).toBe(2);
+
+    store = recordAnswerHistory(store, {
+      question,
+      result: "incorrect",
+      selectedAnswers: ["2"],
+      now: new Date("2026-05-05T01:00:00.000Z"),
+    });
+    expect(store.entries[0].streak).toBe(0);
   });
 });
