@@ -4,8 +4,11 @@ import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { AttemptBadgeSetting } from "@/components/settings/attempt-badge-setting";
 import { ExamDateSetting } from "@/components/settings/exam-date-setting";
 import { StudyGoalSetting } from "@/components/settings/study-goal-setting";
+import { loadAllQuestions } from "@/lib/questions/loader";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const questions = await loadAllQuestions();
+
   return (
     <div className="space-y-4 pt-2">
       <h1 className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
@@ -23,10 +26,10 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-[16px]">試験日までのペース（目標周回）</CardTitle>
+          <CardTitle className="text-[16px]">学習プリセット（任意）</CardTitle>
         </CardHeader>
         <CardContent>
-          <StudyGoalSetting />
+          <StudyGoalSetting pastQuestionsTotal={questions.length} />
         </CardContent>
       </Card>
 

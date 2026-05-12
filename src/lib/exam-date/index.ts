@@ -29,23 +29,24 @@ export function formatExamDate(date: Date): string {
 }
 
 /**
- * 本試験の既定日（次に到来する2月の第4日曜日）。
- * ORT国試は例年2月下旬の日曜開催のため、その近似値を初期値とする。
+ * 本試験の既定日（次に到来する2月の第3木曜日）。
+ * 視能訓練士国家試験は例年2月の第3木曜日に開催されるため、その日付を仮の固定値とする。
+ * 受験生が個別に変更する UI は当面提供しない（仮固定）。
  */
 export function getDefaultExamDate(now: Date = new Date()): string {
   let year = now.getFullYear();
-  const candidate = getFourthSunday(year, 1);
+  const candidate = getThirdThursday(year, 1);
   if (now > candidate) {
     year += 1;
   }
-  return formatExamDate(getFourthSunday(year, 1));
+  return formatExamDate(getThirdThursday(year, 1));
 }
 
-function getFourthSunday(year: number, monthIndex: number): Date {
+function getThirdThursday(year: number, monthIndex: number): Date {
   const first = new Date(year, monthIndex, 1);
-  const dow = first.getDay();
-  const firstSundayDay = dow === 0 ? 1 : 1 + (7 - dow);
-  return new Date(year, monthIndex, firstSundayDay + 21);
+  const dow = first.getDay(); // 0=日, 4=木
+  const firstThursdayDay = 1 + ((4 - dow + 7) % 7);
+  return new Date(year, monthIndex, firstThursdayDay + 14);
 }
 
 /** 本試験までの残り日数（当日=0、過ぎていたら負値） */

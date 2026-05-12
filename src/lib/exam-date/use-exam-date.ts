@@ -1,94 +1,25 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import {
-  EXAM_DATE_STORAGE_KEY,
-  getDefaultExamDate,
-  isValidExamDateString,
-} from ".";
+import { useEffect, useState } from "react";
+import { getDefaultExamDate } from ".";
 
-const STORAGE_EVENT = "ortace.examDate.changed";
-
-type ExamDateSnapshot = {
-  /** ユーザーが明示的に設定した値。未設定なら null */
-  customDate: string | null;
-  /** 既定値 + customDate を解決した最終的な値 */
-  effectiveDate: string;
-  /** ユーザーが明示的に設定済みか */
-  isCustom: boolean;
-};
-
-function readSnapshot(): ExamDateSnapshot {
-  if (typeof window === "undefined") {
-    const fallback = getDefaultExamDate();
-    return { customDate: null, effectiveDate: fallback, isCustom: false };
-  }
-  const raw = window.localStorage.getItem(EXAM_DATE_STORAGE_KEY);
-  if (isValidExamDateString(raw)) {
-    return { customDate: raw, effectiveDate: raw, isCustom: true };
-  }
-  return {
-    customDate: null,
-    effectiveDate: getDefaultExamDate(),
-    isCustom: false,
-  };
-}
-
-let cachedSnapshot: ExamDateSnapshot = readSnapshot();
-
-function notifyChange() {
-  cachedSnapshot = readSnapshot();
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(STORAGE_EVENT));
-  }
-}
-
-function subscribe(listener: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === EXAM_DATE_STORAGE_KEY) {
-      cachedSnapshot = readSnapshot();
-      listener();
-    }
-  };
-  const handleInternal = () => {
-    cachedSnapshot = readSnapshot();
-    listener();
-  };
-  window.addEventListener("storage", handleStorage);
-  window.addEventListener(STORAGE_EVENT, handleInternal);
-  return () => {
-    window.removeEventListener("storage", handleStorage);
-    window.removeEventListener(STORAGE_EVENT, handleInternal);
-  };
-}
-
-function getSnapshot(): ExamDateSnapshot {
-  return cachedSnapshot;
-}
-
-function getServerSnapshot(): ExamDateSnapshot {
-  return { customDate: null, effectiveDate: getDefaultExamDate(), isCustom: false };
-}
-
+/**
+ * 本試験日は当面「2月の第3木曜日」で固定とする。
+ * ユーザーが UI から変更する手段は提供していない（仮固定）。
+ * SSR と初回クライアントで同じ既定値を返すため、ハイドレーション差分は起きない。
+ */
 export function useExamDate() {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [examDate, setExamDate] = useState(() => getDefaultExamDate());
 
-  const setExamDate = (value: string | null) => {
-    if (typeof window === "undefined") return;
-    if (value === null) {
-      window.localStorage.removeItem(EXAM_DATE_STORAGE_KEY);
-    } else if (isValidExamDateString(value)) {
-      window.localStorage.setItem(EXAM_DATE_STORAGE_KEY, value);
-    } else {
-      return;
-    }
-    notifyChange();
-  };
+  useEffect(() => {
+    // 端末の現在時刻に依存して年が変わるため、マウント後にも一度同期する。
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 端末時刻に追従する目的
+    setExamDate(getDefaultExamDate());
+  }, []);
 
   return {
-    examDate: snapshot.effectiveDate,
-    isCustom: snapshot.isCustom,
-    setExamDate,
+    examDate,
+    /** 仮固定なので常に false。表示上の「（仮）」判定に利用する。 */
+    isCustom: false,
   };
 }
