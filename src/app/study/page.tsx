@@ -5,6 +5,7 @@ import { MockModeCard } from "@/components/study/mock-mode-card";
 import { RandomModeCard } from "@/components/study/random-mode-card";
 import { RecommendationSection } from "@/components/study/recommendation-section";
 import { RoundCard } from "@/components/study/round-card";
+import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
 import { getEffectivePlan } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { EXAM_ROUNDS } from "@/lib/questions";
@@ -40,11 +41,12 @@ export default async function StudyPage() {
         <div className="space-y-2.5">
           <FilterModeCard />
           <section className="space-y-2">
-            <div className="grid grid-cols-2 gap-2.5">
-              {EXAM_ROUNDS.map((round) => (
+            <HorizontalSnapRow
+              ariaLabel="第47回〜第56回 過去問の年度カード"
+              items={EXAM_ROUNDS.map((round) => (
                 <RoundCard key={round} round={round} />
               ))}
-            </div>
+            />
           </section>
         </div>
       </section>
