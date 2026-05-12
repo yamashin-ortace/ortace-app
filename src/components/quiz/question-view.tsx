@@ -91,20 +91,31 @@ function ImageOverlay({
     }
   };
 
-  const handlePointerUp = () => {
-    const wasTap = startYRef.current !== null && !movedRef.current;
+  // 背後の選択肢ボタンへタップが貫通するのを防ぐため、close は pointerup ではなく
+  // click で行う。click はオーバーレイがまだ DOM 上にある間に発火するため、
+  // タップ→閉じる→真下の要素を発火、というゴーストタップが起きない。
+  const handleClick = (e: React.MouseEvent) => {
+    // スクロール中（ドラッグ）はタップ扱いしない
+    if (movedRef.current) {
+      movedRef.current = false;
+      startYRef.current = null;
+      return;
+    }
+    e.stopPropagation();
+    e.preventDefault();
     startYRef.current = null;
-    if (wasTap) onClose();
+    onClose();
   };
 
   return (
     <div
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
       onPointerCancel={() => {
         startYRef.current = null;
+        movedRef.current = false;
       }}
+      onClick={handleClick}
       className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/90 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
