@@ -18,6 +18,11 @@ export const DIAGNOSTIC_QUESTION_COUNT =
 
 export type DiagnosticStatus = "completed" | "skipped" | null;
 
+/** `completed` のときだけホームから診断リマインダーを消す */
+export function isDiagnosticComplete(status: DiagnosticStatus): boolean {
+  return status === "completed";
+}
+
 export function isDiagnosticStatus(value: unknown): value is DiagnosticStatus {
   return value === "completed" || value === "skipped" || value === null;
 }

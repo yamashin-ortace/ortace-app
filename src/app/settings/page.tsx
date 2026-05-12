@@ -3,6 +3,7 @@ import { ThemePicker } from "@/components/theme-picker";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { AttemptBadgeSetting } from "@/components/settings/attempt-badge-setting";
 import { ExamDateSetting } from "@/components/settings/exam-date-setting";
+import { StudyGoalSetting } from "@/components/settings/study-goal-setting";
 
 export default function SettingsPage() {
   return (
@@ -17,6 +18,15 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <ExamDateSetting />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-[16px]">試験日までのペース（目標周回）</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StudyGoalSetting />
         </CardContent>
       </Card>
 

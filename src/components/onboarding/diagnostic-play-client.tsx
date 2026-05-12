@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import type { PlanType } from "@/lib/daily-limit";
 import type { Question } from "@/lib/questions";
@@ -22,6 +22,10 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
   const { setStatus } = useDiagnosticStatus();
   const [hydrated, setHydrated] = useState(false);
 
+  const handleComplete = useCallback(() => {
+    setStatus("completed");
+  }, [setStatus]);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage 由来の値を SSR と分離するための hydration ガード
     setHydrated(true);
@@ -33,13 +37,6 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
     // 一度確定したら入れ替えない（同じセッション内で並び替えが起きないように）
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 上記
   }, [hydrated]);
-
-  // プレイ画面に入った時点で「診断を開始した」と見なし、ホームのバナーを消す。
-  // 途中離脱しても再度 `/onboarding/diagnostic` から再開できる。
-  useEffect(() => {
-    if (!hydrated) return;
-    setStatus("completed");
-  }, [hydrated, setStatus]);
 
   if (!hydrated || sessionQuestions === null) {
     return (
@@ -64,6 +61,7 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
       plan={plan}
       resumeLabel="初回診断"
       bypassDailyLimit
+      onSessionComplete={handleComplete}
     />
   );
 }

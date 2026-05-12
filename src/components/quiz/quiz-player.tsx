@@ -46,6 +46,8 @@ type Props = {
    * バイパスする。通常導線では使わない。
    */
   bypassDailyLimit?: boolean;
+  /** セッションを最終画面まで終えたタイミング（未回答強制終了でも呼ばれる） */
+  onSessionComplete?: () => void;
 };
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
@@ -66,6 +68,7 @@ export function QuizPlayer({
   resumeLabel,
   saveProgress = questions.length > 1,
   bypassDailyLimit = false,
+  onSessionComplete,
 }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -78,6 +81,7 @@ export function QuizPlayer({
   const quizTopRef = useRef<HTMLDivElement | null>(null);
   const feedbackAnchorRef = useRef<HTMLDivElement | null>(null);
   const allowAutoResultRef = useRef(true);
+  const sessionCompleteOnceRef = useRef(false);
   const realDailyLimit = useDailyLimit(plan);
   const dailyLimit = useMemo(
     () =>
@@ -250,6 +254,7 @@ export function QuizPlayer({
 
   const handleRestart = useCallback(() => {
     allowAutoResultRef.current = true;
+    sessionCompleteOnceRef.current = false;
     setUnansweredSweepMode(false);
     setCurrentIndex(0);
     setStates({});
@@ -257,6 +262,16 @@ export function QuizPlayer({
     consumingQuestionIdsRef.current.clear();
     scrollToQuestionTop();
   }, [scrollToQuestionTop]);
+
+  useEffect(() => {
+    if (!isFinished) {
+      sessionCompleteOnceRef.current = false;
+      return;
+    }
+    if (sessionCompleteOnceRef.current) return;
+    sessionCompleteOnceRef.current = true;
+    onSessionComplete?.();
+  }, [isFinished, onSessionComplete]);
 
   useEffect(() => {
     if (!isAnswered || currentState.judgement === undefined) return;

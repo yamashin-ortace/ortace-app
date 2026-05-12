@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Popover } from "@base-ui/react/popover";
 import {
   BookOpen,
+  CalendarDays,
   ChevronRight,
   Flame,
   Gauge,
@@ -37,15 +38,26 @@ export function HomeDashboard({ questionTotals }: Props) {
   return (
     <>
       <section>
-        <div className="grid grid-cols-2 items-stretch gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 items-stretch gap-3 xl:grid-cols-5">
           <HomeStatCard
             icon={<Flame className="h-5 w-5" strokeWidth={2} />}
             label="連続学習"
-            value={String(stats.streakDays)}
+            value={String(stats.streakThroughYesterdayDays)}
             unit="日"
             trailing={
               <InfoPopover label="連続学習の説明">
-                1問でも解いた日を「がんばった日」として、何日続いているかを表示します。
+                昨日まで遡って、1問でも解いた日がどれだけ途切れず続いていたかです。当日まだ問題を解いていなくても、昨日まで続いていた記録ならそのまま表示されます。
+              </InfoPopover>
+            }
+          />
+          <HomeStatCard
+            icon={<CalendarDays className="h-5 w-5" strokeWidth={2} />}
+            label="累計学習日"
+            value={String(stats.totalStudyDays)}
+            unit="日"
+            trailing={
+              <InfoPopover label="累計学習日の説明">
+                過去も含め、1問以上解いたことがある日を数えています。（同じ日に何問いても「1日」とみなします）
               </InfoPopover>
             }
           />
@@ -282,28 +294,26 @@ function FieldProgressRow({
 }) {
   return (
     <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
-      <div className="flex items-end gap-2">
+      <div className="flex items-start justify-between gap-2">
         <Link
           href={buildFieldStudyHref(field.name)}
           className="group min-w-0 flex-1 text-left"
           aria-label={`${field.name}：タップで未着手の問題を解く`}
         >
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="min-w-0 text-[13px] font-bold text-[var(--text-1)]">
-              {field.name}
+          <span className="block text-[13px] font-bold text-[var(--text-1)]">
+            {field.name}
+          </span>
+          <span className="mt-1 block text-[12px] leading-snug text-[var(--text-2)]">
+            解いた割合{" "}
+            <span className="font-semibold tabular-nums text-[var(--text-1)]">
+              {field.rate}%
             </span>
-            <span className="text-[12px] leading-snug text-[var(--text-2)]">
-              解いた割合{" "}
-              <span className="font-semibold tabular-nums text-[var(--text-1)]">
-                {field.rate}%
-              </span>
-              <span className="text-[var(--text-3)]">
-                （{field.answered}/{field.total}問）
-              </span>
+            <span className="text-[var(--text-3)]">
+              （{field.answered}/{field.total}問）
             </span>
-          </div>
+          </span>
         </Link>
-        <div className="flex shrink-0 items-center pb-0.5">
+        <div className="flex shrink-0 pt-0.5">
           <FieldAccuracyInfo field={field} />
         </div>
       </div>
@@ -387,7 +397,8 @@ function calculateHomeStats(entries: AnswerHistoryEntry[]) {
     todayCount: todayEntries.length,
     todayAccuracy: calculateAccuracy(todayEntries),
     totalAccuracy: calculateAccuracy(entries),
-    streakDays: calculateStreakDays(entries, today),
+    streakThroughYesterdayDays: calculateStreakThroughYesterday(entries, today),
+    totalStudyDays: calculateTotalDistinctStudyDays(entries),
   };
 }
 
@@ -450,11 +461,17 @@ function calculateAccuracy(entries: AnswerHistoryEntry[]): number | null {
   return Math.round((correct / judged.length) * 100);
 }
 
-function calculateStreakDays(entries: AnswerHistoryEntry[], today: string): number {
+function calculateStreakThroughYesterday(
+  entries: AnswerHistoryEntry[],
+  todayTokyo: string,
+): number {
   const learnedDates = new Set(
-    entries.map((entry) => getTokyoDateString(new Date(entry.answeredAt))),
+    entries.map((entry) =>
+      getTokyoDateString(new Date(entry.answeredAt)),
+    ),
   );
-  let cursor = new Date(`${today}T00:00:00+09:00`);
+  const todayNoonTokyo = new Date(`${todayTokyo}T12:00:00+09:00`);
+  let cursor = new Date(todayNoonTokyo.getTime() - 24 * 60 * 60 * 1000);
   let streak = 0;
 
   while (learnedDates.has(getTokyoDateString(cursor))) {
@@ -463,6 +480,13 @@ function calculateStreakDays(entries: AnswerHistoryEntry[], today: string): numb
   }
 
   return streak;
+}
+
+function calculateTotalDistinctStudyDays(entries: AnswerHistoryEntry[]): number {
+  const dates = new Set(
+    entries.map((entry) => getTokyoDateString(new Date(entry.answeredAt))),
+  );
+  return dates.size;
 }
 
 function formatRate(value: number | null): string {

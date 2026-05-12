@@ -2,25 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronRight, Flag } from "lucide-react";
-import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
-import {
-  formatExamDateLabel,
-  getDaysUntilExam,
-  getRecommendedDailyPace,
-} from "@/lib/exam-date";
+import { CalendarDays, ChevronRight, Flag, Settings2 } from "lucide-react";
+import { formatExamDateLabel, getDaysUntilExam } from "@/lib/exam-date";
 import { useExamDate } from "@/lib/exam-date/use-exam-date";
+import { getAnswersPaceTowardGoal } from "@/lib/study-goal";
+import { useLifetimeAnswerCount } from "@/lib/study-goal/use-lifetime-answer-count";
+import { useStudyRoundsTarget } from "@/lib/study-goal/use-study-rounds-target";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  /** 全問題数（推奨ペース計算の母数） */
+  /** 収録している全問題数（周数目標の計算に使う） */
   totalQuestions: number;
 };
 
 export function HomeExamCountdown({ totalQuestions }: Props) {
   const [hydrated, setHydrated] = useState(false);
-  const { entries } = useAnswerHistoryList();
   const { examDate, isCustom } = useExamDate();
+  const { roundsTarget } = useStudyRoundsTarget();
+  const { count: lifetimeAnswers } = useLifetimeAnswerCount();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage 由来の値を SSR と分離するための hydration ガード
@@ -28,17 +27,40 @@ export function HomeExamCountdown({ totalQuestions }: Props) {
   }, []);
 
   const computed = useMemo(() => {
-    if (!hydrated) {
-      return { daysLeft: 0, pace: null as number | null, untouched: 0 };
-    }
     const daysLeft = getDaysUntilExam(examDate);
-    const answered = new Set(entries.map((entry) => entry.id));
-    const untouched = Math.max(0, totalQuestions - answered.size);
-    const pace = getRecommendedDailyPace(untouched, daysLeft);
-    return { daysLeft, pace, untouched };
-  }, [hydrated, examDate, entries, totalQuestions]);
+    const goalTotalAnswers = Math.max(
+      0,
+      roundsTarget * Math.max(0, totalQuestions),
+    );
+    const remainingGoal = Math.max(0, goalTotalAnswers - lifetimeAnswers);
+    /** 試験当日は「残り1日」のペース近似として扱う（本日分の目安まで） */
+    const daysForGoalPace =
+      daysLeft > 0 ? daysLeft : daysLeft === 0 ? 1 : null;
+    const pace =
+      isCustom && typeof daysForGoalPace === "number"
+        ? getAnswersPaceTowardGoal(
+            goalTotalAnswers,
+            lifetimeAnswers,
+            daysForGoalPace,
+          )
+        : null;
+    return {
+      daysLeft,
+      pace,
+      remainingGoal,
+      goalTotalAnswers,
+    };
+  }, [examDate, isCustom, lifetimeAnswers, roundsTarget, totalQuestions]);
 
   const examLabel = formatExamDateLabel(examDate);
+
+  const paceCaption = hydrated
+    ? computed.daysLeft > 0
+      ? `目標総解答までのこり ${computed.remainingGoal.toLocaleString()}問 ÷ ${computed.daysLeft}日・「${roundsTarget}周」`
+      : computed.daysLeft === 0
+        ? "本試験日当日までのひとつの目安です（過度な無理は避けましょう）"
+        : null
+    : null;
 
   return (
     <section>
@@ -79,37 +101,56 @@ export function HomeExamCountdown({ totalQuestions }: Props) {
               {!isCustom ? "（仮）" : null}
             </span>
           </div>
-          <Link
-            href="/settings#exam-date"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] border border-border bg-[var(--bg-card)] text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
-            aria-label="本試験日を変更"
-          >
-            <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
-          </Link>
+          <div className="flex shrink-0 items-center gap-1">
+            <Link
+              href="/settings#study-goal"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] border border-border bg-[var(--bg-card)] text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
+              aria-label="目標周回を変更"
+            >
+              <Settings2 className="h-4 w-4" strokeWidth={2.5} />
+            </Link>
+            <Link
+              href="/settings#exam-date"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] border border-border bg-[var(--bg-card)] text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
+              aria-label="本試験日を変更"
+            >
+              <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-[12px] border border-border bg-[var(--bg-muted)]/45 px-3 py-2.5">
           {hydrated ? (
-            computed.pace !== null ? (
+            !isCustom ? (
+              <p className="text-[11px] leading-snug text-[var(--text-2)]">
+                受験予定日を設定すると、この下に「自分で決めた周回目標」に対する試験日までのペースが出ます（目標は設定の「試験日の下」を開いて変更できます）。
+              </p>
+            ) : computed.daysLeft < 0 ? (
+              <p className="text-[11px] leading-snug text-[var(--text-2)]">
+                試験日以降はペース計算は出しません。振り返りにお使いください。
+              </p>
+            ) : computed.remainingGoal <= 0 ? (
+              <p className="text-[11px] leading-snug text-[var(--text-2)]">
+                設定した総解答の目標に到達しました。別の周回へ上げても大丈夫です。
+              </p>
+            ) : computed.pace !== null ? (
               <>
                 <p className="text-[11px] font-semibold text-[var(--text-3)]">
-                  推奨ペース（未着手を試験日までに埋める目安）
+                  目標達成までのペース（累計解答ベース）
                 </p>
                 <p className="mt-0.5 text-[16px] font-extrabold text-[var(--text-1)]">
-                  1日 {computed.pace}問
+                  1日 約 {computed.pace}問
                 </p>
                 <p className="mt-0.5 text-[11px] leading-snug text-[var(--text-2)]">
-                  未着手 {computed.untouched.toLocaleString()}問 ÷ 残り{" "}
-                  {computed.daysLeft}日（1日20問まで）
+                  いままで {lifetimeAnswers.toLocaleString()}問 ／ 目標総解答{" "}
+                  {computed.goalTotalAnswers.toLocaleString()}問
+                  {paceCaption ? <>。{paceCaption}</> : null}
+                  。（1日80問までで切りそろえた目安です）
                 </p>
               </>
-            ) : !isCustom ? (
-              <p className="text-[11px] leading-snug text-[var(--text-2)]">
-                受験予定日を設定すると、毎日のペースが出ます。
-              </p>
             ) : (
               <p className="text-[11px] leading-snug text-[var(--text-2)]">
-                未着手の問題はもうありません。お疲れさまです！
+                試験日までのペースが計算できませんでした。
               </p>
             )
           ) : (

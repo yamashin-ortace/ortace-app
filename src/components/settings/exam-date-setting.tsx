@@ -58,7 +58,7 @@ export function ExamDateSetting() {
             ) : null}
           </p>
           <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-2)]">
-            ホーム画面で「本試験まで何日」と「推奨ペース」の計算に使います。
+            ホーム画面で「本試験まで何日」と「目標周回までの試験日までのペース」の計算に使います。
             正確な試験日を設定すると、日々の目標が見えやすくなります。
           </p>
         </div>

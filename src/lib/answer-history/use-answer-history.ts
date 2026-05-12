@@ -18,6 +18,7 @@ import {
   pushAnswerHistoryEntryToDatabase,
   syncAnswerHistoryWithDatabase,
 } from "@/lib/study-sync";
+import { incrementLifetimeAnswerCount } from "@/lib/study-goal/lifetime-answer-count";
 
 const ANSWER_HISTORY_UPDATED_EVENT = "ortace:answer-history-updated";
 
@@ -37,6 +38,7 @@ export function useAnswerHistory() {
       });
       writeAnswerHistoryStore(next);
       notifyAnswerHistoryUpdated();
+      incrementLifetimeAnswerCount();
       const recorded = next.entries.find(
         (entry) =>
           entry.id === params.question.id &&
