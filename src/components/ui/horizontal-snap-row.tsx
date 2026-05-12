@@ -33,11 +33,14 @@ export function HorizontalSnapRow({
     const update = () => {
       const cards = container.querySelectorAll<HTMLElement>("[data-snap-item]");
       if (cards.length === 0) return;
-      const left = container.scrollLeft;
+      // snap port は scroll-padding-left の分だけ内側にあるので、その分を差し引いて距離計算する。
+      const paddingLeft =
+        parseFloat(getComputedStyle(container).paddingLeft) || 0;
+      const scrollLeft = container.scrollLeft;
       let closest = 0;
       let minDist = Infinity;
       cards.forEach((el, i) => {
-        const dist = Math.abs(el.offsetLeft - left - container.clientLeft);
+        const dist = Math.abs(el.offsetLeft - scrollLeft - paddingLeft);
         if (dist < minDist) {
           minDist = dist;
           closest = i;
@@ -61,8 +64,12 @@ export function HorizontalSnapRow({
         ref={containerRef}
         role="region"
         aria-label={ariaLabel}
+        // 横スワイプ：
+        // - snap-proximity：自由スクロール優先 + 近くまで来たらやさしくスナップ（mandatory より滑らか）
+        // - scroll-pl-5：スナップ位置を内側 padding に合わせ、最初のカードが画面端に吸い付くのを防ぐ
+        // - scroll-smooth：プログラム的なスクロール時の補間をオン
         className={cn(
-          "-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden px-5 pb-1",
+          "-mx-5 flex snap-x snap-proximity scroll-pl-5 scroll-smooth gap-3 overflow-x-auto overflow-y-hidden px-5 pb-1",
           "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         )}
       >

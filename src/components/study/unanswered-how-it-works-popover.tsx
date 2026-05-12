@@ -16,7 +16,7 @@ export function UnansweredHowItWorksPopover({ className }: Props) {
         type="button"
         className={cn(
           className,
-          "grid h-10 w-10 shrink-0 place-items-center rounded-[12px] border border-border bg-[var(--bg-muted)] text-[var(--primary-dark)] shadow-sm transition-[transform,colors,box-shadow]",
+          "grid h-10 w-10 shrink-0 place-items-center rounded-[12px] border border-border bg-[var(--bg-muted)] text-[var(--text-2)] shadow-sm transition-[transform,colors,box-shadow]",
           "hover:bg-[var(--bg-card)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
         )}
