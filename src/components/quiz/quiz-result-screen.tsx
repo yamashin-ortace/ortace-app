@@ -12,7 +12,11 @@ type Props = {
   questions: Question[];
   judgements: Record<string, AnswerJudgement>;
   selectedAnswers: Record<string, ChoiceKey[]>;
-  onRestart: () => void;
+  /** 未指定時は「もう一度」ボタンを表示しない */
+  onRestart?: () => void;
+  /** 結果画面下部の戻り先リンク。既定は学習タブ */
+  backHref?: string;
+  backLabel?: string;
 };
 
 export function QuizResultScreen({
@@ -20,6 +24,8 @@ export function QuizResultScreen({
   judgements,
   selectedAnswers,
   onRestart,
+  backHref = "/study",
+  backLabel = "学習タブへ戻る",
 }: Props) {
   const [reviewOpen, setReviewOpen] = useState(true);
   const total = questions.length;
@@ -108,16 +114,18 @@ export function QuizResultScreen({
       </section>
 
       <div className="space-y-3">
-        <PrimaryCta onClick={onRestart}>
-          <RotateCw className="h-4 w-4" strokeWidth={2.5} />
-          もう一度
-        </PrimaryCta>
+        {onRestart ? (
+          <PrimaryCta onClick={onRestart}>
+            <RotateCw className="h-4 w-4" strokeWidth={2.5} />
+            もう一度
+          </PrimaryCta>
+        ) : null}
         <Link
-          href="/study"
+          href={backHref}
           className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-6 py-3 text-[14px] font-semibold text-[var(--text-1)] transition-colors hover:bg-[var(--bg-muted)]"
         >
           <Home className="h-4 w-4" strokeWidth={2.5} />
-          学習タブへ戻る
+          {backLabel}
         </Link>
       </div>
     </div>

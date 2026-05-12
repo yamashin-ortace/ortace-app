@@ -62,6 +62,9 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
       resumeLabel="初回診断"
       bypassDailyLimit
       onSessionComplete={handleComplete}
+      hideRestartOnResult
+      resultBackHref="/"
+      resultBackLabel="ホームへ戻る"
     />
   );
 }

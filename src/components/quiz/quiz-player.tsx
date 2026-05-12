@@ -48,6 +48,11 @@ type Props = {
   bypassDailyLimit?: boolean;
   /** セッションを最終画面まで終えたタイミング（未回答強制終了でも呼ばれる） */
   onSessionComplete?: () => void;
+  /** 結果画面で「もう一度」ボタンを隠す（初回診断など、再挑戦の概念がない導線で使う） */
+  hideRestartOnResult?: boolean;
+  /** 結果画面下部の戻り先リンク。既定は「学習タブへ戻る」（/study） */
+  resultBackHref?: string;
+  resultBackLabel?: string;
 };
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
@@ -69,6 +74,9 @@ export function QuizPlayer({
   saveProgress = questions.length > 1,
   bypassDailyLimit = false,
   onSessionComplete,
+  hideRestartOnResult = false,
+  resultBackHref,
+  resultBackLabel,
 }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -358,7 +366,9 @@ export function QuizPlayer({
         selectedAnswers={Object.fromEntries(
           Object.entries(states).map(([id, s]) => [id, s.selected]),
         )}
-        onRestart={handleRestart}
+        onRestart={hideRestartOnResult ? undefined : handleRestart}
+        backHref={resultBackHref}
+        backLabel={resultBackLabel}
       />
     );
   }
