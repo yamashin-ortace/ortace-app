@@ -30,14 +30,16 @@ export function isDiagnosticStatus(value: unknown): value is DiagnosticStatus {
 /**
  * 全問題から「各分野3問ずつ」をランダム抽出。
  * 同じ問題が混じらないよう問題IDで重複排除する。
+ * 公式正答が未確定の問題（correctAnswers が空）は判定できないので候補から外す。
  */
 export function selectDiagnosticQuestions(
   questions: readonly Question[],
 ): Question[] {
+  const eligible = questions.filter((q) => q.correctAnswers.length > 0);
   const picked: Question[] = [];
   const seen = new Set<string>();
   for (const field of FIELDS) {
-    const inField = questions.filter((q) => q.majorCategory === field);
+    const inField = eligible.filter((q) => q.majorCategory === field);
     const shuffled = shuffle(inField);
     let added = 0;
     for (const q of shuffled) {
