@@ -319,16 +319,30 @@ export async function syncAnswerHistoryWithDatabase(
     );
   }
 
-  // 大量エントリでもエラーで全件失敗しないよう、200件ずつにチャンク化する。
+  // 50件ずつチャンク化して push。チャンク失敗時は単発upsertにフォールバック。
   for (let i = 0; i < localRows.length; i += UPSERT_CHUNK_SIZE) {
     const chunk = localRows.slice(i, i + UPSERT_CHUNK_SIZE);
     const { error: pushError } = await supabase
       .from("answer_history")
       .upsert(chunk, { onConflict: "user_id,entry_key" });
-    if (pushError && typeof window !== "undefined") {
-        console.warn(
-        `[answer-history sync] チャンク${i / UPSERT_CHUNK_SIZE + 1}のpushに失敗: ${pushError.message}`,
+    if (!pushError) continue;
+
+    if (typeof window !== "undefined") {
+      console.warn(
+        `[answer-history sync] チャンク${i / UPSERT_CHUNK_SIZE + 1}(${chunk.length}件)のpushに失敗: ${pushError.message}。単発upsertにフォールバックします。`,
       );
+    }
+    // フォールバック：1件ずつ送り、どの行が原因かを特定する
+    for (const row of chunk) {
+      const { error: singleError } = await supabase
+        .from("answer_history")
+        .upsert(row, { onConflict: "user_id,entry_key" });
+      if (singleError && typeof window !== "undefined") {
+        console.warn(
+          `[answer-history sync] 単発pushに失敗: ${singleError.message} / row=`,
+          row,
+        );
+      }
     }
   }
 
@@ -344,7 +358,7 @@ export async function syncAnswerHistoryWithDatabase(
   return mergeAnswerHistoryStores(localStore, data ?? []);
 }
 
-const UPSERT_CHUNK_SIZE = 200;
+const UPSERT_CHUNK_SIZE = 50;
 
 /**
  * DB スキーマ（0002_study_sync.sql の answer_history テーブル）に定義された
@@ -352,15 +366,28 @@ const UPSERT_CHUNK_SIZE = 200;
  * 全体を失敗させるため、事前に弾く必要がある。
  */
 function isValidAnswerHistoryRow(row: AnswerHistoryInsert): boolean {
+  if (typeof row.question_id !== "string") return false;
   if (!/^[0-9]{2}-[0-9]{1,3}$/.test(row.question_id)) return false;
   if (!["correct", "incorrect", "no_answer"].includes(row.result)) return false;
   if (!Array.isArray(row.selected_answers)) return false;
   for (const sel of row.selected_answers) {
     if (!["1", "2", "3", "4", "5"].includes(sel)) return false;
   }
-  if (row.round < 47 || row.round > 56) return false;
+  if (typeof row.round !== "number" || row.round < 47 || row.round > 56) {
+    return false;
+  }
   if (row.session !== "am" && row.session !== "pm") return false;
-  if (row.display_number < 1 || row.display_number > 75) return false;
+  if (
+    typeof row.display_number !== "number" ||
+    row.display_number < 1 ||
+    row.display_number > 75
+  ) {
+    return false;
+  }
+  if (typeof row.major_category !== "string") return false;
+  if (typeof row.answered_at !== "string" || row.answered_at.length === 0) {
+    return false;
+  }
   return true;
 }
 
