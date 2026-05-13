@@ -10,7 +10,7 @@ import {
   summarizeStudyGoal,
 } from "@/lib/study-goal";
 import { useLifetimeAnswerCount } from "@/lib/study-goal/use-lifetime-answer-count";
-import { useStudyGoalPreset } from "@/lib/study-goal/use-study-goal-preset";
+import { useStudyGoalConfig } from "@/lib/study-goal/use-study-goal-config";
 
 type Props = {
   /** 過去問の総問題数（プリセットの目標総解答数を組み立てる母数） */
@@ -20,7 +20,7 @@ type Props = {
 export function HomeExamCountdown({ totalQuestions }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const { examDate } = useExamDate();
-  const { preset } = useStudyGoalPreset();
+  const { config } = useStudyGoalConfig();
   const { count: lifetimeAnswers } = useLifetimeAnswerCount();
 
   useEffect(() => {
@@ -33,12 +33,12 @@ export function HomeExamCountdown({ totalQuestions }: Props) {
   const goalSummary = useMemo(
     () =>
       summarizeStudyGoal({
-        preset,
+        config,
         examDateISO: examDate,
         pastQuestionsTotal: totalQuestions,
         lifetimeAnswers,
       }),
-    [preset, examDate, totalQuestions, lifetimeAnswers],
+    [config, examDate, totalQuestions, lifetimeAnswers],
   );
 
   const examLabel = formatExamDateLabel(examDate);
@@ -109,13 +109,15 @@ export function HomeExamCountdown({ totalQuestions }: Props) {
             </p>
           ) : goalSummary.remainingAnswers <= 0 ? (
             <p className="text-[11px] leading-snug text-[var(--text-2)]">
-              「{goalSummary.preset.label}」の目標総解答に到達しました。
+              設定した目標（{goalSummary.scopeLabel}・
+              {goalSummary.config.rounds}周）に到達しました。
               プリセットを上げる、または復習に切り替えてもOKです。
             </p>
           ) : goalSummary.paceAnswersPerDay !== null ? (
             <>
               <p className="text-[11px] font-semibold text-[var(--text-3)]">
-                目標達成までのペース（{goalSummary.preset.label}）
+                目標達成までのペース（{goalSummary.scopeLabel}・
+                {goalSummary.config.rounds}周）
               </p>
               <p className="mt-0.5 text-[16px] font-extrabold text-[var(--text-1)]">
                 1日 約 {goalSummary.paceAnswersPerDay}問

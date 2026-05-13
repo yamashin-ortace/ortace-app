@@ -1,101 +1,134 @@
 /**
- * 受験生が選ぶ「学習プリセット」と、目標達成までのペース計算。
+ * 学習プリセット（B-prime：ガードレール付き自由設定）と、目標達成までのペース計算。
  *
- * 自由入力にすると現実離れした目標を立てがちなため、推奨プリセットから1つだけ選ぶ
- * 形にしている（「目標なし」を含む）。終了日は試験日ではなく "試験日 - N日"。
- * 直前の復習・模試バッファを残す目的。
+ * 完全自由ロールにすると現実離れした目標を立てがちなので、
+ * 「スコープ × 周回 × 期限」をそれぞれ妥当な範囲から選ぶ形にしている。
+ * `enabled = false`（既定）のときは目標計算をオフにしてホームのCTAだけ表示する。
  */
 
 export const STUDY_GOAL_STORAGE_KEY = "ortace.studyGoal.preset";
 
-/** プリセット ID。`none` は目標を立てないモード（既定）。 */
-export type StudyGoalPresetId = "none" | "base" | "safe" | "top";
+/** 目標カウントに含める問題集の範囲 */
+export type StudyGoalScope = "past" | "past_plus_original";
 
-export type StudyGoalPreset = {
-  id: StudyGoalPresetId;
-  /** 表示名 */
+/** 達成期限（試験日からの差し引き）。`exam` は試験日当日まで。 */
+export type StudyGoalDeadline = "1m_before" | "2m_before" | "exam";
+
+export const STUDY_GOAL_SCOPES: ReadonlyArray<{
+  id: StudyGoalScope;
   label: string;
-  /** ひと言サマリ（設定 UI でラベルの下に出す） */
-  summary: string;
-  /** 過去問の周回目標（0 なら過去問を目標カウントに含めない） */
-  pastRounds: number;
-  /** オリジナル問題の周回目標（0 なら含めない） */
-  originalRounds: number;
-  /** 試験日 - N日 を達成期限とする（直前の復習バッファ） */
-  daysBeforeExam: number;
-};
-
-/**
- * プリセット定義。
- *
- * - `base`：1周丁寧に。直前1ヶ月は復習・模試にあてる
- * - `safe`：合格安全圏。直前1ヶ月は復習・模試にあてる
- * - `top` ：上位合格。直前2ヶ月を復習・模試・弱点詰めにあてる
- *
- * オリジナル問題はリリース直後はまだ枠が小さい想定なので、
- * 過去問+オリジナルは「top」のみ採用する。
- */
-export const STUDY_GOAL_PRESETS: readonly StudyGoalPreset[] = [
+  hint: string;
+}> = [
   {
-    id: "none",
-    label: "目標は立てない",
-    summary:
-      "自分のペースで毎日コツコツ。ペース表示は出さず、おすすめだけ参考にする。",
-    pastRounds: 0,
-    originalRounds: 0,
-    daysBeforeExam: 0,
+    id: "past",
+    label: "過去問だけ",
+    hint: "過去問1,500問を母数にする",
   },
   {
-    id: "base",
-    label: "ベース（1周）",
-    summary:
-      "試験1ヶ月前までに過去問を1周。直前1ヶ月は復習・模試にあてる。",
-    pastRounds: 1,
-    originalRounds: 0,
-    daysBeforeExam: 30,
-  },
-  {
-    id: "safe",
-    label: "合格安全圏（2周）",
-    summary:
-      "試験1ヶ月前までに過去問を2周。本番に向けて知識をしっかり固める。",
-    pastRounds: 2,
-    originalRounds: 0,
-    daysBeforeExam: 30,
-  },
-  {
-    id: "top",
-    label: "上位合格（2周＋オリジナル1周）",
-    summary:
-      "試験2ヶ月前までに過去問2周＋オリジナル1周。直前2ヶ月は弱点詰め＋模試。",
-    pastRounds: 2,
-    originalRounds: 1,
-    daysBeforeExam: 60,
+    id: "past_plus_original",
+    label: "過去問＋オリジナル",
+    hint: "過去問1,500問＋オリジナル180問が母数",
   },
 ];
 
-export const STUDY_GOAL_DEFAULT_ID: StudyGoalPresetId = "none";
+/** 周回（1〜3）。これ以上は現実的に苦しいので入れない。 */
+export const STUDY_GOAL_ROUNDS = [1, 2, 3] as const;
+export type StudyGoalRounds = (typeof STUDY_GOAL_ROUNDS)[number];
 
-/**
- * オリジナル問題の総数（CLAUDE.md の目標：180問）。
- * オリジナル問題はまだアプリに実装されていないため、ペース計算の暫定値。
- */
+export const STUDY_GOAL_DEADLINES: ReadonlyArray<{
+  id: StudyGoalDeadline;
+  label: string;
+  /** 試験日 - daysBeforeExam 日。`exam` は 0。 */
+  daysBeforeExam: number;
+  hint: string;
+}> = [
+  {
+    id: "1m_before",
+    label: "試験1ヶ月前",
+    daysBeforeExam: 30,
+    hint: "直前1ヶ月は復習・模試にあてる",
+  },
+  {
+    id: "2m_before",
+    label: "試験2ヶ月前",
+    daysBeforeExam: 60,
+    hint: "直前2ヶ月を弱点詰め＋模試にあてる",
+  },
+  {
+    id: "exam",
+    label: "試験日まで",
+    daysBeforeExam: 0,
+    hint: "本番ギリギリまで使う前提（バッファなし）",
+  },
+];
+
+export type StudyGoalConfig = {
+  enabled: boolean;
+  scope: StudyGoalScope;
+  rounds: StudyGoalRounds;
+  deadline: StudyGoalDeadline;
+};
+
+export const DEFAULT_STUDY_GOAL: StudyGoalConfig = {
+  enabled: false,
+  scope: "past",
+  rounds: 1,
+  deadline: "1m_before",
+};
+
+/** 1日に解ける現実的な上限（このペースを超える目標は赤表示にして警告する） */
+export const REALISTIC_DAILY_CAP = 80;
+
+/** オリジナル問題の総数（CLAUDE.md の目標：180問） */
 export const ORIGINAL_QUESTIONS_TOTAL = 180;
 
-export function isStudyGoalPresetId(value: unknown): value is StudyGoalPresetId {
-  return (
-    value === "none" ||
-    value === "base" ||
-    value === "safe" ||
-    value === "top"
-  );
+export function isStudyGoalScope(value: unknown): value is StudyGoalScope {
+  return value === "past" || value === "past_plus_original";
 }
 
-export function getStudyGoalPreset(id: StudyGoalPresetId): StudyGoalPreset {
-  return (
-    STUDY_GOAL_PRESETS.find((p) => p.id === id) ??
-    STUDY_GOAL_PRESETS.find((p) => p.id === "none")!
-  );
+export function isStudyGoalDeadline(value: unknown): value is StudyGoalDeadline {
+  return value === "1m_before" || value === "2m_before" || value === "exam";
+}
+
+export function isStudyGoalRounds(value: unknown): value is StudyGoalRounds {
+  return value === 1 || value === 2 || value === 3;
+}
+
+export function parseStudyGoalConfig(raw: string | null): StudyGoalConfig {
+  if (!raw) return DEFAULT_STUDY_GOAL;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed !== "object" || parsed === null) return DEFAULT_STUDY_GOAL;
+    const v = parsed as Record<string, unknown>;
+    return {
+      enabled: typeof v.enabled === "boolean" ? v.enabled : false,
+      scope: isStudyGoalScope(v.scope) ? v.scope : DEFAULT_STUDY_GOAL.scope,
+      rounds: isStudyGoalRounds(v.rounds)
+        ? v.rounds
+        : DEFAULT_STUDY_GOAL.rounds,
+      deadline: isStudyGoalDeadline(v.deadline)
+        ? v.deadline
+        : DEFAULT_STUDY_GOAL.deadline,
+    };
+  } catch {
+    return DEFAULT_STUDY_GOAL;
+  }
+}
+
+export function serializeStudyGoalConfig(config: StudyGoalConfig): string {
+  return JSON.stringify(config);
+}
+
+export function getDeadlineDaysBeforeExam(deadline: StudyGoalDeadline): number {
+  return STUDY_GOAL_DEADLINES.find((d) => d.id === deadline)?.daysBeforeExam ?? 0;
+}
+
+export function getDeadlineLabel(deadline: StudyGoalDeadline): string {
+  return STUDY_GOAL_DEADLINES.find((d) => d.id === deadline)?.label ?? "";
+}
+
+export function getScopeLabel(scope: StudyGoalScope): string {
+  return STUDY_GOAL_SCOPES.find((s) => s.id === scope)?.label ?? "";
 }
 
 /** 目標期限 (= 試験日 - daysBeforeExam) を "YYYY-MM-DD" で返す */
@@ -112,7 +145,6 @@ export function getGoalDeadlineISO(
   return `${yy}-${mm}-${dd}`;
 }
 
-/** "YYYY-MM-DD" → 当日0時の Date */
 export function parseISODate(value: string): Date {
   const [y, m, d] = value.split("-").map((s) => Number(s));
   return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
@@ -131,7 +163,9 @@ export function getDaysUntilDeadline(
 }
 
 export type StudyGoalSummary = {
-  preset: StudyGoalPreset;
+  config: StudyGoalConfig;
+  scopeLabel: string;
+  deadlineLabelText: string;
   /** 目標とする総解答数 */
   targetAnswers: number;
   /** 目標期限 (YYYY-MM-DD) */
@@ -142,14 +176,16 @@ export type StudyGoalSummary = {
   remainingAnswers: number;
   /** 1日あたりの目安問題数（残÷残日数）。期限切れや達成済みなら null */
   paceAnswersPerDay: number | null;
+  /** 1日 80問 を超える非現実的なペースなら true */
+  isOverloaded: boolean;
 };
 
 /**
- * プリセット・試験日・現状の累計解答から、ペース計算結果を組み立てる。
- * `preset.id === "none"` のときは null を返す（呼び出し側で CTA に切り替える）。
+ * 設定値・試験日・現状の累計解答から、ペース計算結果を組み立てる。
+ * `config.enabled === false` のときは null を返す（呼び出し側でCTAに切り替える）。
  */
 export function summarizeStudyGoal(params: {
-  preset: StudyGoalPreset;
+  config: StudyGoalConfig;
   examDateISO: string;
   pastQuestionsTotal: number;
   lifetimeAnswers: number;
@@ -159,44 +195,78 @@ export function summarizeStudyGoal(params: {
   now?: Date;
 }): StudyGoalSummary | null {
   const {
-    preset,
+    config,
     examDateISO,
     pastQuestionsTotal,
     lifetimeAnswers,
-    dailyCap = 80,
+    dailyCap = REALISTIC_DAILY_CAP,
     now = new Date(),
   } = params;
-  if (preset.id === "none") return null;
+  if (!config.enabled) return null;
 
-  const targetAnswers =
-    pastQuestionsTotal * preset.pastRounds +
-    ORIGINAL_QUESTIONS_TOTAL * preset.originalRounds;
-  const deadlineISO = getGoalDeadlineISO(examDateISO, preset.daysBeforeExam);
+  const scopeBase =
+    config.scope === "past_plus_original"
+      ? pastQuestionsTotal + ORIGINAL_QUESTIONS_TOTAL
+      : pastQuestionsTotal;
+  const targetAnswers = scopeBase * config.rounds;
+  const daysBeforeExam = getDeadlineDaysBeforeExam(config.deadline);
+  const deadlineISO = getGoalDeadlineISO(examDateISO, daysBeforeExam);
   const daysUntilDeadline = getDaysUntilDeadline(deadlineISO, now);
   const remainingAnswers = Math.max(0, targetAnswers - lifetimeAnswers);
 
-  let paceAnswersPerDay: number | null;
-  if (remainingAnswers <= 0 || daysUntilDeadline <= 0) {
-    paceAnswersPerDay = null;
-  } else {
-    paceAnswersPerDay = Math.min(
-      dailyCap,
-      Math.max(1, Math.ceil(remainingAnswers / daysUntilDeadline)),
-    );
+  let rawPace: number | null = null;
+  if (remainingAnswers > 0 && daysUntilDeadline > 0) {
+    rawPace = Math.ceil(remainingAnswers / daysUntilDeadline);
   }
+  const paceAnswersPerDay =
+    rawPace === null ? null : Math.min(dailyCap, Math.max(1, rawPace));
+  const isOverloaded = rawPace !== null && rawPace > REALISTIC_DAILY_CAP;
 
   return {
-    preset,
+    config,
+    scopeLabel: getScopeLabel(config.scope),
+    deadlineLabelText: getDeadlineLabel(config.deadline),
     targetAnswers,
     deadlineISO,
     daysUntilDeadline,
     remainingAnswers,
     paceAnswersPerDay,
+    isOverloaded,
   };
 }
 
-/** "YYYY-MM-DD" を「YYYY年M月D日」に整形 */
 export function formatGoalDeadlineLabel(value: string): string {
   const d = parseISODate(value);
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+/**
+ * UI 上で「設定中の組み合わせだと1日に何問必要か」を即時計算するための簡易関数。
+ * 累計解答ゼロ前提で「ペースが現実的か」のプレビューに使う。
+ */
+export function previewDailyPace(params: {
+  scope: StudyGoalScope;
+  rounds: StudyGoalRounds;
+  deadline: StudyGoalDeadline;
+  examDateISO: string;
+  pastQuestionsTotal: number;
+  now?: Date;
+}): { perDay: number | null; isOverloaded: boolean; daysLeft: number } {
+  const { scope, rounds, deadline, examDateISO, pastQuestionsTotal, now } =
+    params;
+  const scopeBase =
+    scope === "past_plus_original"
+      ? pastQuestionsTotal + ORIGINAL_QUESTIONS_TOTAL
+      : pastQuestionsTotal;
+  const target = scopeBase * rounds;
+  const daysBefore = getDeadlineDaysBeforeExam(deadline);
+  const deadlineISO = getGoalDeadlineISO(examDateISO, daysBefore);
+  const daysLeft = getDaysUntilDeadline(deadlineISO, now);
+  if (daysLeft <= 0) return { perDay: null, isOverloaded: false, daysLeft };
+  const raw = Math.ceil(target / daysLeft);
+  return {
+    perDay: raw,
+    isOverloaded: raw > REALISTIC_DAILY_CAP,
+    daysLeft,
+  };
 }
