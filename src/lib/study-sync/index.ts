@@ -132,54 +132,26 @@ export function mergeAnswerHistoryStores(
   const afterLocalSize = entriesByKey.size;
 
   let nullCount = 0;
-  // DB が保存している entry_key と、私のparserで recompute した key の差を
-  // 切り分けるため、両方の unique set を集計する。
-  const storedKeys = new Set<string>();
-  const recomputedKeys = new Set<string>();
+  // 重要：remote 行は DB が unique に保存している `entry_key` をそのまま
+  // map のキーに使う。recompute すると行間で衝突が発生（1050→525のように
+  // half collapse）する事例が観測されたため。
+  // local 側は createAnswerHistoryEntryKey の値をキーに継続使用。push 時に
+  // 同じロジックで entry_key を生成して DB に保存しているので、自分由来の
+  // remote 行は同じキーで上書きされる。
   for (const row of remoteRows) {
-    storedKeys.add(row.entry_key);
     const entry = answerHistoryRowToEntry(row);
     if (!entry) {
       nullCount += 1;
       continue;
     }
-    const key = createAnswerHistoryEntryKey(entry);
-    recomputedKeys.add(key);
-    entriesByKey.set(key, entry);
+    entriesByKey.set(row.entry_key, entry);
   }
   const afterRemoteSize = entriesByKey.size;
 
   if (typeof window !== "undefined") {
     console.info(
-      `[answer-history merge] local→map: ${afterLocalSize} / remote→map: ${afterRemoteSize - afterLocalSize}件追加（remote ${remoteRows.length}件 中 ${nullCount}件 null）`,
+      `[answer-history merge] local→map: ${afterLocalSize} / 最終 map size: ${afterRemoteSize}（remote ${remoteRows.length}件 中 ${nullCount}件 null）`,
     );
-    console.info(
-      `[answer-history merge] DB stored unique entry_keys: ${storedKeys.size} / 私のrecompute unique keys: ${recomputedKeys.size}`,
-    );
-    // recompute が collapse している場合、最初の DB row の生データと
-    // 私が再構築したentry の中身を見比べる
-    if (
-      storedKeys.size > recomputedKeys.size &&
-      remoteRows.length > 0
-    ) {
-      const sample = remoteRows[0];
-      const reconstructed = answerHistoryRowToEntry(sample);
-      console.info("[answer-history merge] 最初のDB row（生）:", sample);
-      console.info(
-        "[answer-history merge] 最初のentry（recompute後）:",
-        reconstructed,
-      );
-      if (reconstructed) {
-        console.info(
-          "[answer-history merge] DB stored entry_key:",
-          sample.entry_key,
-        );
-        console.info(
-          "[answer-history merge] 私のrecompute entry_key:",
-          createAnswerHistoryEntryKey(reconstructed),
-        );
-      }
-    }
   }
 
   // 注意：ここで parseAnswerHistoryStore を再度通すと、relax した
