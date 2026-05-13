@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Popover } from "@base-ui/react/popover";
-import { ChevronRight, Gauge, HelpCircle } from "lucide-react";
+import { ChevronRight, Gauge, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
@@ -112,13 +112,13 @@ function NextFieldReasonInfo({
       <Popover.Trigger
         type="button"
         className={cn(
-          "grid h-10 w-10 shrink-0 place-items-center rounded-[12px] border border-border bg-[var(--bg-card)] text-[var(--text-2)] shadow-sm transition-[transform,colors,box-shadow]",
-          "hover:bg-[var(--bg-muted)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
+          "-m-0.5 rounded-full p-1.5 text-[var(--text-3)] transition-colors",
+          "hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
         )}
         aria-label="次にやる目安の選び方"
       >
-        <HelpCircle className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
+        <Info className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner
