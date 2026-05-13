@@ -89,7 +89,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
           <span
             aria-hidden
             className={cn(
-              "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform",
+              "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
               config.enabled ? "translate-x-5" : "translate-x-0.5",
             )}
           />
