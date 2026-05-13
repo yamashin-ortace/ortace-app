@@ -28,7 +28,7 @@ import type {
   NotesRow,
 } from "@/lib/supabase/database.types";
 
-const ANSWER_HISTORY_DISPLAY_LIMIT = 500;
+const ANSWER_HISTORY_DISPLAY_LIMIT = 10_000;
 const BOOKMARK_CATEGORY_IDS = BOOKMARK_CATEGORIES.map((category) => category.id);
 
 export function mergeDailyLimitRecords(

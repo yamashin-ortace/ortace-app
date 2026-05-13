@@ -3,7 +3,7 @@ import type { ChoiceKey, Question, Session } from "@/lib/questions";
 import { computeSpacedRepetition } from "./spaced-repetition";
 
 export const ANSWER_HISTORY_STORAGE_KEY = "ortace.stats";
-const MAX_ANSWER_HISTORY_ENTRIES = 500;
+const MAX_ANSWER_HISTORY_ENTRIES = 10_000;
 
 export type ConfidenceLevel = "high" | "mid" | "guess";
 
