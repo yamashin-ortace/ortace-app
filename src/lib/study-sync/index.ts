@@ -305,14 +305,31 @@ export async function syncAnswerHistoryWithDatabase(
 
   const supabase = createSupabaseBrowserClient();
   const localStore = parseAnswerHistoryStore(serializeAnswerHistoryStore(local));
-  const localRows = localStore.entries.map((entry) =>
+  const allLocalRows = localStore.entries.map((entry) =>
     answerHistoryEntryToRow(userId, entry),
   );
+  // DBスキーマの CHECK 制約に違反する古い・壊れたエントリで upsert 全体が
+  // 失敗するのを避けるため、事前にバリデートして弾く。弾かれたものは
+  // ローカルには残しつつ、DB には送らない（次回までに状況改善することを期待）。
+  const localRows = allLocalRows.filter(isValidAnswerHistoryRow);
+  const skippedCount = allLocalRows.length - localRows.length;
+  if (skippedCount > 0 && typeof window !== "undefined") {
+    console.warn(
+      `[answer-history sync] ${skippedCount}件のエントリをスキップしました（DBスキーマ違反）`,
+    );
+  }
 
-  if (localRows.length > 0) {
-    await supabase
+  // 大量エントリでもエラーで全件失敗しないよう、200件ずつにチャンク化する。
+  for (let i = 0; i < localRows.length; i += UPSERT_CHUNK_SIZE) {
+    const chunk = localRows.slice(i, i + UPSERT_CHUNK_SIZE);
+    const { error: pushError } = await supabase
       .from("answer_history")
-      .upsert(localRows, { onConflict: "user_id,entry_key" });
+      .upsert(chunk, { onConflict: "user_id,entry_key" });
+    if (pushError && typeof window !== "undefined") {
+        console.warn(
+        `[answer-history sync] チャンク${i / UPSERT_CHUNK_SIZE + 1}のpushに失敗: ${pushError.message}`,
+      );
+    }
   }
 
   const { data, error } = await supabase
@@ -325,6 +342,26 @@ export async function syncAnswerHistoryWithDatabase(
   if (error) return null;
 
   return mergeAnswerHistoryStores(localStore, data ?? []);
+}
+
+const UPSERT_CHUNK_SIZE = 200;
+
+/**
+ * DB スキーマ（0002_study_sync.sql の answer_history テーブル）に定義された
+ * CHECK 制約に合致するかを判定する。1件でも違反すると Postgres は upsert
+ * 全体を失敗させるため、事前に弾く必要がある。
+ */
+function isValidAnswerHistoryRow(row: AnswerHistoryInsert): boolean {
+  if (!/^[0-9]{2}-[0-9]{1,3}$/.test(row.question_id)) return false;
+  if (!["correct", "incorrect", "no_answer"].includes(row.result)) return false;
+  if (!Array.isArray(row.selected_answers)) return false;
+  for (const sel of row.selected_answers) {
+    if (!["1", "2", "3", "4", "5"].includes(sel)) return false;
+  }
+  if (row.round < 47 || row.round > 56) return false;
+  if (row.session !== "am" && row.session !== "pm") return false;
+  if (row.display_number < 1 || row.display_number > 75) return false;
+  return true;
 }
 
 export async function pushAnswerHistoryEntryToDatabase(
