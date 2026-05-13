@@ -46,7 +46,7 @@ export function HomeTodayCta({ totalQuestions }: Props) {
               今日のおすすめ
             </span>
             <span className="mt-0.5 text-[12px] text-[var(--text-2)]">
-              迷ったらここから。出題数は10／15／20問から選べます
+              迷ったらここから。出題数は10/15/20問から選べます
             </span>
           </div>
           <ChevronRight

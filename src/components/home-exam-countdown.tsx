@@ -135,7 +135,7 @@ export function HomeExamCountdown({ totalQuestions }: Props) {
               />
               <MetricCell
                 label="残り"
-                value={goalSummary.remainingAnswers.toLocaleString()}
+                value={String(goalSummary.remainingAnswers)}
                 unit="問"
               />
               <MetricCell

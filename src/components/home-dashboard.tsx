@@ -154,7 +154,7 @@ function NextFieldReasonInfo({
                 」（割合 {field.rate}%・未着手 {field.remaining}問）。
               </p>
               <p>
-                タップで未着手の問題から出題。出題数は10／15／20問から選べます。
+                タップで未着手の問題から出題。出題数は10/15/20問から選べます。
               </p>
             </div>
           </Popover.Popup>

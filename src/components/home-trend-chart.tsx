@@ -156,7 +156,6 @@ function FullChart({ bins, range }: { bins: DailyBin[]; range: Range }) {
       <svg
         viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
         width="100%"
-        height="auto"
         role="img"
         aria-label={`直近${range === "7d" ? "7" : "30"}日の解答数と正答率の推移`}
         className="block"

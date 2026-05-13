@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CalendarRange } from "lucide-react";
+import { CalendarRange, Info } from "lucide-react";
 import {
   STUDY_GOAL_DEADLINES,
   STUDY_GOAL_ROUNDS,
@@ -74,8 +74,8 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
           学習プリセット（任意）
         </p>
         <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-2)]">
-          「スコープ × 周回 × 期限」の3つを選んで、自分の目標を組み立てます。
-          選ばなくても学習は進められます。1日80問を超える組み合わせは赤で警告します。
+          「対象範囲 × 周回 × 期限」の3つを選んで、自分の目標を組み立てます。
+          選ばなくても学習は進められます。
         </p>
       </div>
 
@@ -179,9 +179,10 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
                 value={config.customDeadlineISO ?? ""}
                 onChange={(event) => handleCustomDateChange(event.target.value)}
                 className={cn(
-                  "h-10 w-full rounded-[10px] border border-border bg-[var(--bg-card)] px-3 text-[14px] font-bold text-[var(--text-1)]",
+                  "block h-10 w-full min-w-0 max-w-full appearance-none rounded-[10px] border border-border bg-[var(--bg-card)] px-3 text-[14px] font-bold text-[var(--text-1)]",
                   "focus:border-[var(--primary)] focus:outline-none",
                 )}
+                style={{ boxSizing: "border-box" }}
               />
               {config.customDeadlineISO ? (
                 <p className="text-[11px] leading-snug text-[var(--text-2)]">
@@ -198,34 +199,20 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
       </fieldset>
 
       {config.enabled ? (
-        <div
-          className={cn(
-            "rounded-[14px] border px-4 py-3",
-            preview.isOverloaded
-              ? "border-red-300 bg-red-50 dark:border-red-900/60 dark:bg-red-900/15"
-              : "border-border bg-[var(--bg-muted)]/40",
-          )}
-        >
+        <div className="rounded-[14px] border border-border bg-[var(--bg-muted)]/40 px-4 py-3">
           <p className="text-[11px] font-semibold text-[var(--text-3)]">
             このプリセットだと
           </p>
-          <p
-            className={cn(
-              "mt-0.5 text-[16px] font-extrabold",
-              preview.isOverloaded
-                ? "text-red-700 dark:text-red-300"
-                : "text-[var(--text-1)]",
-            )}
-          >
+          <p className="mt-0.5 text-[16px] font-extrabold text-[var(--text-1)]">
             1日 {preview.perDay ?? "—"}問以上
             <span className="ml-2 text-[11px] font-medium text-[var(--text-3)]">
               （{formatGoalDeadlineLabel(deadlineISO)}まで {preview.daysLeft}日）
             </span>
           </p>
           {preview.isOverloaded ? (
-            <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 dark:text-red-300">
-              <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2.5} />
-              1日80問を超えるペースになります。周回を減らすか、期限を見直すのをおすすめします。
+            <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--text-2)]">
+              <Info className="h-3.5 w-3.5 text-[var(--text-3)]" strokeWidth={2.5} />
+              1日80問以上のペースです。短期で詰めたいときは無理のない範囲で進めてください。
             </p>
           ) : null}
         </div>

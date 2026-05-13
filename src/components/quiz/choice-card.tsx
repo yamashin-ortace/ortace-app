@@ -74,7 +74,8 @@ export function ChoiceCard({
           state === "selected" && "bg-[var(--primary)] text-white",
           state === "correct" && "bg-[#4CAF7A] text-white",
           state === "incorrect" && "bg-[#D84848] text-white",
-          state === "revealed" && "bg-[#4CAF7A]/40 text-[#1F5E3F]",
+          state === "revealed" &&
+            "bg-[#4CAF7A]/40 text-[#1F5E3F] dark:bg-[#4CAF7A]/55 dark:text-white",
           (state === "default" || state === "dimmed") &&
             "bg-[var(--bg-muted)] text-[var(--text-2)]",
         )}
