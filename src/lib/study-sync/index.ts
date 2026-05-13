@@ -305,45 +305,50 @@ export async function syncAnswerHistoryWithDatabase(
 
   const supabase = createSupabaseBrowserClient();
   const localStore = parseAnswerHistoryStore(serializeAnswerHistoryStore(local));
-  const allLocalRows = localStore.entries.map((entry) =>
+  const localRows = localStore.entries.map((entry) =>
     answerHistoryEntryToRow(userId, entry),
   );
-  // DBスキーマの CHECK 制約に違反する古い・壊れたエントリで upsert 全体が
-  // 失敗するのを避けるため、事前にバリデートして弾く。弾かれたものは
-  // ローカルには残しつつ、DB には送らない（次回までに状況改善することを期待）。
-  const localRows = allLocalRows.filter(isValidAnswerHistoryRow);
-  const skippedCount = allLocalRows.length - localRows.length;
-  if (skippedCount > 0 && typeof window !== "undefined") {
-    console.warn(
-      `[answer-history sync] ${skippedCount}件のエントリをスキップしました（DBスキーマ違反）`,
-    );
-  }
 
-  // 50件ずつチャンク化して push。チャンク失敗時は単発upsertにフォールバック。
+  // 50件ずつチャンク化して push。チャンク失敗時は単発upsertにフォールバックして、
+  // 1件の問題行が他49件を巻き込まないようにする。エラー詳細は console に出す。
+  let successCount = 0;
+  let failureCount = 0;
   for (let i = 0; i < localRows.length; i += UPSERT_CHUNK_SIZE) {
     const chunk = localRows.slice(i, i + UPSERT_CHUNK_SIZE);
     const { error: pushError } = await supabase
       .from("answer_history")
       .upsert(chunk, { onConflict: "user_id,entry_key" });
-    if (!pushError) continue;
+    if (!pushError) {
+      successCount += chunk.length;
+      continue;
+    }
 
     if (typeof window !== "undefined") {
       console.warn(
-        `[answer-history sync] チャンク${i / UPSERT_CHUNK_SIZE + 1}(${chunk.length}件)のpushに失敗: ${pushError.message}。単発upsertにフォールバックします。`,
+        `[answer-history sync] チャンク${i / UPSERT_CHUNK_SIZE + 1}(${chunk.length}件)のpushに失敗: ${pushError.message}。単発にフォールバックします。`,
       );
     }
-    // フォールバック：1件ずつ送り、どの行が原因かを特定する
     for (const row of chunk) {
       const { error: singleError } = await supabase
         .from("answer_history")
         .upsert(row, { onConflict: "user_id,entry_key" });
-      if (singleError && typeof window !== "undefined") {
-        console.warn(
-          `[answer-history sync] 単発pushに失敗: ${singleError.message} / row=`,
-          row,
-        );
+      if (singleError) {
+        failureCount += 1;
+        if (typeof window !== "undefined") {
+          console.warn(
+            `[answer-history sync] 単発pushに失敗: ${singleError.message} / row=`,
+            row,
+          );
+        }
+      } else {
+        successCount += 1;
       }
     }
+  }
+  if (typeof window !== "undefined" && (localRows.length > 0 || failureCount > 0)) {
+    console.info(
+      `[answer-history sync] push完了: 成功 ${successCount} / 失敗 ${failureCount}（ローカル合計 ${localRows.length}件）`,
+    );
   }
 
   const { data, error } = await supabase
@@ -359,37 +364,6 @@ export async function syncAnswerHistoryWithDatabase(
 }
 
 const UPSERT_CHUNK_SIZE = 50;
-
-/**
- * DB スキーマ（0002_study_sync.sql の answer_history テーブル）に定義された
- * CHECK 制約に合致するかを判定する。1件でも違反すると Postgres は upsert
- * 全体を失敗させるため、事前に弾く必要がある。
- */
-function isValidAnswerHistoryRow(row: AnswerHistoryInsert): boolean {
-  if (typeof row.question_id !== "string") return false;
-  if (!/^[0-9]{2}-[0-9]{1,3}$/.test(row.question_id)) return false;
-  if (!["correct", "incorrect", "no_answer"].includes(row.result)) return false;
-  if (!Array.isArray(row.selected_answers)) return false;
-  for (const sel of row.selected_answers) {
-    if (!["1", "2", "3", "4", "5"].includes(sel)) return false;
-  }
-  if (typeof row.round !== "number" || row.round < 47 || row.round > 56) {
-    return false;
-  }
-  if (row.session !== "am" && row.session !== "pm") return false;
-  if (
-    typeof row.display_number !== "number" ||
-    row.display_number < 1 ||
-    row.display_number > 75
-  ) {
-    return false;
-  }
-  if (typeof row.major_category !== "string") return false;
-  if (typeof row.answered_at !== "string" || row.answered_at.length === 0) {
-    return false;
-  }
-  return true;
-}
 
 export async function pushAnswerHistoryEntryToDatabase(
   entry: AnswerHistoryEntry,
