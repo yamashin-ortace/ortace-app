@@ -345,12 +345,6 @@ export async function syncAnswerHistoryWithDatabase(
       }
     }
   }
-  if (typeof window !== "undefined" && (localRows.length > 0 || failureCount > 0)) {
-    console.info(
-      `[answer-history sync] push完了: 成功 ${successCount} / 失敗 ${failureCount}（ローカル合計 ${localRows.length}件）`,
-    );
-  }
-
   const { data, error } = await supabase
     .from("answer_history")
     .select("*")
@@ -358,9 +352,25 @@ export async function syncAnswerHistoryWithDatabase(
     .order("answered_at", { ascending: false })
     .limit(ANSWER_HISTORY_DISPLAY_LIMIT);
 
-  if (error) return null;
+  if (error) {
+    if (typeof window !== "undefined") {
+      console.warn(
+        `[answer-history sync] fetch失敗: ${error.message}`,
+      );
+    }
+    return null;
+  }
 
-  return mergeAnswerHistoryStores(localStore, data ?? []);
+  const fetchedRows = data ?? [];
+  const merged = mergeAnswerHistoryStores(localStore, fetchedRows);
+
+  if (typeof window !== "undefined") {
+    console.info(
+      `[answer-history sync] push成功 ${successCount} / push失敗 ${failureCount} / DB fetch ${fetchedRows.length}件 / merge後 ${merged.entries.length}件（ローカル ${localRows.length}件）`,
+    );
+  }
+
+  return merged;
 }
 
 const UPSERT_CHUNK_SIZE = 50;
