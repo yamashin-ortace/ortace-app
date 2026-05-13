@@ -28,63 +28,41 @@ export function HomeStatsRow() {
   const items: ReactNode[] = [
     <HomeStatCard
       key="streak"
-      icon={<Flame className="h-5 w-5" strokeWidth={2} />}
+      icon={<Flame className="h-4 w-4" strokeWidth={2} />}
       label="連続学習"
       value={String(stats.streakThroughYesterdayDays)}
       unit="日"
       trailing={
         <InfoPopover label="連続学習の説明">
-          昨日まで遡って、1問でも解いた日がどれだけ途切れず続いていたかです。当日まだ問題を解いていなくても、昨日まで続いていた記録ならそのまま表示されます。
+          1問でも解いた日が連続している日数です。当日まだ0問でも、昨日まで続いていれば途切れません。
         </InfoPopover>
       }
     />,
     <HomeStatCard
       key="total-days"
-      icon={<CalendarDays className="h-5 w-5" strokeWidth={2} />}
+      icon={<CalendarDays className="h-4 w-4" strokeWidth={2} />}
       label="累計学習日"
       value={String(stats.totalStudyDays)}
       unit="日"
       trailing={
         <InfoPopover label="累計学習日の説明">
-          過去も含め、1問以上解いたことがある日を数えています。（同じ日に何問いても「1日」とみなします）
+          1問でも解いたことがある日の合計です（同じ日に何問解いても1日）。
         </InfoPopover>
       }
     />,
     <HomeStatCard
       key="today-count"
-      icon={<BookOpen className="h-5 w-5" strokeWidth={2} />}
+      icon={<BookOpen className="h-4 w-4" strokeWidth={2} />}
       label="今日の解答"
       value={String(stats.todayCount)}
       unit="問"
-      trailing={
-        <InfoPopover label="今日の解答の説明">
-          今日解いた問題数です。日付が変わるまでの学習量の目安として見られます。
-        </InfoPopover>
-      }
     />,
     <HomeStatCard
       key="today-accuracy"
-      icon={<Target className="h-5 w-5" strokeWidth={2} />}
+      icon={<Target className="h-4 w-4" strokeWidth={2} />}
       label="今日の正答率"
       value={formatRate(stats.todayAccuracy)}
       unit="%"
-      trailing={
-        <InfoPopover label="今日の正答率の説明">
-          今日解いた問題のうち、正解した割合です。正答未確定の問題は集計から外します。
-        </InfoPopover>
-      }
-    />,
-    <HomeStatCard
-      key="total-accuracy"
-      icon={<Target className="h-5 w-5" strokeWidth={2} />}
-      label="総合正答率"
-      value={formatRate(stats.totalAccuracy)}
-      unit="%"
-      trailing={
-        <InfoPopover label="総合正答率の説明">
-          これまでに解いた問題全体の正答率です。正答未確定の問題は集計から外します。
-        </InfoPopover>
-      }
     />,
   ];
 
@@ -149,7 +127,6 @@ function calculateHomeStats(entries: AnswerHistoryEntry[]) {
   return {
     todayCount: todayEntries.length,
     todayAccuracy: calculateAccuracy(todayEntries),
-    totalAccuracy: calculateAccuracy(entries),
     streakThroughYesterdayDays: calculateStreakThroughYesterday(entries, today),
     totalStudyDays: calculateTotalDistinctStudyDays(entries),
   };

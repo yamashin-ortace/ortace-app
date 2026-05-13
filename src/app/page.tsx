@@ -5,6 +5,7 @@ import { HomeEstimatedScore } from "@/components/home-estimated-score";
 import { HomeExamCountdown } from "@/components/home-exam-countdown";
 import { HomeStatsRow } from "@/components/home-stats-row";
 import { HomeTodayCta } from "@/components/home-today-cta";
+import { HomeTrendChart } from "@/components/home-trend-chart";
 import { DiagnosticBanner } from "@/components/onboarding/diagnostic-banner";
 import { LandingPage } from "@/components/landing/landing-page";
 import { getSessionContext } from "@/lib/auth/profile";
@@ -49,6 +50,7 @@ export default async function HomePage() {
       <HomeExamCountdown totalQuestions={questions.length} />
       <HomeEstimatedScore questions={questions} />
       <HomeStatsRow />
+      <HomeTrendChart />
       <HomeTodayCta totalQuestions={questions.length} />
       <HomeDashboard
         questionTotals={{

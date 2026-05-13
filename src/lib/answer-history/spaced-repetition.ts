@@ -1,22 +1,21 @@
 /**
  * 間隔反復（Spaced Repetition）の最小実装
  *
- * - 連続正解数（streak）に応じて、次回の復習日を 1 / 3 / 7 / 21 / 60 日後にスケジュール。
- * - 連続正解 5 回以上で「卒業」とみなし、復習対象から外す。
+ * - 連続正解数（streak）に応じて、次回の復習日を 1 / 3 / 7 日後にスケジュール。
+ * - 連続正解 4 回以上で「卒業」とみなし、復習対象から外す。
  * - 誤答の場合は streak=0 にリセットし、翌日に復習対象として戻ってくる。
  */
 
 import type { AnswerJudgement } from "@/lib/quiz";
 
 /** 卒業基準：これ以上は復習対象に出さない */
-export const STREAK_GRADUATION = 5;
+export const STREAK_GRADUATION = 4;
 
 /** 連続正解 N 回後の次回復習までの間隔（日） */
 const INTERVALS_BY_STREAK: Record<number, number> = {
-  1: 3,
-  2: 7,
-  3: 21,
-  4: 60,
+  1: 1,
+  2: 3,
+  3: 7,
 };
 
 /**

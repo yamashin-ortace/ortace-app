@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Popover } from "@base-ui/react/popover";
-import { ChevronRight, Gauge, Info } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
@@ -87,9 +87,14 @@ export function HomeDashboard({ questionTotals }: Props) {
           )}
 
           <div className="space-y-2">
-            <p className="text-[12px] font-semibold text-[var(--text-3)]">
-              分野別（タップで未着手の問題を解く）
-            </p>
+            <div className="space-y-0.5">
+              <p className="text-[12px] font-semibold text-[var(--text-3)]">
+                分野別（タップで未着手の問題を解く）
+              </p>
+              <p className="text-[10px] text-[var(--text-3)]">
+                ※正答率は最新解答ベース
+              </p>
+            </div>
             <div className="space-y-2">
               {progress.fields.map((field) => (
                 <FieldProgressRow key={field.name} field={field} />
@@ -142,24 +147,14 @@ function NextFieldReasonInfo({
             </p>
             <div className="mt-2 space-y-2">
               <p>
-                全体の穴を1つずつ埋めるために、次に取り組む分野を1つだけ提案しています。
-                何から進めるか迷う時間を減らすための目安です。
-              </p>
-              <p>
-                分野ごとの解いた割合と未着手数を見て、
+                解いた割合と未着手数から、まだ伸ばせる分野を1つ提案しています。今回は「
                 <strong className="font-bold text-[var(--text-1)]">
-                  まだ伸ばせる分野
+                  {field.name}
                 </strong>
-                を優先しています。
-                今回は「{field.name}」が、解いた割合 {field.rate}%・未着手{" "}
-                {field.remaining}問でした。
-                {field.accuracy !== null
-                  ? ` 直近の正答率は ${field.accuracy}% です。`
-                  : " 直近の解答実績はまだ少なめです。"}
+                」（割合 {field.rate}%・未着手 {field.remaining}問）。
               </p>
               <p>
-                まず未着手を減らすと、分野ごとの抜けが見えやすくなります。
-                この分野の中から、まだ解いていない問題を優先して出題します（出題数は10／15／20問から選べます）。
+                タップで未着手の問題から出題。出題数は10／15／20問から選べます。
               </p>
             </div>
           </Popover.Popup>
@@ -175,82 +170,42 @@ function FieldProgressRow({
   field: ReturnType<typeof calculateLearningProgress>["fields"][number];
 }) {
   return (
-    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
-      <div className="flex items-start justify-between gap-2">
-        <Link
-          href={buildFieldStudyHref(field.name)}
-          className="group min-w-0 flex-1 text-left"
-          aria-label={`${field.name}：タップで未着手の問題を解く`}
-        >
-          <span className="block text-[13px] font-bold text-[var(--text-1)]">
-            {field.name}
-          </span>
-          <span className="mt-1 block text-[12px] leading-snug text-[var(--text-2)]">
-            解いた割合{" "}
-            <span className="font-semibold tabular-nums text-[var(--text-1)]">
-              {field.rate}%
+    <Link
+      href={buildFieldStudyHref(field.name)}
+      aria-label={`${field.name}：タップで未着手の問題を解く`}
+      className="group block rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="min-w-0 truncate text-[13px] font-bold text-[var(--text-1)]">
+          {field.name}
+        </span>
+        {field.accuracy !== null ? (
+          <span className="shrink-0 text-[11px] text-[var(--text-3)]">
+            正答率{" "}
+            <span className="text-[13px] font-bold tabular-nums text-[var(--text-1)]">
+              {field.accuracy}
             </span>
-            <span className="text-[var(--text-3)]">
-              （{field.answered}/{field.total}問）
-            </span>
+            %
           </span>
-        </Link>
-        <div className="flex shrink-0 pt-0.5">
-          <FieldAccuracyInfo field={field} />
-        </div>
+        ) : (
+          <span className="shrink-0 text-[11px] text-[var(--text-3)]">
+            正答率 --
+          </span>
+        )}
+      </div>
+      <div className="mt-1 text-[12px] leading-snug text-[var(--text-2)]">
+        解いた割合{" "}
+        <span className="font-semibold tabular-nums text-[var(--text-1)]">
+          {field.rate}%
+        </span>
+        <span className="text-[var(--text-3)]">
+          （{field.answered}/{field.total}問）
+        </span>
       </div>
       <div className="mt-1.5">
         <ProgressBar value={field.rate} />
       </div>
-    </div>
-  );
-}
-
-function FieldAccuracyInfo({
-  field,
-}: {
-  field: ReturnType<typeof calculateLearningProgress>["fields"][number];
-}) {
-  return (
-    <Popover.Root>
-      <Popover.Trigger
-        type="button"
-        aria-label={`${field.name}の正答率を表示`}
-        className={cn(
-          "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--text-3)] transition-colors",
-          "hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
-        )}
-      >
-        <Gauge className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Positioner
-          className="z-50 max-w-[min(20rem,calc(100vw-1.5rem))]"
-          side="top"
-          align="end"
-          sideOffset={6}
-        >
-          <Popover.Popup
-            className={cn(
-              "w-[var(--positioner-width)] min-w-[15rem] max-w-[min(20rem,calc(100vw-1.5rem))] rounded-[12px] border border-border",
-              "bg-[var(--bg-card)] p-3 text-[12px] leading-relaxed text-[var(--text-2)] shadow-lg",
-              "origin-[var(--transform-origin)] transition-[transform,scale,opacity]",
-              "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-              "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-            )}
-            initialFocus={false}
-          >
-            <p className="text-[13px] font-bold text-[var(--text-1)]">
-              正答率 {formatRate(field.accuracy)}%
-            </p>
-            <p className="mt-1 text-[11px] text-[var(--text-3)]">
-              解答済 {field.answered}問のうち、最新の解答が正解だった割合です。
-            </p>
-          </Popover.Popup>
-        </Popover.Positioner>
-      </Popover.Portal>
-    </Popover.Root>
+    </Link>
   );
 }
 
@@ -328,6 +283,3 @@ function calculateAccuracy(entries: AnswerHistoryEntry[]): number | null {
   return Math.round((correct / judged.length) * 100);
 }
 
-function formatRate(value: number | null): string {
-  return value === null ? "--" : String(value);
-}
