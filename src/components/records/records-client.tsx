@@ -15,7 +15,9 @@ import {
   FileText,
   HelpCircle,
   History,
+  Search,
   Trash2,
+  X,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -77,21 +79,61 @@ export function RecordsClient({ questions }: Props) {
   );
   const [visibleHistoryCount, setVisibleHistoryCount] =
     useState(HISTORY_PAGE_SIZE);
-  const questionMap = new Map(questions.map((q) => [q.id, q]));
-  const filteredBookmarks = useMemo(
-    () =>
+  const [searchQuery, setSearchQuery] = useState("");
+  const questionMap = useMemo(
+    () => new Map(questions.map((q) => [q.id, q])),
+    [questions],
+  );
+  const noteTextMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const note of notes) map.set(note.id, note.text);
+    return map;
+  }, [notes]);
+
+  const matchesSearch = useCallback(
+    (questionId: string, extraText: string = "") => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      const question = questionMap.get(questionId);
+      if (!question) return false;
+      // 問題ID（"47-12"）、回数（"47" / "第47回"）、本文・分野・自分のノート本文を検索対象にする。
+      const haystacks: string[] = [
+        questionId,
+        String(question.round),
+        `第${question.round}回`,
+        question.questionText,
+        question.majorCategory,
+        extraText,
+      ];
+      return haystacks.some((s) => s.toLowerCase().includes(q));
+    },
+    [searchQuery, questionMap],
+  );
+
+  const filteredBookmarks = useMemo(() => {
+    const byCategory =
       categoryFilter === "all"
         ? bookmarks
-        : bookmarks.filter((item) => item.categories.includes(categoryFilter)),
-    [bookmarks, categoryFilter],
+        : bookmarks.filter((item) => item.categories.includes(categoryFilter));
+    return byCategory.filter((item) =>
+      matchesSearch(item.id, noteTextMap.get(item.id) ?? ""),
+    );
+  }, [bookmarks, categoryFilter, matchesSearch, noteTextMap]);
+
+  const filteredNotes = useMemo(
+    () => notes.filter((item) => matchesSearch(item.id, item.text)),
+    [notes, matchesSearch],
   );
-  const displayedHistory = useMemo(
-    () =>
+
+  const displayedHistory = useMemo(() => {
+    const byScope =
       historyScope === "today"
         ? answerHistory.filter((entry) => isAnsweredToday(entry))
-        : answerHistory,
-    [answerHistory, historyScope],
-  );
+        : answerHistory;
+    return byScope.filter((entry) =>
+      matchesSearch(entry.id, noteTextMap.get(entry.id) ?? ""),
+    );
+  }, [answerHistory, historyScope, matchesSearch, noteTextMap]);
   const fieldSummaries = useMemo(
     () => calculateFieldSummaries(displayedHistory),
     [displayedHistory],
@@ -160,6 +202,7 @@ export function RecordsClient({ questions }: Props) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <RecordsSearchInput value={searchQuery} onChange={setSearchQuery} />
       <TabsList className="grid h-11 w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1">
         <TabsTrigger
           value="bookmarks"
@@ -203,10 +246,15 @@ export function RecordsClient({ questions }: Props) {
           ))}
         </div>
 
-        {filteredBookmarks.length === 0 ? (
+        {bookmarks.length === 0 ? (
           <EmptyState
             title="ブックマークはまだありません"
             description="演習中に保存した問題がここに並びます。"
+          />
+        ) : filteredBookmarks.length === 0 ? (
+          <EmptyState
+            title="一致するブックマークはありません"
+            description="検索条件・フィルターを変えてみてください。"
           />
         ) : (
           filteredBookmarks.map((item) => {
@@ -222,6 +270,8 @@ export function RecordsClient({ questions }: Props) {
                 actionLabel="ブックマーク解除"
                 onRemove={() => removeBookmark(item.id)}
                 onOpenDetail={saveRecordsScroll}
+                source="bookmark"
+                sourceCategory={categoryFilter}
               />
             );
           })
@@ -234,8 +284,13 @@ export function RecordsClient({ questions }: Props) {
             title="ノートはまだありません"
             description="覚えておきたいことを書くと、ここから見返せます。"
           />
+        ) : filteredNotes.length === 0 ? (
+          <EmptyState
+            title="一致するノートはありません"
+            description="検索条件を変えてみてください。"
+          />
         ) : (
-          notes.map((item) => {
+          filteredNotes.map((item) => {
             const question = questionMap.get(item.id);
             if (!question) return null;
             return (
@@ -248,6 +303,7 @@ export function RecordsClient({ questions }: Props) {
                 actionLabel="ノート削除"
                 onRemove={() => removeNote(item.id)}
                 onOpenDetail={saveRecordsScroll}
+                source="note"
               />
             );
           })
@@ -279,8 +335,16 @@ export function RecordsClient({ questions }: Props) {
 
             {displayedHistory.length === 0 ? (
               <EmptyState
-                title="今日の解答はまだありません"
-                description="問題を解くと、今日の履歴がここに並びます。"
+                title={
+                  searchQuery.trim()
+                    ? "一致する履歴はありません"
+                    : "今日の解答はまだありません"
+                }
+                description={
+                  searchQuery.trim()
+                    ? "検索条件を変えてみてください。"
+                    : "問題を解くと、今日の履歴がここに並びます。"
+                }
               />
             ) : (
               <>
@@ -294,6 +358,7 @@ export function RecordsClient({ questions }: Props) {
                       entry={entry}
                       question={question}
                       onOpenDetail={saveRecordsScroll}
+                      historyScope={historyScope}
                     />
                   );
                 })}
@@ -327,6 +392,8 @@ function SavedQuestionCard({
   mode,
   noteBody,
   onOpenDetail,
+  source,
+  sourceCategory,
 }: {
   question: QuestionSummary;
   date: string;
@@ -336,13 +403,19 @@ function SavedQuestionCard({
   mode: "bookmark" | "note";
   noteBody?: string;
   onOpenDetail: () => void;
+  source: "bookmark" | "note";
+  sourceCategory?: BookmarkCategory | "all";
 }) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const stem = question.questionText.replace(/\s+/g, " ").trim();
-  const href =
-    mode === "note"
-      ? `/study/question/${question.id}?from=records&note=1`
-      : `/study/question/${question.id}?from=records`;
+  const href = (() => {
+    const params = new URLSearchParams({ from: source });
+    if (mode === "note") params.set("note", "1");
+    if (source === "bookmark" && sourceCategory && sourceCategory !== "all") {
+      params.set("category", sourceCategory);
+    }
+    return `/study/question/${question.id}?${params.toString()}`;
+  })();
   const deleteCopy =
     mode === "note"
       ? {
@@ -479,19 +552,26 @@ function AnswerHistoryCard({
   entry,
   question,
   onOpenDetail,
+  historyScope,
 }: {
   entry: AnswerHistoryEntry;
   question: QuestionSummary;
   onOpenDetail: () => void;
+  historyScope: "all" | "today";
 }) {
   const stem = question.questionText.replace(/\s+/g, " ").trim();
   const result = getAnswerResultDisplay(entry.result);
   const ResultIcon = result.icon;
+  const href = (() => {
+    const params = new URLSearchParams({ from: "history" });
+    if (historyScope === "today") params.set("range", "today");
+    return `/study/question/${question.id}?${params.toString()}`;
+  })();
 
   return (
     <article className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-sm">
       <Link
-        href={`/study/question/${question.id}?from=records`}
+        href={href}
         onClick={onOpenDetail}
         className="block space-y-2"
       >
@@ -617,6 +697,46 @@ function FilterChip({
     >
       {children}
     </button>
+  );
+}
+
+function RecordsSearchInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <Search
+        className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--text-3)]"
+        strokeWidth={2.5}
+        aria-hidden
+      />
+      <input
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="問題ID、回数、本文、ノートで検索"
+        aria-label="記録を検索"
+        className={cn(
+          "h-10 w-full rounded-[12px] border border-border bg-[var(--bg-card)] pr-10 pl-9 text-[14px] text-[var(--text-1)]",
+          "shadow-sm placeholder:text-[var(--text-3)]",
+          "focus:border-[var(--primary)] focus:outline-none",
+        )}
+      />
+      {value ? (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label="検索をクリア"
+          className="absolute top-1/2 right-2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-[var(--text-3)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
+        >
+          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </button>
+      ) : null}
+    </div>
   );
 }
 

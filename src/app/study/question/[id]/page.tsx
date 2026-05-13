@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/study/back-link";
-import { QuizPlayer } from "@/components/quiz/quiz-player";
+import { SingleQuestionPlayer } from "@/components/study/single-question-player";
 import { getEffectivePlan } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { isExamRound, loadQuestion } from "@/lib/questions/loader";
@@ -35,14 +35,17 @@ export default async function SavedQuestionPage({ params, searchParams }: Props)
       <BackLink
         href="/records"
         label="記録"
-        useHistory={query.from === "records"}
+        useHistory={
+          query.from === "bookmark" ||
+          query.from === "note" ||
+          query.from === "history" ||
+          query.from === "records"
+        }
       />
-      <QuizPlayer
-        questions={[question]}
-        mode="random"
+      <SingleQuestionPlayer
+        question={question}
         plan={plan}
-        initialStudyAction={query.note === "1" ? "note" : undefined}
-        saveProgress={false}
+        initialNote={query.note === "1"}
       />
     </div>
   );

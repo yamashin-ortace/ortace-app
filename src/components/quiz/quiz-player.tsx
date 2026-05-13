@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Crown, LockKeyhole } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, LockKeyhole } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import {
   type AnswerJudgement,
@@ -15,6 +15,7 @@ import {
   useAnswerHistoryList,
 } from "@/lib/answer-history/use-answer-history";
 import { useQuizSettings } from "@/lib/quiz-settings/use-quiz-settings";
+import { cn } from "@/lib/utils";
 import { DAILY_LIMIT, type PlanType } from "@/lib/daily-limit";
 import { useDailyLimit } from "@/lib/daily-limit/use-daily-limit";
 import {
@@ -53,6 +54,19 @@ type Props = {
   /** 結果画面下部の戻り先リンク。既定は「学習タブへ戻る」（/study） */
   resultBackHref?: string;
   resultBackLabel?: string;
+  /**
+   * 単問モード（記録ページからブックマーク・ノート・履歴の1問を解く導線）。
+   * 結果画面に飛ばず、フッターの「戻る／次へ」で前後の問題に直接遷移する。
+   */
+  singleMode?: boolean;
+  /** 単問モード時の前の問題への href（リスト先頭なら null） */
+  prevQuestionHref?: string | null;
+  /** 単問モード時の次の問題への href（リスト末尾なら null） */
+  nextQuestionHref?: string | null;
+  /** 単問モード時の「戻る」のラベル（既定「記録に戻る」） */
+  singleBackLabel?: string;
+  /** 単問モード時の「戻る」リンク（既定「/records」） */
+  singleBackHref?: string;
 };
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
@@ -77,6 +91,11 @@ export function QuizPlayer({
   hideRestartOnResult = false,
   resultBackHref,
   resultBackLabel,
+  singleMode = false,
+  prevQuestionHref = null,
+  nextQuestionHref = null,
+  singleBackLabel = "記録に戻る",
+  singleBackHref = "/records",
 }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -88,7 +107,6 @@ export function QuizPlayer({
   const consumingQuestionIdsRef = useRef<Set<string>>(new Set());
   const quizTopRef = useRef<HTMLDivElement | null>(null);
   const feedbackAnchorRef = useRef<HTMLDivElement | null>(null);
-  const allowAutoResultRef = useRef(true);
   const sessionCompleteOnceRef = useRef(false);
   const realDailyLimit = useDailyLimit(plan);
   const dailyLimit = useMemo(
@@ -197,15 +215,9 @@ export function QuizPlayer({
 
   const handlePrev = useCallback(() => {
     if (currentIndex === 0) return;
-    const allAnswered = questions.every(
-      (question) => states[question.id]?.judgement !== undefined,
-    );
-    if (allAnswered) {
-      allowAutoResultRef.current = false;
-    }
     setCurrentIndex((i) => i - 1);
     scrollToQuestionTop();
-  }, [currentIndex, questions, scrollToQuestionTop, states]);
+  }, [currentIndex, scrollToQuestionTop]);
 
   const handleNext = useCallback(() => {
     if (currentIndex >= questions.length - 1) return;
@@ -261,7 +273,6 @@ export function QuizPlayer({
   }, []);
 
   const handleRestart = useCallback(() => {
-    allowAutoResultRef.current = true;
     sessionCompleteOnceRef.current = false;
     setUnansweredSweepMode(false);
     setCurrentIndex(0);
@@ -292,20 +303,9 @@ export function QuizPlayer({
     return () => cancelAnimationFrame(id);
   }, [current?.id, currentIndex, currentState.judgement, isAnswered]);
 
-  useEffect(() => {
-    if (!allowAutoResultRef.current) return;
-    if (unansweredSweepMode) return;
-    if (isFinished) return;
-    if (questions.length === 0) return;
-    const allAnswered = questions.every(
-      (question) => states[question.id]?.judgement !== undefined,
-    );
-    if (!allAnswered) return;
-    const timeoutId = window.setTimeout(() => {
-      setIsFinished(true);
-    }, 1400);
-    return () => window.clearTimeout(timeoutId);
-  }, [states, questions, isFinished, unansweredSweepMode]);
+  // 以前は全問解答完了で 1400ms 後に自動で結果画面へ遷移していたが、
+  // 解説を読む時間がなく評判が悪かったため廃止。
+  // 現在は最終問題で「結果を見る」ボタン（QuizControls）を押す導線に統一している。
 
   useEffect(() => {
     if (!saveProgress) return;
@@ -485,14 +485,23 @@ export function QuizPlayer({
         </div>
       ) : null}
 
-      <QuizControls
-        canPrev={currentIndex > 0}
-        canNext={currentIndex < questions.length - 1}
-        isLast={isLast}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        onFinish={handleFinish}
-      />
+      {singleMode ? (
+        <SingleModeControls
+          backHref={singleBackHref}
+          backLabel={singleBackLabel}
+          prevHref={prevQuestionHref}
+          nextHref={nextQuestionHref}
+        />
+      ) : (
+        <QuizControls
+          canPrev={currentIndex > 0}
+          canNext={currentIndex < questions.length - 1}
+          isLast={isLast}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onFinish={handleFinish}
+        />
+      )}
 
       {pendingFinish ? (
         <UnansweredDialog
@@ -503,6 +512,83 @@ export function QuizPlayer({
           onForceFinish={handleConfirmFinish}
         />
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * 単問モード（記録ページからブックマーク・ノート・履歴の1問を解く導線）の下部ナビ。
+ * 結果画面に飛ばず、隣接する問題への遷移に使う。
+ */
+function SingleModeControls({
+  backHref,
+  backLabel,
+  prevHref,
+  nextHref,
+}: {
+  backHref: string;
+  backLabel: string;
+  prevHref: string | null;
+  nextHref: string | null;
+}) {
+  const btnBase =
+    "choice-pressable flex h-14 flex-1 items-center justify-center gap-1.5 rounded-[12px] text-[15px] font-bold disabled:cursor-not-allowed disabled:opacity-40";
+  const neutral =
+    "border border-border bg-[var(--bg-card)] text-[var(--text-1)]";
+  const primary =
+    "bg-[var(--primary)] text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]";
+
+  return (
+    <div className="flex flex-col gap-2 pt-2">
+      <Link
+        href={backHref}
+        className="flex h-11 w-full items-center justify-center gap-1.5 rounded-[12px] border border-border bg-[var(--bg-card)] text-[14px] font-semibold text-[var(--text-1)] hover:bg-[var(--bg-muted)]"
+      >
+        <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+        {backLabel}
+      </Link>
+      <div className="flex items-stretch gap-3">
+        {prevHref ? (
+          <Link
+            href={prevHref}
+            className={cn(btnBase, neutral)}
+            aria-label="前の問題へ"
+          >
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
+            <span>前へ</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className={cn(btnBase, neutral)}
+            aria-label="前の問題へ"
+          >
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
+            <span>前へ</span>
+          </button>
+        )}
+        {nextHref ? (
+          <Link
+            href={nextHref}
+            className={cn(btnBase, primary)}
+            aria-label="次の問題へ"
+          >
+            <span>次へ</span>
+            <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className={cn(btnBase, neutral)}
+            aria-label="次の問題へ"
+          >
+            <span>次へ</span>
+            <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

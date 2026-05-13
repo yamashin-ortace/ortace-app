@@ -97,7 +97,7 @@ export function QuestionCountSelector({
         })}
       </div>
       <span className="ml-auto text-[10px] text-[var(--text-3)]">
-        変えると出題し直し
+        既に解いた問題は残ります
       </span>
     </div>
   );

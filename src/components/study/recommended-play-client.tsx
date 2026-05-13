@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, Inbox } from "lucide-react";
@@ -35,10 +35,14 @@ type Props = {
   plan: PlanType;
 };
 
+const MAX_LIMIT = 20;
+
 /**
- * 解答のたびに entries が更新されると pool のシャッフル結果が毎回変わり、
- * QuizPlayer に渡す questions の並びが差し替わって採点表示が壊れるのを防ぐため、
- * ハイドレーション直後の1回だけ出題リストを確定する（entries は依存に含めない）。
+ * 解答のたびに entries が更新されたり、出題数を変更したりするたびに pool が
+ * 作り直されると、解答済み状態が新しい並びに対してズレてしまう。それを防ぐため
+ * ハイドレーション直後に「最大出題数（20問）ぶん」を1回だけ確定し、UI の出題数は
+ * その固定プールを slice するだけにする。出題数を増減しても先頭からの並びは変わらず、
+ * 既に解答した問題はそのままの位置にとどまる。
  */
 export function RecommendedPlayClient({
   questions,
@@ -55,23 +59,22 @@ export function RecommendedPlayClient({
     searchParams.get("count"),
     defaultLimit,
   );
-  const [hydrated, setHydrated] = useState(false);
+  const [frozenPool, setFrozenPool] = useState<Question[] | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage 由来の値を SSR と分離するための hydration ガード
-    setHydrated(true);
+    if (frozenPool !== null) return;
+    const pool = pickPoolByMode(mode, questions, entries, MAX_LIMIT);
+    const ordered = orderPoolForMode(mode, pool);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ハイドレーション後にプールを確定する
+    setFrozenPool(ordered.slice(0, MAX_LIMIT));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回マウント時のみ pool を凍結する
   }, []);
 
-  // 出題数を変更した場合はセッションを選び直す。
-  // entries/mode/questions は意図的に依存に含めない（解答のたびに並びが変わらないようにする）。
-  const sessionQuestions = useMemo(() => {
-    if (!hydrated) return null;
-    const pool = pickPoolByMode(mode, questions, entries, limit);
-    return pickSessionFromPool(mode, pool, limit);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 解答中の並び替えを避けるため、依存は hydrated/limit のみ
-  }, [hydrated, limit]);
+  const sessionQuestions = frozenPool
+    ? frozenPool.slice(0, Math.min(limit, frozenPool.length))
+    : null;
 
-  if (!hydrated || sessionQuestions === null) {
+  if (sessionQuestions === null) {
     return (
       <div className="py-12 text-center text-[13px] text-[var(--text-3)]">
         読み込み中…
@@ -93,17 +96,15 @@ export function RecommendedPlayClient({
   );
 }
 
-function pickSessionFromPool(
-  mode: RecommendedMode,
-  pool: Question[],
-  limit: number,
-): Question[] {
+/**
+ * モードごとに pool の並びを「最終的な出題順」に整える（凍結前の1回だけ）。
+ * - today/unanswered：すでに pickPoolByMode 内で並び順が確定しているのでそのまま
+ * - review/weak：ランダム性を持たせるためここで一度だけ shuffle する
+ */
+function orderPoolForMode(mode: RecommendedMode, pool: Question[]): Question[] {
   if (pool.length === 0) return [];
-  const n = Math.min(limit, pool.length);
-  if (mode === "today" || mode === "unanswered") {
-    return pool.slice(0, n);
-  }
-  return shuffle(pool).slice(0, n);
+  if (mode === "today" || mode === "unanswered") return pool;
+  return shuffle(pool);
 }
 
 function pickPoolByMode(
