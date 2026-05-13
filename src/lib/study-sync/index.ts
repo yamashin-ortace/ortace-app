@@ -132,19 +132,19 @@ export function mergeAnswerHistoryStores(
   const afterLocalSize = entriesByKey.size;
 
   let nullCount = 0;
-  let sampleRemoteKey: string | null = null;
-  let sampleLocalKey: string | null = null;
+  // DB が保存している entry_key と、私のparserで recompute した key の差を
+  // 切り分けるため、両方の unique set を集計する。
+  const storedKeys = new Set<string>();
+  const recomputedKeys = new Set<string>();
   for (const row of remoteRows) {
+    storedKeys.add(row.entry_key);
     const entry = answerHistoryRowToEntry(row);
     if (!entry) {
       nullCount += 1;
       continue;
     }
     const key = createAnswerHistoryEntryKey(entry);
-    if (sampleRemoteKey === null) {
-      sampleRemoteKey = key;
-      sampleLocalKey = entriesByKey.has(key) ? key : null;
-    }
+    recomputedKeys.add(key);
     entriesByKey.set(key, entry);
   }
   const afterRemoteSize = entriesByKey.size;
@@ -153,11 +153,32 @@ export function mergeAnswerHistoryStores(
     console.info(
       `[answer-history merge] local→map: ${afterLocalSize} / remote→map: ${afterRemoteSize - afterLocalSize}件追加（remote ${remoteRows.length}件 中 ${nullCount}件 null）`,
     );
-    if (sampleRemoteKey && sampleLocalKey === null) {
-      // 最初の remote key が local map に無かった = 本来追加されるはず
+    console.info(
+      `[answer-history merge] DB stored unique entry_keys: ${storedKeys.size} / 私のrecompute unique keys: ${recomputedKeys.size}`,
+    );
+    // recompute が collapse している場合、最初の DB row の生データと
+    // 私が再構築したentry の中身を見比べる
+    if (
+      storedKeys.size > recomputedKeys.size &&
+      remoteRows.length > 0
+    ) {
+      const sample = remoteRows[0];
+      const reconstructed = answerHistoryRowToEntry(sample);
+      console.info("[answer-history merge] 最初のDB row（生）:", sample);
       console.info(
-        `[answer-history merge] 最初のremoteキー: "${sampleRemoteKey.slice(0, 80)}..."`,
+        "[answer-history merge] 最初のentry（recompute後）:",
+        reconstructed,
       );
+      if (reconstructed) {
+        console.info(
+          "[answer-history merge] DB stored entry_key:",
+          sample.entry_key,
+        );
+        console.info(
+          "[answer-history merge] 私のrecompute entry_key:",
+          createAnswerHistoryEntryKey(reconstructed),
+        );
+      }
     }
   }
 
