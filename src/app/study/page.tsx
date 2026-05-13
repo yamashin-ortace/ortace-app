@@ -5,6 +5,7 @@ import { MockModeCard } from "@/components/study/mock-mode-card";
 import { RandomModeCard } from "@/components/study/random-mode-card";
 import { RecommendationSection } from "@/components/study/recommendation-section";
 import { RoundCard } from "@/components/study/round-card";
+import { BookmarkSetSection } from "@/components/study/bookmark-set-section";
 import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
 import { getEffectivePlan } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
@@ -60,6 +61,8 @@ export default async function StudyPage() {
           <RandomModeCard />
         </div>
       </section>
+
+      <BookmarkSetSection />
     </div>
   );
 }
