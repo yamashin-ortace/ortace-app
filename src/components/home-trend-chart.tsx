@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import { getTokyoDateString } from "@/lib/daily-limit";
@@ -17,113 +22,57 @@ type DailyBin = {
   judged: number;
 };
 
-const STORAGE_KEY = "ortace.homeTrendExpanded";
+const CHART_INNER_WIDTH = 320;
+const CHART_INNER_HEIGHT = 120;
+const CHART_PADDING = { top: 10, right: 28, bottom: 22, left: 28 };
+const CHART_WIDTH =
+  CHART_INNER_WIDTH + CHART_PADDING.left + CHART_PADDING.right;
+const CHART_HEIGHT =
+  CHART_INNER_HEIGHT + CHART_PADDING.top + CHART_PADDING.bottom;
 
 export function HomeTrendChart() {
   const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [range, setRange] = useState<Range>("7d");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage 由来の値を SSR と分離するための hydration ガード
     setHydrated(true);
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved === "1") setExpanded(true);
-    } catch {
-      // localStorage 不可な環境（プライベートモード等）は既定の collapsed のまま
-    }
   }, []);
 
   const bins7 = useMemo(() => buildDailyBins(entries, 7), [entries]);
   const bins30 = useMemo(() => buildDailyBins(entries, 30), [entries]);
   const bins = range === "7d" ? bins7 : bins30;
-  const averagePerDay = useMemo(() => {
-    if (bins7.length === 0) return 0;
-    const total = bins7.reduce((sum, b) => sum + b.count, 0);
-    return Math.round(total / bins7.length);
-  }, [bins7]);
-
-  const toggleExpanded = () => {
-    setExpanded((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
 
   if (!hydrated) {
     return (
-      <section className="h-[68px] rounded-[14px] border border-border bg-[var(--bg-card)]" />
+      <section className="h-[220px] rounded-[14px] border border-border bg-[var(--bg-card)]" />
     );
   }
 
   return (
     <section
       aria-label="直近の学習推移"
-      className="rounded-[14px] border border-border bg-[var(--bg-card)] shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+      className="space-y-3 rounded-[14px] border border-border bg-[var(--bg-card)] px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
     >
-      <button
-        type="button"
-        onClick={toggleExpanded}
-        aria-expanded={expanded}
-        aria-controls="home-trend-chart-body"
-        className={cn(
-          "flex w-full items-center gap-3 rounded-[14px] px-3.5 py-2.5 text-left transition-colors",
-          "hover:bg-[var(--bg-muted)]/40",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
-        )}
-      >
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[12px] font-semibold text-[var(--text-3)]">
-              直近の推移
-            </span>
-            <span className="text-[11px] text-[var(--text-3)]">
-              平均{" "}
-              <span className="font-bold text-[var(--text-1)] tabular-nums">
-                {averagePerDay}
-              </span>
-              問/日
-            </span>
-          </div>
-          <div className="mt-1">
-            <Sparkline bins={bins7} />
-          </div>
-        </div>
-        <ChevronDown
-          className={cn(
-            "h-4 w-4 shrink-0 text-[var(--text-3)] transition-transform duration-200",
-            expanded && "rotate-180",
-          )}
-          strokeWidth={2.5}
-          aria-hidden
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {expanded ? (
-          <motion.div
-            id="home-trend-chart-body"
-            key="body"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="overflow-hidden"
-          >
-            <div className="space-y-3 border-t border-border px-3.5 pt-3 pb-4">
-              <RangeTabs value={range} onChange={setRange} />
-              <FullChart bins={bins} range={range} />
-              <Legend />
-            </div>
-          </motion.div>
-        ) : null}
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-[12px] font-semibold text-[var(--text-3)]">
+          直近の推移
+        </h3>
+        <RangeTabs value={range} onChange={setRange} />
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={range}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="space-y-3"
+        >
+          <FullChart bins={bins} range={range} />
+          <AverageStrip bins={bins} range={range} />
+        </motion.div>
       </AnimatePresence>
     </section>
   );
@@ -140,7 +89,7 @@ function RangeTabs({
     <div
       role="tablist"
       aria-label="表示期間"
-      className="inline-flex h-8 items-center gap-1 rounded-[10px] bg-[var(--bg-muted)] p-1"
+      className="inline-flex h-7 items-center gap-1 rounded-[10px] bg-[var(--bg-muted)] p-1"
     >
       {(["7d", "30d"] as const).map((option) => {
         const selected = value === option;
@@ -152,7 +101,7 @@ function RangeTabs({
             aria-selected={selected}
             onClick={() => onChange(option)}
             className={cn(
-              "h-full rounded-[8px] px-3 text-[12px] font-bold leading-none transition-colors",
+              "h-full rounded-[8px] px-2.5 text-[11px] font-bold leading-none transition-colors",
               selected
                 ? "bg-[var(--bg-card)] text-[var(--text-1)] shadow-sm"
                 : "text-[var(--text-3)]",
@@ -166,82 +115,60 @@ function RangeTabs({
   );
 }
 
-function Sparkline({ bins }: { bins: DailyBin[] }) {
-  const width = 200;
-  const height = 24;
-  const max = Math.max(1, ...bins.map((b) => b.count));
-  const gap = 2;
-  const barWidth =
-    bins.length === 0 ? 0 : (width - gap * (bins.length - 1)) / bins.length;
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      width="100%"
-      height={height}
-      preserveAspectRatio="none"
-      aria-hidden
-    >
-      {bins.map((bin, i) => {
-        const barHeight = bin.count === 0 ? 2 : (bin.count / max) * height;
-        const x = i * (barWidth + gap);
-        const y = height - barHeight;
-        return (
-          <rect
-            key={bin.date}
-            x={x}
-            y={y}
-            width={barWidth}
-            height={barHeight}
-            rx={1.5}
-            className="fill-[var(--primary)]/45"
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
 function FullChart({ bins, range }: { bins: DailyBin[]; range: Range }) {
-  const padding = { top: 8, right: 8, bottom: 22, left: 24 };
-  const innerWidth = 320;
-  const innerHeight = 120;
-  const width = innerWidth + padding.left + padding.right;
-  const height = innerHeight + padding.top + padding.bottom;
-  const maxCount = Math.max(4, ...bins.map((b) => b.count));
-  const gap = range === "7d" ? 6 : 2;
-  const barWidth =
-    bins.length === 0 ? 0 : (innerWidth - gap * (bins.length - 1)) / bins.length;
+  const geom = useMemo(() => computeGeometry(bins, range), [bins, range]);
+  const xLabels = useMemo(() => pickXLabels(bins, range), [bins, range]);
+  const [tappedIndex, setTappedIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const linePoints = bins.map((bin, i) => {
-    const cx = padding.left + i * (barWidth + gap) + barWidth / 2;
-    if (bin.judged === 0) return { cx, cy: null as number | null, bin };
-    const rate = bin.correct / bin.judged;
-    const cy = padding.top + innerHeight - rate * innerHeight;
-    return { cx, cy, bin };
-  });
+  // 外側タップで tooltip を閉じる
+  useEffect(() => {
+    if (tappedIndex === null) return;
+    const handle = (event: globalThis.MouseEvent | TouchEvent) => {
+      const node = containerRef.current;
+      if (!node) return;
+      if (event.target instanceof Node && node.contains(event.target)) return;
+      setTappedIndex(null);
+    };
+    window.addEventListener("mousedown", handle);
+    window.addEventListener("touchstart", handle, { passive: true });
+    return () => {
+      window.removeEventListener("mousedown", handle);
+      window.removeEventListener("touchstart", handle);
+    };
+  }, [tappedIndex]);
 
-  const linePath = buildLinePath(linePoints);
+  const handleColumnClick = (index: number) => (event: MouseEvent) => {
+    event.stopPropagation();
+    setTappedIndex((prev) => (prev === index ? null : index));
+  };
 
-  const xLabels = pickXLabels(bins, range);
+  const tappedBin = tappedIndex !== null ? bins[tappedIndex] : null;
+  const tappedLeftPercent =
+    tappedIndex !== null
+      ? clampPercent(
+          ((geom.barX(tappedIndex) + geom.barWidth / 2) / CHART_WIDTH) * 100,
+        )
+      : null;
 
   return (
-    <div className="overflow-hidden">
+    <div ref={containerRef} className="relative">
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
         width="100%"
         height="auto"
         role="img"
         aria-label={`直近${range === "7d" ? "7" : "30"}日の解答数と正答率の推移`}
         className="block"
       >
+        {/* 水平グリッド + 左軸（問題数）+ 右軸（正答率） */}
         {[0, 0.5, 1].map((ratio) => {
-          const y = padding.top + innerHeight - ratio * innerHeight;
+          const y = CHART_PADDING.top + CHART_INNER_HEIGHT - ratio * CHART_INNER_HEIGHT;
           return (
             <g key={ratio}>
               <line
-                x1={padding.left}
-                x2={padding.left + innerWidth}
+                x1={CHART_PADDING.left}
+                x2={CHART_PADDING.left + CHART_INNER_WIDTH}
                 y1={y}
                 y2={y}
                 className="stroke-[var(--border)]"
@@ -249,37 +176,45 @@ function FullChart({ bins, range }: { bins: DailyBin[]; range: Range }) {
                 strokeDasharray={ratio === 0 ? undefined : "2 3"}
               />
               <text
-                x={padding.left - 6}
+                x={CHART_PADDING.left - 6}
                 y={y + 3}
                 textAnchor="end"
                 className="fill-[var(--text-3)] text-[9px] tabular-nums"
               >
-                {Math.round(ratio * maxCount)}
+                {Math.round(ratio * geom.maxCount)}
+              </text>
+              <text
+                x={CHART_PADDING.left + CHART_INNER_WIDTH + 6}
+                y={y + 3}
+                textAnchor="start"
+                className="fill-[var(--text-3)] text-[9px] tabular-nums"
+              >
+                {Math.round(ratio * 100)}%
               </text>
             </g>
           );
         })}
 
-        {bins.map((bin, i) => {
-          const barHeight = bin.count === 0 ? 0 : (bin.count / maxCount) * innerHeight;
-          const x = padding.left + i * (barWidth + gap);
-          const y = padding.top + innerHeight - barHeight;
-          return (
-            <rect
-              key={bin.date}
-              x={x}
-              y={y}
-              width={barWidth}
-              height={barHeight}
-              rx={2}
-              className="fill-[var(--primary)]/55"
-            />
-          );
-        })}
+        {/* 棒（解答数） */}
+        {bins.map((bin, i) => (
+          <rect
+            key={`bar-${bin.date}`}
+            x={geom.barX(i)}
+            y={geom.barY(bin)}
+            width={geom.barWidth}
+            height={geom.barHeight(bin)}
+            rx={2}
+            className={cn(
+              "fill-[var(--primary)]/55 transition-opacity",
+              tappedIndex !== null && tappedIndex !== i && "opacity-30",
+            )}
+          />
+        ))}
 
-        {linePath ? (
+        {/* 折れ線（正答率） */}
+        {geom.linePath ? (
           <path
-            d={linePath}
+            d={geom.linePath}
             fill="none"
             strokeWidth={1.5}
             strokeLinecap="round"
@@ -287,10 +222,10 @@ function FullChart({ bins, range }: { bins: DailyBin[]; range: Range }) {
             className="stroke-[var(--primary-dark)]"
           />
         ) : null}
-        {linePoints.map((pt) =>
+        {geom.linePoints.map((pt) =>
           pt.cy === null ? null : (
             <circle
-              key={pt.bin.date}
+              key={`pt-${pt.bin.date}`}
               cx={pt.cx}
               cy={pt.cy}
               r={range === "7d" ? 2.5 : 1.5}
@@ -299,13 +234,14 @@ function FullChart({ bins, range }: { bins: DailyBin[]; range: Range }) {
           ),
         )}
 
+        {/* 横軸ラベル（M/D） */}
         {xLabels.map(({ index, label }) => {
-          const cx = padding.left + index * (barWidth + gap) + barWidth / 2;
+          const cx = geom.barX(index) + geom.barWidth / 2;
           return (
             <text
-              key={index}
+              key={`xl-${index}`}
               x={cx}
-              y={height - 6}
+              y={CHART_HEIGHT - 6}
               textAnchor="middle"
               className="fill-[var(--text-3)] text-[9px]"
             >
@@ -313,36 +249,133 @@ function FullChart({ bins, range }: { bins: DailyBin[]; range: Range }) {
             </text>
           );
         })}
+
+        {/* 透明なタップ領域（バーが細くてもタップしやすいよう列全幅） */}
+        {bins.map((bin, i) => (
+          <rect
+            key={`hit-${bin.date}`}
+            x={geom.barX(i) - geom.gap / 2}
+            y={CHART_PADDING.top}
+            width={geom.barWidth + geom.gap}
+            height={CHART_INNER_HEIGHT}
+            fill="transparent"
+            className="cursor-pointer"
+            onClick={handleColumnClick(i)}
+            aria-label={`${formatShortLabel(bin.date)} 解答${bin.count}問`}
+          />
+        ))}
       </svg>
+
+      <AnimatePresence>
+        {tappedBin && tappedLeftPercent !== null ? (
+          <motion.div
+            key={tappedBin.date}
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 3 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            role="status"
+            aria-live="polite"
+            className={cn(
+              "pointer-events-none absolute z-10 -translate-x-1/2 rounded-[8px] border border-border bg-[var(--bg-card)]",
+              "px-1.5 py-1 text-center shadow-[0_4px_12px_rgba(0,0,0,0.08)]",
+            )}
+            style={{ left: `${tappedLeftPercent}%`, top: 0 }}
+          >
+            <p className="text-[8px] leading-none text-[var(--text-3)]">
+              {formatShortLabel(tappedBin.date)}
+            </p>
+            <p className="mt-0.5 text-[10px] leading-none font-bold text-[var(--text-1)] tabular-nums">
+              解答 {tappedBin.count}問
+            </p>
+            <p className="mt-0.5 text-[10px] leading-none font-semibold text-[var(--primary-dark)] tabular-nums">
+              正答率 {tappedBin.judged === 0
+                ? "--"
+                : Math.round((tappedBin.correct / tappedBin.judged) * 100)}
+              %
+            </p>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
 
-function Legend() {
+function AverageStrip({ bins, range }: { bins: DailyBin[]; range: Range }) {
+  const totalCount = bins.reduce((sum, b) => sum + b.count, 0);
+  const judgedTotal = bins.reduce((sum, b) => sum + b.judged, 0);
+  const correctTotal = bins.reduce((sum, b) => sum + b.correct, 0);
+  const avgPerDay = bins.length === 0 ? 0 : Math.round(totalCount / bins.length);
+  const accuracy =
+    judgedTotal === 0 ? null : Math.round((correctTotal / judgedTotal) * 100);
+  const rangeLabel = range === "7d" ? "直近7日" : "直近30日";
+
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--text-3)]">
-      <span className="inline-flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-sm bg-[var(--primary)]/55" />
-        解答数
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <span className="h-[2px] w-3 bg-[var(--primary-dark)]" />
-        正答率（0-100%）
-      </span>
+    <div className="flex items-center justify-between gap-3 rounded-[10px] bg-[var(--bg-muted)]/45 px-3 py-2">
+      <p className="text-[11px] font-semibold text-[var(--text-3)]">
+        {rangeLabel}の平均
+      </p>
+      <p className="text-[12px] font-bold text-[var(--text-2)] tabular-nums">
+        <span className="text-[var(--text-1)]">{avgPerDay}</span>
+        問/日 ・ 正答率{" "}
+        <span className="text-[var(--text-1)]">
+          {accuracy === null ? "--" : accuracy}
+        </span>
+        %
+      </p>
     </div>
   );
 }
 
-function buildLinePath(
-  points: { cx: number; cy: number | null }[],
-): string | null {
-  const valid = points.filter(
-    (p): p is { cx: number; cy: number } => p.cy !== null,
+type ChartGeometry = {
+  maxCount: number;
+  gap: number;
+  barWidth: number;
+  barX: (index: number) => number;
+  barY: (bin: DailyBin) => number;
+  barHeight: (bin: DailyBin) => number;
+  linePoints: Array<{ cx: number; cy: number | null; bin: DailyBin }>;
+  linePath: string | null;
+};
+
+function computeGeometry(bins: DailyBin[], range: Range): ChartGeometry {
+  const maxCount = Math.max(4, ...bins.map((b) => b.count));
+  const gap = range === "7d" ? 6 : 2;
+  const barWidth =
+    bins.length === 0
+      ? 0
+      : (CHART_INNER_WIDTH - gap * (bins.length - 1)) / bins.length;
+
+  const barX = (index: number) =>
+    CHART_PADDING.left + index * (barWidth + gap);
+
+  const barHeight = (bin: DailyBin) =>
+    bin.count === 0 ? 0 : (bin.count / maxCount) * CHART_INNER_HEIGHT;
+
+  const barY = (bin: DailyBin) =>
+    CHART_PADDING.top + CHART_INNER_HEIGHT - barHeight(bin);
+
+  const linePoints = bins.map((bin, i) => {
+    const cx = barX(i) + barWidth / 2;
+    if (bin.judged === 0) return { cx, cy: null as number | null, bin };
+    const rate = bin.correct / bin.judged;
+    const cy = CHART_PADDING.top + CHART_INNER_HEIGHT - rate * CHART_INNER_HEIGHT;
+    return { cx, cy, bin };
+  });
+
+  const valid = linePoints.filter(
+    (p): p is { cx: number; cy: number; bin: DailyBin } => p.cy !== null,
   );
-  if (valid.length < 2) return null;
-  return valid
-    .map((p, i) => `${i === 0 ? "M" : "L"}${p.cx} ${p.cy}`)
-    .join(" ");
+  const linePath =
+    valid.length < 2
+      ? null
+      : valid.map((p, i) => `${i === 0 ? "M" : "L"}${p.cx} ${p.cy}`).join(" ");
+
+  return { maxCount, gap, barWidth, barX, barY, barHeight, linePoints, linePath };
+}
+
+function clampPercent(value: number): number {
+  return Math.max(8, Math.min(92, value));
 }
 
 function pickXLabels(bins: DailyBin[], range: Range) {

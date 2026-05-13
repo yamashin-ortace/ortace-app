@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Flame,
   Info,
+  ListChecks,
   Target,
 } from "lucide-react";
 import { HomeStatCard } from "@/components/home-stat-card";
@@ -14,6 +15,7 @@ import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import { getTokyoDateString } from "@/lib/daily-limit";
+import { useLifetimeAnswerCount } from "@/lib/study-goal/use-lifetime-answer-count";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,6 +25,7 @@ import { cn } from "@/lib/utils";
  */
 export function HomeStatsRow() {
   const { entries } = useAnswerHistoryList();
+  const { count: lifetimeAnswers } = useLifetimeAnswerCount();
   const stats = calculateHomeStats(entries);
 
   const items: ReactNode[] = [
@@ -63,6 +66,18 @@ export function HomeStatsRow() {
       label="今日の正答率"
       value={formatRate(stats.todayAccuracy)}
       unit="%"
+    />,
+    <HomeStatCard
+      key="lifetime-answers"
+      icon={<ListChecks className="h-4 w-4" strokeWidth={2} />}
+      label="累計問題数"
+      value={lifetimeAnswers.toLocaleString()}
+      unit="問"
+      trailing={
+        <InfoPopover label="累計問題数の説明">
+          これまで解答した問題の総数です。同じ問題を複数回解いた場合もそれぞれ1問として数えます。
+        </InfoPopover>
+      }
     />,
   ];
 

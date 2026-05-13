@@ -37,6 +37,14 @@ export function HorizontalSnapRow({
       const paddingLeft =
         parseFloat(getComputedStyle(container).paddingLeft) || 0;
       const scrollLeft = container.scrollLeft;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      // 右端まで到達したら、視覚的にも最後尾を active にする。
+      // snap-start のため、最後のカードは「左端に吸い付かない」場合があり、
+      // offsetLeft 距離だけだと一つ前のカードが closest になることがあるため。
+      if (maxScrollLeft > 0 && scrollLeft >= maxScrollLeft - 2) {
+        setActiveIndex(cards.length - 1);
+        return;
+      }
       let closest = 0;
       let minDist = Infinity;
       cards.forEach((el, i) => {

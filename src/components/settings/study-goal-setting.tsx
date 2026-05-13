@@ -1,14 +1,16 @@
 "use client";
 
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, CalendarRange } from "lucide-react";
 import {
   STUDY_GOAL_DEADLINES,
   STUDY_GOAL_ROUNDS,
   STUDY_GOAL_SCOPES,
   formatGoalDeadlineLabel,
-  getDeadlineDaysBeforeExam,
+  formatGoalDeadlineLabelWithWeekday,
   getGoalDeadlineISO,
+  isValidISODate,
   previewDailyPace,
+  resolveGoalDeadlineISO,
   type StudyGoalDeadline,
   type StudyGoalRounds,
   type StudyGoalScope,
@@ -37,13 +39,33 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
     scope: config.scope,
     rounds: config.rounds,
     deadline: config.deadline,
+    customDeadlineISO: config.customDeadlineISO,
     examDateISO: examDate,
     pastQuestionsTotal,
   });
-  const deadlineISO = getGoalDeadlineISO(
-    examDate,
-    getDeadlineDaysBeforeExam(config.deadline),
-  );
+  const deadlineISO = resolveGoalDeadlineISO(config, examDate);
+
+  const handleDeadlineChange = (next: string) => {
+    if (next === "custom") {
+      // 初回 "自分で決める" 選択時、まだ customDeadlineISO が未設定なら
+      // 試験1ヶ月前を初期値として埋める。
+      const fallback =
+        config.customDeadlineISO ?? getGoalDeadlineISO(examDate, 30);
+      updateConfig({
+        deadline: "custom",
+        customDeadlineISO: fallback,
+      });
+      return;
+    }
+    updateConfig({ deadline: next as StudyGoalDeadline });
+  };
+
+  const handleCustomDateChange = (value: string) => {
+    if (!isValidISODate(value)) return;
+    updateConfig({ customDeadlineISO: value });
+  };
+
+  const todayISO = formatTodayISO();
 
   return (
     <div id="study-goal" className="scroll-mt-24 space-y-3">
@@ -100,8 +122,8 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
         disabled={!config.enabled}
         className={cn("space-y-3", !config.enabled && "opacity-50")}
       >
-        <PickerRow
-          legend="スコープ（何の問題を）"
+        <ChipRow
+          legend="対象範囲（どの問題？）"
           options={STUDY_GOAL_SCOPES.map((s) => ({
             id: s.id,
             label: s.label,
@@ -111,14 +133,14 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
           onChange={(next) => updateConfig({ scope: next as StudyGoalScope })}
         />
 
-        <PickerRow
-          legend="周回（何回解く）"
+        <ChipRow
+          legend="周回（何周する？）"
           options={STUDY_GOAL_ROUNDS.map((r) => ({
             id: String(r),
             label: `${r}周`,
             hint:
               r === 1
-                ? "まずは1周通すスタンダード"
+                ? "まずは全範囲を1回"
                 : r === 2
                   ? "合格安全圏の目安"
                   : "上位合格を狙う",
@@ -129,18 +151,50 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
           }
         />
 
-        <PickerRow
-          legend="期限（いつまでに）"
-          options={STUDY_GOAL_DEADLINES.map((d) => ({
-            id: d.id,
-            label: d.label,
-            hint: d.hint,
-          }))}
-          value={config.deadline}
-          onChange={(next) =>
-            updateConfig({ deadline: next as StudyGoalDeadline })
-          }
-        />
+        <div className="space-y-2">
+          <ChipRow
+            legend="期限（いつまで？）"
+            options={STUDY_GOAL_DEADLINES.map((d) => ({
+              id: d.id,
+              label: d.label,
+              hint: d.hint,
+            }))}
+            value={config.deadline}
+            onChange={handleDeadlineChange}
+          />
+          {config.deadline === "custom" ? (
+            <div className="space-y-1.5 rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
+              <label
+                htmlFor="study-goal-custom-deadline"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-3)]"
+              >
+                <CalendarRange className="h-3.5 w-3.5" strokeWidth={2.5} />
+                期限日
+              </label>
+              <input
+                id="study-goal-custom-deadline"
+                type="date"
+                min={todayISO}
+                max={examDate}
+                value={config.customDeadlineISO ?? ""}
+                onChange={(event) => handleCustomDateChange(event.target.value)}
+                className={cn(
+                  "h-10 w-full rounded-[10px] border border-border bg-[var(--bg-card)] px-3 text-[14px] font-bold text-[var(--text-1)]",
+                  "focus:border-[var(--primary)] focus:outline-none",
+                )}
+              />
+              {config.customDeadlineISO ? (
+                <p className="text-[11px] leading-snug text-[var(--text-2)]">
+                  期限：{formatGoalDeadlineLabelWithWeekday(config.customDeadlineISO)}
+                </p>
+              ) : (
+                <p className="text-[11px] leading-snug text-[var(--text-3)]">
+                  日付を選んでください（今日〜試験日まで）
+                </p>
+              )}
+            </div>
+          ) : null}
+        </div>
       </fieldset>
 
       {config.enabled ? (
@@ -163,7 +217,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
                 : "text-[var(--text-1)]",
             )}
           >
-            1日 約 {preview.perDay ?? "—"}問
+            1日 {preview.perDay ?? "—"}問以上
             <span className="ml-2 text-[11px] font-medium text-[var(--text-3)]">
               （{formatGoalDeadlineLabel(deadlineISO)}まで {preview.daysLeft}日）
             </span>
@@ -180,7 +234,15 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
   );
 }
 
-function PickerRow({
+function formatTodayISO(): string {
+  const now = new Date();
+  const yy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+function ChipRow({
   legend,
   options,
   value,
@@ -191,10 +253,11 @@ function PickerRow({
   value: string;
   onChange: (next: string) => void;
 }) {
+  const selectedHint = options.find((opt) => opt.id === value)?.hint ?? "";
   return (
     <div className="space-y-1.5">
       <p className="text-[11px] font-semibold text-[var(--text-3)]">{legend}</p>
-      <div className="grid gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {options.map((opt) => {
           const selected = opt.id === value;
           return (
@@ -204,35 +267,21 @@ function PickerRow({
               onClick={() => onChange(opt.id)}
               aria-pressed={selected}
               className={cn(
-                "flex w-full items-start gap-2.5 rounded-[12px] border px-3 py-2 text-left transition-colors",
+                "shrink-0 rounded-[12px] border px-3.5 py-2 text-center text-[13px] font-bold transition-colors",
+                "min-w-[30%] sm:min-w-[120px]",
                 selected
-                  ? "border-[var(--primary)] bg-[var(--primary-soft)]"
-                  : "border-border bg-[var(--bg-card)] hover:bg-[var(--bg-muted)]",
+                  ? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary-dark)]"
+                  : "border-border bg-[var(--bg-card)] text-[var(--text-1)] hover:bg-[var(--bg-muted)]",
               )}
             >
-              <span
-                aria-hidden
-                className={cn(
-                  "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border",
-                  selected
-                    ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                    : "border-[var(--text-3)]/40 bg-[var(--bg-card)] text-transparent",
-                )}
-              >
-                <Check className="h-2.5 w-2.5" strokeWidth={3} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[13px] font-bold text-[var(--text-1)]">
-                  {opt.label}
-                </span>
-                <span className="mt-0.5 block text-[11px] leading-snug text-[var(--text-2)]">
-                  {opt.hint}
-                </span>
-              </span>
+              {opt.label}
             </button>
           );
         })}
       </div>
+      <p className="min-h-[16px] text-[11px] leading-snug text-[var(--text-2)]">
+        {selectedHint}
+      </p>
     </div>
   );
 }

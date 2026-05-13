@@ -11,8 +11,8 @@ export const STUDY_GOAL_STORAGE_KEY = "ortace.studyGoal.preset";
 /** 目標カウントに含める問題集の範囲 */
 export type StudyGoalScope = "past" | "past_plus_original";
 
-/** 達成期限（試験日からの差し引き）。`exam` は試験日当日まで。 */
-export type StudyGoalDeadline = "1m_before" | "2m_before" | "exam";
+/** 達成期限（試験日からの差し引き）。`exam` は試験日当日まで、`custom` は任意日付。 */
+export type StudyGoalDeadline = "1m_before" | "2m_before" | "exam" | "custom";
 
 export const STUDY_GOAL_SCOPES: ReadonlyArray<{
   id: StudyGoalScope;
@@ -22,12 +22,12 @@ export const STUDY_GOAL_SCOPES: ReadonlyArray<{
   {
     id: "past",
     label: "過去問だけ",
-    hint: "過去問1,500問を母数にする",
+    hint: "過去問1,500問を解く",
   },
   {
     id: "past_plus_original",
     label: "過去問＋オリジナル",
-    hint: "過去問1,500問＋オリジナル180問が母数",
+    hint: "過去問+オリジナル 計1,680問を解く",
   },
 ];
 
@@ -58,7 +58,13 @@ export const STUDY_GOAL_DEADLINES: ReadonlyArray<{
     id: "exam",
     label: "試験日まで",
     daysBeforeExam: 0,
-    hint: "本番ギリギリまで使う前提（バッファなし）",
+    hint: "試験日直前まで丸ごと使う",
+  },
+  {
+    id: "custom",
+    label: "自分で決める",
+    daysBeforeExam: 0,
+    hint: "日付を選んで設定する",
   },
 ];
 
@@ -67,6 +73,8 @@ export type StudyGoalConfig = {
   scope: StudyGoalScope;
   rounds: StudyGoalRounds;
   deadline: StudyGoalDeadline;
+  /** deadline === "custom" のときに使う任意日付（"YYYY-MM-DD"）。未設定時は試験日にフォールバック。 */
+  customDeadlineISO?: string;
 };
 
 export const DEFAULT_STUDY_GOAL: StudyGoalConfig = {
@@ -87,7 +95,19 @@ export function isStudyGoalScope(value: unknown): value is StudyGoalScope {
 }
 
 export function isStudyGoalDeadline(value: unknown): value is StudyGoalDeadline {
-  return value === "1m_before" || value === "2m_before" || value === "exam";
+  return (
+    value === "1m_before" ||
+    value === "2m_before" ||
+    value === "exam" ||
+    value === "custom"
+  );
+}
+
+/** "YYYY-MM-DD" の妥当性を簡易チェック */
+export function isValidISODate(value: unknown): value is string {
+  return (
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+  );
 }
 
 export function isStudyGoalRounds(value: unknown): value is StudyGoalRounds {
@@ -109,6 +129,9 @@ export function parseStudyGoalConfig(raw: string | null): StudyGoalConfig {
       deadline: isStudyGoalDeadline(v.deadline)
         ? v.deadline
         : DEFAULT_STUDY_GOAL.deadline,
+      customDeadlineISO: isValidISODate(v.customDeadlineISO)
+        ? v.customDeadlineISO
+        : undefined,
     };
   } catch {
     return DEFAULT_STUDY_GOAL;
@@ -143,6 +166,23 @@ export function getGoalDeadlineISO(
   const mm = String(exam.getMonth() + 1).padStart(2, "0");
   const dd = String(exam.getDate()).padStart(2, "0");
   return `${yy}-${mm}-${dd}`;
+}
+
+/**
+ * config と試験日から最終的な目標期限の "YYYY-MM-DD" を解決する。
+ * - "custom" + customDeadlineISO 有 → customDeadlineISO をそのまま返す
+ * - "custom" だが customDeadlineISO 未設定 → 試験日にフォールバック
+ * - その他のプリセット → 試験日 - daysBeforeExam
+ */
+export function resolveGoalDeadlineISO(
+  config: Pick<StudyGoalConfig, "deadline" | "customDeadlineISO">,
+  examDateISO: string,
+): string {
+  if (config.deadline === "custom") {
+    return config.customDeadlineISO ?? examDateISO;
+  }
+  const daysBefore = getDeadlineDaysBeforeExam(config.deadline);
+  return getGoalDeadlineISO(examDateISO, daysBefore);
 }
 
 export function parseISODate(value: string): Date {
@@ -209,8 +249,7 @@ export function summarizeStudyGoal(params: {
       ? pastQuestionsTotal + ORIGINAL_QUESTIONS_TOTAL
       : pastQuestionsTotal;
   const targetAnswers = scopeBase * config.rounds;
-  const daysBeforeExam = getDeadlineDaysBeforeExam(config.deadline);
-  const deadlineISO = getGoalDeadlineISO(examDateISO, daysBeforeExam);
+  const deadlineISO = resolveGoalDeadlineISO(config, examDateISO);
   const daysUntilDeadline = getDaysUntilDeadline(deadlineISO, now);
   const remainingAnswers = Math.max(0, targetAnswers - lifetimeAnswers);
 
@@ -235,9 +274,21 @@ export function summarizeStudyGoal(params: {
   };
 }
 
+const WEEKDAY_LABELS_JA = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
 export function formatGoalDeadlineLabel(value: string): string {
   const d = parseISODate(value);
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+/** "2026/03/15（日）" 形式（日付＋曜日） */
+export function formatGoalDeadlineLabelWithWeekday(value: string): string {
+  const d = parseISODate(value);
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const wd = WEEKDAY_LABELS_JA[d.getDay()];
+  return `${yy}/${mm}/${dd}（${wd}）`;
 }
 
 /**
@@ -248,19 +299,29 @@ export function previewDailyPace(params: {
   scope: StudyGoalScope;
   rounds: StudyGoalRounds;
   deadline: StudyGoalDeadline;
+  customDeadlineISO?: string;
   examDateISO: string;
   pastQuestionsTotal: number;
   now?: Date;
 }): { perDay: number | null; isOverloaded: boolean; daysLeft: number } {
-  const { scope, rounds, deadline, examDateISO, pastQuestionsTotal, now } =
-    params;
+  const {
+    scope,
+    rounds,
+    deadline,
+    customDeadlineISO,
+    examDateISO,
+    pastQuestionsTotal,
+    now,
+  } = params;
   const scopeBase =
     scope === "past_plus_original"
       ? pastQuestionsTotal + ORIGINAL_QUESTIONS_TOTAL
       : pastQuestionsTotal;
   const target = scopeBase * rounds;
-  const daysBefore = getDeadlineDaysBeforeExam(deadline);
-  const deadlineISO = getGoalDeadlineISO(examDateISO, daysBefore);
+  const deadlineISO = resolveGoalDeadlineISO(
+    { deadline, customDeadlineISO },
+    examDateISO,
+  );
   const daysLeft = getDaysUntilDeadline(deadlineISO, now);
   if (daysLeft <= 0) return { perDay: null, isOverloaded: false, daysLeft };
   const raw = Math.ceil(target / daysLeft);

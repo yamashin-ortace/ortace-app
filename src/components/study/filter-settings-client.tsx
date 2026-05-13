@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Play } from "lucide-react";
+import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
 import { PrimaryCta } from "@/components/ui/primary-cta";
 import { startNavigationPending } from "@/lib/navigation-pending";
 import { cn } from "@/lib/utils";
@@ -136,8 +137,11 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
             />
           }
         >
-          <div className="grid grid-cols-3 gap-2">
-            {allRounds.map((item) => (
+          <HorizontalSnapRow
+            ariaLabel="第47回〜第56回の選択"
+            showDots={false}
+            itemClassName="min-w-[28%] basis-[28%] shrink-0 snap-start sm:min-w-[110px] sm:basis-[110px]"
+            items={allRounds.map((item) => (
               <OptionButton
                 key={item}
                 selected={selectedRounds.includes(item)}
@@ -146,7 +150,7 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
                 第{item}回
               </OptionButton>
             ))}
-          </div>
+          />
         </ControlGroup>
 
         <ControlGroup label="午前/午後">
@@ -216,6 +220,11 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
         </p>
       </div>
 
+      <PrimaryCta onClick={handleStart} disabled={!canStart}>
+        <Play className="h-4 w-4" strokeWidth={2.5} />
+        出題開始
+      </PrimaryCta>
+
       {history.length > 0 ? (
         <section className="space-y-2">
           <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
@@ -235,11 +244,6 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
           </div>
         </section>
       ) : null}
-
-      <PrimaryCta onClick={handleStart} disabled={!canStart}>
-        <Play className="h-4 w-4" strokeWidth={2.5} />
-        出題開始
-      </PrimaryCta>
     </div>
   );
 }
