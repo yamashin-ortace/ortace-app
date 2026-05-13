@@ -129,10 +129,36 @@ export function mergeAnswerHistoryStores(
   for (const entry of localStore.entries) {
     entriesByKey.set(createAnswerHistoryEntryKey(entry), entry);
   }
+  const afterLocalSize = entriesByKey.size;
+
+  let nullCount = 0;
+  let sampleRemoteKey: string | null = null;
+  let sampleLocalKey: string | null = null;
   for (const row of remoteRows) {
     const entry = answerHistoryRowToEntry(row);
-    if (!entry) continue;
-    entriesByKey.set(createAnswerHistoryEntryKey(entry), entry);
+    if (!entry) {
+      nullCount += 1;
+      continue;
+    }
+    const key = createAnswerHistoryEntryKey(entry);
+    if (sampleRemoteKey === null) {
+      sampleRemoteKey = key;
+      sampleLocalKey = entriesByKey.has(key) ? key : null;
+    }
+    entriesByKey.set(key, entry);
+  }
+  const afterRemoteSize = entriesByKey.size;
+
+  if (typeof window !== "undefined") {
+    console.info(
+      `[answer-history merge] local→map: ${afterLocalSize} / remote→map: ${afterRemoteSize - afterLocalSize}件追加（remote ${remoteRows.length}件 中 ${nullCount}件 null）`,
+    );
+    if (sampleRemoteKey && sampleLocalKey === null) {
+      // 最初の remote key が local map に無かった = 本来追加されるはず
+      console.info(
+        `[answer-history merge] 最初のremoteキー: "${sampleRemoteKey.slice(0, 80)}..."`,
+      );
+    }
   }
 
   // 注意：ここで parseAnswerHistoryStore を再度通すと、relax した

@@ -150,7 +150,14 @@ function readAnswerHistoryStore(): AnswerHistoryStore {
 }
 
 function writeAnswerHistoryStore(store: AnswerHistoryStore) {
+  const before = store.entries.length;
   const next = parseAnswerHistoryStore(serializeAnswerHistoryStore(store));
+  const after = next.entries.length;
+  if (typeof window !== "undefined" && before !== after) {
+    console.warn(
+      `[answer-history write] 再パースで ${before - after}件 落ちました (before=${before}, after=${after})`,
+    );
+  }
   fallbackAnswerHistoryStore = next;
   if (typeof window === "undefined") return;
 
