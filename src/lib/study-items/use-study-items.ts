@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import {
   BOOKMARKS_STORAGE_KEY,
   NOTES_STORAGE_KEY,
@@ -28,6 +28,7 @@ import {
   pushNoteToDatabase,
   syncStudyItemsWithDatabase,
 } from "@/lib/study-sync";
+import { useDataSync } from "@/lib/study-sync/use-data-sync";
 
 const STUDY_ITEMS_UPDATED_EVENT = "ortace:study-items-updated";
 
@@ -148,27 +149,20 @@ function useStudyItemsStores() {
 
 let fallbackBookmarksStore: BookmarksStore | null = null;
 let fallbackNotesStore: NotesStore | null = null;
-let studyItemsSyncStarted = false;
+
+async function runStudyItemsSync() {
+  const merged = await syncStudyItemsWithDatabase(
+    readBookmarksStore(),
+    readNotesStore(),
+  );
+  if (!merged) return;
+  writeBookmarksStore(merged.bookmarks);
+  writeNotesStore(merged.notes);
+  notifyStudyItemsUpdated();
+}
 
 function useEnsureStudyItemsSynced() {
-  useEffect(() => {
-    if (studyItemsSyncStarted) return;
-    studyItemsSyncStarted = true;
-
-    let cancelled = false;
-    void syncStudyItemsWithDatabase(readBookmarksStore(), readNotesStore()).then(
-      (merged) => {
-        if (cancelled || !merged) return;
-        writeBookmarksStore(merged.bookmarks);
-        writeNotesStore(merged.notes);
-        notifyStudyItemsUpdated();
-      },
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  useDataSync({ key: "study-items", run: runStudyItemsSync });
 }
 
 function subscribeStudyItems(onStoreChange: () => void): () => void {

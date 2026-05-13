@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import type { AnswerJudgement } from "@/lib/quiz";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import {
@@ -18,6 +18,7 @@ import {
   pushAnswerHistoryEntryToDatabase,
   syncAnswerHistoryWithDatabase,
 } from "@/lib/study-sync";
+import { useDataSync } from "@/lib/study-sync/use-data-sync";
 import { incrementLifetimeAnswerCount } from "@/lib/study-goal/lifetime-answer-count";
 
 const ANSWER_HISTORY_UPDATED_EVENT = "ortace:answer-history-updated";
@@ -91,26 +92,16 @@ function useAnswerHistoryStore() {
 }
 
 let fallbackAnswerHistoryStore: AnswerHistoryStore | null = null;
-let answerHistorySyncStarted = false;
+
+async function runAnswerHistorySync() {
+  const merged = await syncAnswerHistoryWithDatabase(readAnswerHistoryStore());
+  if (!merged) return;
+  writeAnswerHistoryStore(merged);
+  notifyAnswerHistoryUpdated();
+}
 
 function useEnsureAnswerHistorySynced() {
-  useEffect(() => {
-    if (answerHistorySyncStarted) return;
-    answerHistorySyncStarted = true;
-
-    let cancelled = false;
-    void syncAnswerHistoryWithDatabase(readAnswerHistoryStore()).then(
-      (merged) => {
-        if (cancelled || !merged) return;
-        writeAnswerHistoryStore(merged);
-        notifyAnswerHistoryUpdated();
-      },
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  useDataSync({ key: "answer-history", run: runAnswerHistorySync });
 }
 
 function subscribeAnswerHistory(onStoreChange: () => void): () => void {

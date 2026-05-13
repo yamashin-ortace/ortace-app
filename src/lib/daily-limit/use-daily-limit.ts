@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import {
   DAILY_LIMIT,
   DAILY_LIMIT_STORAGE_KEY,
@@ -21,6 +21,7 @@ import {
   pushDailyLimitToDatabase,
   syncDailyLimitWithDatabase,
 } from "@/lib/study-sync";
+import { useDataSync } from "@/lib/study-sync/use-data-sync";
 
 const DAILY_LIMIT_UPDATED_EVENT = "ortace:daily-limit-updated";
 
@@ -82,26 +83,24 @@ export function useDailyLimit(plan: PlanType = "free"): DailyLimitState {
 }
 
 let fallbackRecord: DailyLimitRecord | null = null;
-const syncedDailyLimitDates = new Set<string>();
 
-function useEnsureDailyLimitSynced(record: DailyLimitRecord, plan: PlanType) {
-  useEffect(() => {
-    if (plan !== "free") return;
-    if (syncedDailyLimitDates.has(record.date)) return;
+async function runDailyLimitSync() {
+  const current = readDailyLimitRecord();
+  const merged = await syncDailyLimitWithDatabase(current);
+  if (!merged) return;
+  writeDailyLimitRecord(merged);
+  notifyDailyLimitUpdated();
+}
 
-    syncedDailyLimitDates.add(record.date);
-    let cancelled = false;
-
-    void syncDailyLimitWithDatabase(record).then((merged) => {
-      if (cancelled || !merged) return;
-      writeDailyLimitRecord(merged);
-      notifyDailyLimitUpdated();
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [plan, record]);
+function useEnsureDailyLimitSynced(_record: DailyLimitRecord, plan: PlanType) {
+  // 無料プランのみDB同期対象（low/exam は無制限のため）
+  // key に plan と日付を含めて、日付が変わったら別の同期サイクルとして扱う
+  const today = getTokyoDateString();
+  const key = plan === "free" ? `daily-limit:${today}` : "daily-limit:disabled";
+  useDataSync({
+    key,
+    run: plan === "free" ? runDailyLimitSync : async () => {},
+  });
 }
 
 function subscribeDailyLimit(onStoreChange: () => void): () => void {
