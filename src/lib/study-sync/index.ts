@@ -135,14 +135,14 @@ export function mergeAnswerHistoryStores(
     entriesByKey.set(createAnswerHistoryEntryKey(entry), entry);
   }
 
-  return parseAnswerHistoryStore(
-    JSON.stringify({
-      version: 1,
-      entries: [...entriesByKey.values()]
-        .sort((a, b) => b.answeredAt.localeCompare(a.answeredAt))
-        .slice(0, ANSWER_HISTORY_DISPLAY_LIMIT),
-    }),
-  );
+  // 注意：ここで parseAnswerHistoryStore を再度通すと、relax した
+  // answerHistoryRowToEntry で受け取った行が isAnswerHistoryEntry の
+  // 厳密チェックで弾き返される可能性がある。merge 結果はそのまま返す。
+  const entries = [...entriesByKey.values()]
+    .sort((a, b) => b.answeredAt.localeCompare(a.answeredAt))
+    .slice(0, ANSWER_HISTORY_DISPLAY_LIMIT);
+
+  return { version: 1, entries };
 }
 
 export function createAnswerHistoryEntryKey(entry: AnswerHistoryEntry): string {
@@ -345,23 +345,35 @@ export async function syncAnswerHistoryWithDatabase(
       }
     }
   }
-  const { data, error } = await supabase
-    .from("answer_history")
-    .select("*")
-    .eq("user_id", userId)
-    .order("answered_at", { ascending: false })
-    .limit(ANSWER_HISTORY_DISPLAY_LIMIT);
-
-  if (error) {
-    if (typeof window !== "undefined") {
-      console.warn(
-        `[answer-history sync] fetch失敗: ${error.message}`,
-      );
+  // PostgREST / Supabase の1リクエスト当たり最大1000件制限を超えて取るために
+  // ページネーションで取得する。
+  const PAGE_SIZE = 1000;
+  const fetchedRows: AnswerHistoryRow[] = [];
+  let pageFrom = 0;
+  while (fetchedRows.length < ANSWER_HISTORY_DISPLAY_LIMIT) {
+    const pageTo = Math.min(
+      pageFrom + PAGE_SIZE - 1,
+      ANSWER_HISTORY_DISPLAY_LIMIT - 1,
+    );
+    const { data, error } = await supabase
+      .from("answer_history")
+      .select("*")
+      .eq("user_id", userId)
+      .order("answered_at", { ascending: false })
+      .range(pageFrom, pageTo);
+    if (error) {
+      if (typeof window !== "undefined") {
+        console.warn(
+          `[answer-history sync] fetch失敗 (range ${pageFrom}-${pageTo}): ${error.message}`,
+        );
+      }
+      return null;
     }
-    return null;
+    if (!data || data.length === 0) break;
+    fetchedRows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    pageFrom += PAGE_SIZE;
   }
-
-  const fetchedRows = data ?? [];
   const merged = mergeAnswerHistoryStores(localStore, fetchedRows);
 
   if (typeof window !== "undefined") {
@@ -455,23 +467,35 @@ function answerHistoryEntryToRow(
 }
 
 function answerHistoryRowToEntry(row: AnswerHistoryRow): AnswerHistoryEntry | null {
-  const store = parseAnswerHistoryStore(
-    JSON.stringify({
-      version: 1,
-      entries: [
-        {
-          id: row.question_id,
-          answeredAt: row.answered_at,
-          result: row.result,
-          selectedAnswers: row.selected_answers,
-          round: row.round,
-          session: row.session,
-          displayNumber: row.display_number,
-          majorCategory: row.major_category,
-        },
-      ],
-    }),
-  );
+  // DB CHECK 制約を通過して保存されているデータなので、ここでは強い検証を
+  // かけず、最低限の必須フィールド（id / answered_at）のみ確認する。
+  // 過剰な検証で正当なDB行を弾いてしまうと merge から落ちて他端末で
+  // データが揃わなくなる。
+  if (typeof row.question_id !== "string" || row.question_id === "") return null;
+  if (typeof row.answered_at !== "string" || row.answered_at === "") return null;
 
-  return store.entries[0] ?? null;
+  return {
+    id: row.question_id,
+    answeredAt: row.answered_at,
+    result: (row.result === "correct" ||
+    row.result === "incorrect" ||
+    row.result === "no_answer"
+      ? row.result
+      : "no_answer") as AnswerHistoryEntry["result"],
+    selectedAnswers: (Array.isArray(row.selected_answers)
+      ? row.selected_answers.filter(
+          (v): v is AnswerHistoryEntry["selectedAnswers"][number] =>
+            v === "1" || v === "2" || v === "3" || v === "4" || v === "5",
+        )
+      : []) as AnswerHistoryEntry["selectedAnswers"],
+    round: (typeof row.round === "number"
+      ? row.round
+      : 47) as AnswerHistoryEntry["round"],
+    session: (row.session === "am" || row.session === "pm"
+      ? row.session
+      : "am") as AnswerHistoryEntry["session"],
+    displayNumber: typeof row.display_number === "number" ? row.display_number : 1,
+    majorCategory:
+      typeof row.major_category === "string" ? row.major_category : "",
+  };
 }
