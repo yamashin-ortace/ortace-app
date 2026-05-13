@@ -185,7 +185,10 @@ function isChoiceKey(value: unknown): value is ChoiceKey {
 }
 
 function isValidQuestionId(value: unknown): value is string {
-  return typeof value === "string" && /^\d{2}-\d{1,3}$/.test(value);
+  // DB CHECK で正規 ID（例：47-12）は保証されているが、それ以外の文字列も
+  // 「履歴データ」としてはそのまま保持したい（履歴のドロップで再同期不一致が
+  // 発生しないようにする）。最低限、非空文字列であることだけ確認する。
+  return typeof value === "string" && value.length > 0;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

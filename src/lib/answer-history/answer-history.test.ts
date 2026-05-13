@@ -63,7 +63,10 @@ describe("answer-history", () => {
     );
   });
 
-  it("不正な履歴を正規化で落とす", () => {
+  it("必須フィールドが欠けた履歴を正規化で落とす", () => {
+    // id="bad" 等の「DB CHECK 正規ID外だが文字列としては有効」なIDは、
+    // 端末間同期の取りこぼし回避のため受け入れる方針（loose）。
+    // ここでは answeredAt が空など、本当に壊れたエントリだけ落ちることを確認する。
     expect(
       normalizeAnswerHistoryStore({
         version: 1,
@@ -79,8 +82,8 @@ describe("answer-history", () => {
             majorCategory: "視能検査・検査機器",
           },
           {
-            id: "bad",
-            answeredAt: "2026-05-08T00:00:00.000Z",
+            id: "",
+            answeredAt: "",
             result: "correct",
             selectedAnswers: ["1"],
             round: 56,
