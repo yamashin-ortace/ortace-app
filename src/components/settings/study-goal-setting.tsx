@@ -215,7 +215,8 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
                 value={draft.customDeadlineISO ?? ""}
                 onChange={(event) => handleCustomDateChange(event.target.value)}
                 className={cn(
-                  "block h-10 w-full min-w-0 max-w-full appearance-none rounded-[10px] border border-border bg-[var(--bg-card)] px-3 text-[14px] font-bold text-[var(--text-1)]",
+                  "block h-10 w-full min-w-0 max-w-full appearance-none rounded-[10px] border border-border bg-[var(--bg-card)] px-3 py-0 text-[14px] leading-10 font-bold text-[var(--text-1)]",
+                  "[&::-webkit-date-and-time-value]:min-h-[40px] [&::-webkit-date-and-time-value]:leading-10",
                   "focus:border-[var(--primary)] focus:outline-none",
                 )}
                 style={{ boxSizing: "border-box" }}
