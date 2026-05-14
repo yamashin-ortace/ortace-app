@@ -408,16 +408,26 @@ const UPSERT_CHUNK_SIZE = 50;
 
 export async function pushAnswerHistoryEntryToDatabase(
   entry: AnswerHistoryEntry,
-): Promise<void> {
+): Promise<boolean> {
   const userId = await getCurrentUserId();
-  if (!userId) return;
+  if (!userId) return false;
 
   const supabase = createSupabaseBrowserClient();
-  await supabase
+  const { error } = await supabase
     .from("answer_history")
     .upsert(answerHistoryEntryToRow(userId, entry), {
       onConflict: "user_id,entry_key",
     });
+  if (error) {
+    if (typeof window !== "undefined") {
+      console.warn(
+        `[answer-history sync] 単発pushに失敗: ${error.message}`,
+        entry,
+      );
+    }
+    return false;
+  }
+  return true;
 }
 
 async function getCurrentUserId(): Promise<string | null> {

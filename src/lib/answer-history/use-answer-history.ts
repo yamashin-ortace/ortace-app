@@ -45,7 +45,9 @@ export function useAnswerHistory() {
           entry.answeredAt === now.toISOString(),
       );
       if (recorded) {
-        void pushAnswerHistoryEntryToDatabase(recorded);
+        void pushAnswerHistoryEntryToDatabase(recorded).then((ok) => {
+          if (!ok) void runAnswerHistorySync();
+        });
       }
     },
     [],
