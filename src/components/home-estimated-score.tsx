@@ -39,7 +39,7 @@ export function HomeEstimatedScore({ questions }: Props) {
           </span>
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-[11px] font-semibold text-[var(--text-3)]">
-              いま本番なら（推定スコア）
+              最新実力の目安（推定スコア）
             </span>
             <span className="mt-0.5 text-[24px] font-extrabold leading-none tracking-tight text-[var(--text-1)]">
               {hydrated && estimated ? (
@@ -163,12 +163,13 @@ function EstimatedScoreInfo() {
             </p>
             <div className="mt-2 space-y-2">
               <p>
-                分野別の正答率を、本試験の出題数で加重平均し150点満点に換算しています（
+                同じ問題を複数回解いた場合は、各問題の最新解答だけを使います。
+                その分野別正答率を本試験の出題数で加重平均し、150点満点に換算しています（
                 <strong className="font-bold text-[var(--text-1)]">3問未満</strong>
                 の分野は除外）。
               </p>
               <p>
-                バーの線は合格圏ライン（仮{" "}
+                表示は「今の実力の目安」です。バーの線は合格圏ライン（仮{" "}
                 <strong className="font-bold text-[var(--text-1)]">95点</strong>
                 ）。試験の分野別出題数は過去問からの推定値です。
               </p>

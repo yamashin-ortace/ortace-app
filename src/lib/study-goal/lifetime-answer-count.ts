@@ -1,6 +1,6 @@
 import {
   ANSWER_HISTORY_STORAGE_KEY,
-  getSortedAnswerHistoryEntries,
+  getUniqueSortedAnswerHistoryEntries,
   parseAnswerHistoryStore,
 } from "@/lib/answer-history";
 
@@ -37,7 +37,7 @@ export function bootstrapLifetimeFromHistory(): number {
 export const LIFETIME_ANSWER_UPDATED_EVENT = "ortace:lifetime-answer-updated";
 
 export function countLifetimeAnswersFromHistoryRaw(raw: string | null): number {
-  return getSortedAnswerHistoryEntries(parseAnswerHistoryStore(raw)).length;
+  return getUniqueSortedAnswerHistoryEntries(parseAnswerHistoryStore(raw)).length;
 }
 
 export function notifyLifetimeAnswerCountUpdated(): number {

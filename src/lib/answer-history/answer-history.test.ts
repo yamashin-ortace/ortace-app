@@ -3,6 +3,7 @@ import type { Question } from "@/lib/questions";
 import {
   createAnswerHistoryStore,
   getSortedAnswerHistoryEntries,
+  getUniqueSortedAnswerHistoryEntries,
   normalizeAnswerHistoryStore,
   parseAnswerHistoryStore,
   recordAnswerHistory,
@@ -124,6 +125,37 @@ describe("answer-history", () => {
       ],
     });
     expect(parsed.entries[0].nextReviewAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("同じ実体の履歴は表示用に1件へまとめる", () => {
+    const store = normalizeAnswerHistoryStore({
+      version: 1,
+      entries: [
+        {
+          id: "56-101",
+          answeredAt: "2026-05-08T00:00:00.000Z",
+          result: "correct",
+          selectedAnswers: ["1"],
+          round: 56,
+          session: "pm",
+          displayNumber: 1,
+          majorCategory: "視能検査・検査機器",
+        },
+        {
+          id: "56-101",
+          answeredAt: "2026-05-08T00:00:00+00:00",
+          result: "correct",
+          selectedAnswers: ["1"],
+          round: 56,
+          session: "pm",
+          displayNumber: 1,
+          majorCategory: "視能検査・検査機器",
+        },
+      ],
+    });
+
+    expect(store.entries).toHaveLength(2);
+    expect(getUniqueSortedAnswerHistoryEntries(store)).toHaveLength(1);
   });
 
   it("正解で連続正解数が増え、誤答で 0 にリセットされる", () => {

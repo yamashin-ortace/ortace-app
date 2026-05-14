@@ -138,6 +138,34 @@ export function getSortedAnswerHistoryEntries(store: AnswerHistoryStore) {
   return normalizeAnswerHistoryStore(store).entries;
 }
 
+export function getUniqueSortedAnswerHistoryEntries(store: AnswerHistoryStore) {
+  const seen = new Set<string>();
+  const entries: AnswerHistoryEntry[] = [];
+  for (const entry of getSortedAnswerHistoryEntries(store)) {
+    const key = createSemanticAnswerHistoryKey(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    entries.push(entry);
+  }
+  return entries;
+}
+
+export function createSemanticAnswerHistoryKey(
+  entry: AnswerHistoryEntry,
+): string {
+  return [
+    entry.id,
+    normalizeAnsweredAtForSemanticKey(entry.answeredAt),
+    entry.result,
+    entry.selectedAnswers.join(","),
+  ].join("|");
+}
+
+function normalizeAnsweredAtForSemanticKey(value: string): string {
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? new Date(time).toISOString() : value;
+}
+
 function isAnswerHistoryEntry(value: unknown): value is AnswerHistoryEntry {
   if (!isObject(value)) return false;
   return (

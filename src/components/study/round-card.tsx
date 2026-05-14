@@ -26,7 +26,7 @@ export function RoundCard({ round, year = YEAR_BY_ROUND[round] }: Props) {
   return (
     <Link
       href={`/study/${round}`}
-      className="group flex min-h-[74px] items-center justify-between rounded-[12px] border border-border bg-[var(--bg-card)] px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+      className="group flex min-h-[74px] items-center justify-between rounded-[12px] border border-border bg-[var(--bg-card)] px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-px hover:border-border hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
     >
       <div className="flex flex-col">
         <span className="text-[15px] font-bold tracking-tight text-[var(--text-1)]">

@@ -24,7 +24,7 @@ type DailyBin = {
 
 const CHART_INNER_WIDTH = 320;
 const CHART_INNER_HEIGHT = 120;
-const CHART_PADDING = { top: 10, right: 28, bottom: 22, left: 28 };
+const CHART_PADDING = { top: 10, right: 40, bottom: 22, left: 28 };
 const CHART_WIDTH =
   CHART_INNER_WIDTH + CHART_PADDING.left + CHART_PADDING.right;
 const CHART_HEIGHT =
@@ -183,10 +183,10 @@ function FullChart({ bins, range }: { bins: DailyBin[]; range: Range }) {
                 {Math.round(ratio * geom.maxCount)}
               </text>
               <text
-                x={CHART_PADDING.left + CHART_INNER_WIDTH + 6}
+                x={CHART_PADDING.left + CHART_INNER_WIDTH + 5}
                 y={y + 3}
                 textAnchor="start"
-                className="fill-[var(--text-3)] text-[9px] tabular-nums"
+                className="fill-[var(--text-3)] text-[8px] tabular-nums"
               >
                 {Math.round(ratio * 100)}%
               </text>

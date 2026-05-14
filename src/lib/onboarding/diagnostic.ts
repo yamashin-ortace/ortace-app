@@ -2,14 +2,15 @@
  * 初回診断パッケージ（27問・任意）
  *
  * - 9分野 × 3問 = 27問。
- * - 端末ローカル（localStorage）に状態を保存する MVP 実装。
- *   Supabase 連携は後続フェーズで検討。
+ * - 完了/スキップの明示状態は端末ローカル（localStorage）に保存する。
+ * - 別端末で解いた場合は同期済み解答履歴から診断相当の完了状態を推定する。
  * - QuizPlayer の `bypassDailyLimit` で初日のキャップを実質拡張する。
  */
 
 import type { Question } from "@/lib/questions";
 import { FIELDS } from "@/lib/questions";
 import { shuffle } from "@/lib/quiz";
+import type { AnswerHistoryEntry } from "@/lib/answer-history";
 
 export const DIAGNOSTIC_STATUS_KEY = "ortace.diagnostic.status";
 export const DIAGNOSTIC_QUESTIONS_PER_FIELD = 3;
@@ -25,6 +26,26 @@ export function isDiagnosticComplete(status: DiagnosticStatus): boolean {
 
 export function isDiagnosticStatus(value: unknown): value is DiagnosticStatus {
   return value === "completed" || value === "skipped" || value === null;
+}
+
+/**
+ * 別端末で診断を終えた場合でも、同期済みの解答履歴から診断相当のデータ量を推定する。
+ * 診断は9分野×3問なので、各分野に3問以上の判定済み履歴があればホーム案内は不要。
+ */
+export function hasDiagnosticBaseline(
+  entries: readonly AnswerHistoryEntry[],
+): boolean {
+  const judgedByField = new Map<string, number>();
+  for (const entry of entries) {
+    if (entry.result !== "correct" && entry.result !== "incorrect") continue;
+    judgedByField.set(
+      entry.majorCategory,
+      (judgedByField.get(entry.majorCategory) ?? 0) + 1,
+    );
+  }
+  return FIELDS.every(
+    (field) => (judgedByField.get(field) ?? 0) >= DIAGNOSTIC_QUESTIONS_PER_FIELD,
+  );
 }
 
 /**

@@ -7,7 +7,7 @@ type Props = {
   items: ReactNode[];
   /** カード1枚に与えるクラス（幅・スナップ位置）。既定はモバイルで2枚弱見える幅。 */
   itemClassName?: string;
-  /** ドットインジケーター表示（要素が1枚ならどちらにせよ非表示） */
+  /** バーインジケーター表示（要素が1枚ならどちらにせよ非表示） */
   showDots?: boolean;
   /** スワイプ領域の aria-label */
   ariaLabel?: string;
@@ -15,7 +15,7 @@ type Props = {
 
 /**
  * 横スワイプ＋スナップする一行カードリスト。
- * - 親が `px-5` でレイアウトされている前提で `-mx-5 px-5` 端まで広げる。
+ * - 親幅に収めたまま横スクロールし、周囲のカードと左右端を揃える。
  * - スクロールバーは UI 上隠す（タッチ／トラックパッド前提）。
  */
 export function HorizontalSnapRow({
@@ -33,7 +33,7 @@ export function HorizontalSnapRow({
     const update = () => {
       const cards = container.querySelectorAll<HTMLElement>("[data-snap-item]");
       if (cards.length === 0) return;
-      // snap port は scroll-padding-left の分だけ内側にあるので、その分を差し引いて距離計算する。
+      // 左右端を親カード幅に揃えるため、実際の padding 分だけ距離計算から差し引く。
       const paddingLeft =
         parseFloat(getComputedStyle(container).paddingLeft) || 0;
       const scrollLeft = container.scrollLeft;
@@ -74,10 +74,10 @@ export function HorizontalSnapRow({
         aria-label={ariaLabel}
         // 横スワイプ：
         // - snap-proximity：自由スクロール優先 + 近くまで来たらやさしくスナップ（mandatory より滑らか）
-        // - scroll-pl-5：スナップ位置を内側 padding に合わせ、最初のカードが画面端に吸い付くのを防ぐ
+        // - 親の幅からはみ出さない：周囲のカードと左右端を揃える
         // - scroll-smooth：プログラム的なスクロール時の補間をオン
         className={cn(
-          "-mx-5 flex snap-x snap-proximity scroll-pl-5 scroll-smooth gap-3 overflow-x-auto overflow-y-hidden px-5 pb-1",
+          "flex snap-x snap-proximity scroll-smooth gap-3 overflow-x-auto overflow-y-visible py-1",
           "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         )}
       >
@@ -93,20 +93,16 @@ export function HorizontalSnapRow({
       </div>
       {showDots && items.length > 1 ? (
         <div
-          className="flex items-center justify-center gap-1.5"
+          className="mx-auto h-1 w-20 overflow-hidden rounded-full bg-[var(--text-3)]/18"
           aria-hidden="true"
         >
-          {items.map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                "h-1.5 rounded-full transition-[width,background-color] duration-200",
-                i === activeIndex
-                  ? "w-4 bg-[var(--primary)]"
-                  : "w-1.5 bg-[var(--text-3)]/30",
-              )}
-            />
-          ))}
+          <span
+            className="block h-full rounded-full bg-[var(--primary)] transition-transform duration-200 ease-out"
+            style={{
+              width: `${100 / items.length}%`,
+              transform: `translateX(${activeIndex * 100}%)`,
+            }}
+          />
         </div>
       ) : null}
     </div>

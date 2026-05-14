@@ -7,7 +7,7 @@ import {
   ANSWER_HISTORY_STORAGE_KEY,
   ANSWER_HISTORY_UPDATED_EVENT,
   createAnswerHistoryStore,
-  getSortedAnswerHistoryEntries,
+  getUniqueSortedAnswerHistoryEntries,
   parseAnswerHistoryStore,
   recordAnswerHistory,
   serializeAnswerHistoryStore,
@@ -74,7 +74,7 @@ export function useAnswerHistoryList() {
   const store = useAnswerHistoryStore();
   return useMemo(
     () => ({
-      entries: getSortedAnswerHistoryEntries(store),
+      entries: getUniqueSortedAnswerHistoryEntries(store),
     }),
     [store],
   );

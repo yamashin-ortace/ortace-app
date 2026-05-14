@@ -55,9 +55,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
   const [noteOpen, setNoteOpen] = useState(initialOpen === "note");
   const [draft, setDraft] = useState<string | null>(null);
   const [saveFeedbackText, setSaveFeedbackText] = useState<string | null>(null);
-  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<
-    "bookmark" | "note" | null
-  >(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const saveFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bookmarkCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -68,7 +66,6 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
     noteText,
     hasNote,
     saveBookmarkCategories,
-    removeBookmark,
     saveNote,
     removeNote,
   } = useQuestionStudyItems(question.id);
@@ -145,37 +142,12 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
       saveFeedbackTimerRef.current = null;
     }
 
-    if (deleteConfirmTarget === "bookmark") {
-      removeBookmark();
-      setBookmarkDraft([]);
-      setBookmarkOpen(false);
-      showSaveFeedback("解除しました");
-    }
-
-    if (deleteConfirmTarget === "note") {
-      removeNote();
-      setDraft(null);
-      setNoteOpen(false);
-      showSaveFeedback("削除しました");
-    }
-
-    setDeleteConfirmTarget(null);
+    removeNote();
+    setDraft(null);
+    setNoteOpen(false);
+    showSaveFeedback("削除しました");
+    setDeleteConfirmOpen(false);
   };
-
-  const deleteCopy =
-    deleteConfirmTarget === "bookmark"
-      ? {
-          title: "ブックマークを解除しますか？",
-          description:
-            "この問題はブックマークから外れます。あとで見返したい場合はキャンセルしてください。",
-          confirm: "解除する",
-        }
-      : {
-          title: "ノートを削除しますか？",
-          description:
-            "保存したメモは元に戻せません。本当に削除してよいですか？",
-          confirm: "削除する",
-        };
 
   return (
     <>
@@ -223,21 +195,12 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
             clearTimeout(bookmarkCloseTimerRef.current);
             bookmarkCloseTimerRef.current = null;
           }
-          if (!open && deleteConfirmTarget === "bookmark") {
-            setDeleteConfirmTarget(null);
-          }
         }}
       >
         <SheetContent
           side="bottom"
           className="max-h-[88vh] rounded-t-[16px] border-border bg-[var(--bg-card)]"
         >
-          <SheetDeleteIconButton
-            label="ブックマークを解除"
-            disabled={!isBookmarked && bookmarkDraft.length === 0}
-            className="top-14 right-4 sm:top-3 sm:right-14"
-            onClick={() => setDeleteConfirmTarget("bookmark")}
-          />
           <SheetHeader className="border-b border-border pr-12 sm:pr-12">
             <SheetTitle className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[17px] font-bold text-[var(--text-1)]">
               <span>ブックマーク</span>
@@ -301,9 +264,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
         onOpenChange={(open) => {
           setNoteOpen(open);
           if (!open) {
-            if (deleteConfirmTarget === "note") {
-              setDeleteConfirmTarget(null);
-            }
+            setDeleteConfirmOpen(false);
             setSaveFeedbackText(null);
             if (saveFeedbackTimerRef.current) {
               clearTimeout(saveFeedbackTimerRef.current);
@@ -331,7 +292,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
                 label="ノートを削除"
                 disabled={!hasNote && !(draft ?? noteText).trim()}
                 className="top-2 right-2 shadow-none"
-                onClick={() => setDeleteConfirmTarget("note")}
+                onClick={() => setDeleteConfirmOpen(true)}
               />
               <Textarea
                 value={draft ?? noteText}
@@ -365,18 +326,18 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
       </Sheet>
 
       <Dialog
-        open={deleteConfirmTarget !== null}
+        open={deleteConfirmOpen}
         onOpenChange={(open) => {
-          if (!open) setDeleteConfirmTarget(null);
+          setDeleteConfirmOpen(open);
         }}
       >
         <DialogContent showCloseButton>
           <DialogHeader>
             <DialogTitle className="text-[var(--text-1)]">
-              {deleteCopy.title}
+              ノートを削除しますか？
             </DialogTitle>
             <DialogDescription className="text-[var(--text-2)]">
-              {deleteCopy.description}
+              保存したメモは元に戻せません。本当に削除してよいですか？
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -384,7 +345,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
-              onClick={() => setDeleteConfirmTarget(null)}
+              onClick={() => setDeleteConfirmOpen(false)}
             >
               キャンセル
             </Button>
@@ -395,7 +356,7 @@ export function QuestionStudyActions({ question, initialOpen }: Props) {
               onClick={handleConfirmDelete}
             >
               <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-              {deleteCopy.confirm}
+              削除する
             </Button>
           </DialogFooter>
         </DialogContent>

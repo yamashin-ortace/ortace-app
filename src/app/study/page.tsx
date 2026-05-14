@@ -41,6 +41,7 @@ export default async function StudyPage() {
         </h2>
         <div className="space-y-2.5">
           <FilterModeCard />
+          <RandomModeCard />
           <section className="space-y-2">
             <HorizontalSnapRow
               ariaLabel="第47回〜第56回 過去問の年度カード"
@@ -58,7 +59,6 @@ export default async function StudyPage() {
         </h2>
         <div className="space-y-2.5">
           <MockModeCard />
-          <RandomModeCard />
         </div>
       </section>
 

@@ -5,8 +5,10 @@ import Link from "next/link";
 import { ChevronRight, Compass, X } from "lucide-react";
 import {
   DIAGNOSTIC_QUESTION_COUNT,
+  hasDiagnosticBaseline,
   isDiagnosticComplete,
 } from "@/lib/onboarding/diagnostic";
+import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import { useDiagnosticStatus } from "@/lib/onboarding/use-diagnostic-status";
 import { cn } from "@/lib/utils";
 
@@ -17,13 +19,21 @@ import { cn } from "@/lib/utils";
 export function DiagnosticBanner() {
   const [hydrated, setHydrated] = useState(false);
   const { status, setStatus } = useDiagnosticStatus();
+  const { entries } = useAnswerHistoryList();
+  const inferredComplete = hasDiagnosticBaseline(entries);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage 由来の値を SSR と分離するための hydration ガード
     setHydrated(true);
   }, []);
 
-  if (!hydrated || isDiagnosticComplete(status)) return null;
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!inferredComplete || isDiagnosticComplete(status)) return;
+    setStatus("completed");
+  }, [hydrated, inferredComplete, setStatus, status]);
+
+  if (!hydrated || isDiagnosticComplete(status) || inferredComplete) return null;
 
   const isSkipped = status === "skipped";
 
