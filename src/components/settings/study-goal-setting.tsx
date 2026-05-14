@@ -1,6 +1,8 @@
 "use client";
 
-import { CalendarRange, Info } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarRange, Info, RotateCcw, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   STUDY_GOAL_DEADLINES,
   STUDY_GOAL_ROUNDS,
@@ -11,6 +13,8 @@ import {
   isValidISODate,
   previewDailyPace,
   resolveGoalDeadlineISO,
+  serializeStudyGoalConfig,
+  type StudyGoalConfig,
   type StudyGoalDeadline,
   type StudyGoalRounds,
   type StudyGoalScope,
@@ -28,41 +32,73 @@ type Props = {
  * 学習プリセット（B-prime：ガードレール付き自由設定）の編集UI。
  *
  * 「目標を立てるか」のトグル、スコープ／周回／期限を1択で組み合わせる形式。
- * 入力するたびに「1日 約 X問」のプレビューを出し、80問/日 を超える組み合わせは
- * 赤で警告して無理な目標を立てさせないようにする。
+ * 入力中は下書きとして扱い、「保存する」でアカウント設定へ反映する。
  */
 export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
-  const { config, updateConfig } = useStudyGoalConfig();
+  const { config, setConfig } = useStudyGoalConfig();
+  const [draftOverride, setDraftOverride] = useState<StudyGoalConfig | null>(
+    null,
+  );
+  const [savedNotice, setSavedNotice] = useState(false);
   const { examDate } = useExamDate();
+  const draft = draftOverride ?? config;
+
+  useEffect(() => {
+    if (!savedNotice) return;
+    const timerId = window.setTimeout(() => setSavedNotice(false), 1800);
+    return () => window.clearTimeout(timerId);
+  }, [savedNotice]);
 
   const preview = previewDailyPace({
-    scope: config.scope,
-    rounds: config.rounds,
-    deadline: config.deadline,
-    customDeadlineISO: config.customDeadlineISO,
+    scope: draft.scope,
+    rounds: draft.rounds,
+    deadline: draft.deadline,
+    customDeadlineISO: draft.customDeadlineISO,
     examDateISO: examDate,
     pastQuestionsTotal,
   });
-  const deadlineISO = resolveGoalDeadlineISO(config, examDate);
+  const deadlineISO = resolveGoalDeadlineISO(draft, examDate);
+  const hasChanges = useMemo(
+    () =>
+      draftOverride !== null &&
+      serializeStudyGoalConfig(draftOverride) !== serializeStudyGoalConfig(config),
+    [config, draftOverride],
+  );
+
+  const updateDraft = (patch: Partial<StudyGoalConfig>) => {
+    setDraftOverride((current) => ({ ...(current ?? config), ...patch }));
+    setSavedNotice(false);
+  };
+
+  const handleSave = () => {
+    setConfig(draft);
+    setDraftOverride(null);
+    setSavedNotice(true);
+  };
+
+  const handleReset = () => {
+    setDraftOverride(null);
+    setSavedNotice(false);
+  };
 
   const handleDeadlineChange = (next: string) => {
     if (next === "custom") {
       // 初回 "自分で決める" 選択時、まだ customDeadlineISO が未設定なら
       // 試験1ヶ月前を初期値として埋める。
       const fallback =
-        config.customDeadlineISO ?? getGoalDeadlineISO(examDate, 30);
-      updateConfig({
+        draft.customDeadlineISO ?? getGoalDeadlineISO(examDate, 30);
+      updateDraft({
         deadline: "custom",
         customDeadlineISO: fallback,
       });
       return;
     }
-    updateConfig({ deadline: next as StudyGoalDeadline });
+    updateDraft({ deadline: next as StudyGoalDeadline });
   };
 
   const handleCustomDateChange = (value: string) => {
     if (!isValidISODate(value)) return;
-    updateConfig({ customDeadlineISO: value });
+    updateDraft({ customDeadlineISO: value });
   };
 
   const todayISO = formatTodayISO();
@@ -82,7 +118,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
       <div
         className={cn(
           "flex items-center justify-between gap-3 rounded-[14px] border px-4 py-3",
-          config.enabled
+          draft.enabled
             ? "border-[var(--primary)] bg-[var(--primary-soft)]"
             : "border-border bg-[var(--bg-card)]",
         )}
@@ -98,12 +134,12 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
         <button
           type="button"
           role="switch"
-          aria-checked={config.enabled}
-          onClick={() => updateConfig({ enabled: !config.enabled })}
+          aria-checked={draft.enabled}
+          onClick={() => updateDraft({ enabled: !draft.enabled })}
           className={cn(
             "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
-            config.enabled
+            draft.enabled
               ? "bg-[var(--primary)]"
               : "bg-[var(--text-3)]/40",
           )}
@@ -112,15 +148,15 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
             aria-hidden
             className={cn(
               "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
-              config.enabled ? "translate-x-5" : "translate-x-0.5",
+              draft.enabled ? "translate-x-5" : "translate-x-0.5",
             )}
           />
         </button>
       </div>
 
       <fieldset
-        disabled={!config.enabled}
-        className={cn("space-y-3", !config.enabled && "opacity-50")}
+        disabled={!draft.enabled}
+        className={cn("space-y-3", !draft.enabled && "opacity-50")}
       >
         <ChipRow
           legend="対象範囲（どの問題？）"
@@ -129,8 +165,8 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
             label: s.label,
             hint: s.hint,
           }))}
-          value={config.scope}
-          onChange={(next) => updateConfig({ scope: next as StudyGoalScope })}
+          value={draft.scope}
+          onChange={(next) => updateDraft({ scope: next as StudyGoalScope })}
         />
 
         <ChipRow
@@ -145,9 +181,9 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
                   ? "合格安全圏の目安"
                   : "上位合格を狙う",
           }))}
-          value={String(config.rounds)}
+          value={String(draft.rounds)}
           onChange={(next) =>
-            updateConfig({ rounds: Number(next) as StudyGoalRounds })
+            updateDraft({ rounds: Number(next) as StudyGoalRounds })
           }
         />
 
@@ -159,10 +195,10 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
               label: d.label,
               hint: d.hint,
             }))}
-            value={config.deadline}
+            value={draft.deadline}
             onChange={handleDeadlineChange}
           />
-          {config.deadline === "custom" ? (
+          {draft.deadline === "custom" ? (
             <div className="space-y-1.5 rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
               <label
                 htmlFor="study-goal-custom-deadline"
@@ -176,7 +212,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
                 type="date"
                 min={todayISO}
                 max={examDate}
-                value={config.customDeadlineISO ?? ""}
+                value={draft.customDeadlineISO ?? ""}
                 onChange={(event) => handleCustomDateChange(event.target.value)}
                 className={cn(
                   "block h-10 w-full min-w-0 max-w-full appearance-none rounded-[10px] border border-border bg-[var(--bg-card)] px-3 text-[14px] font-bold text-[var(--text-1)]",
@@ -184,9 +220,9 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
                 )}
                 style={{ boxSizing: "border-box" }}
               />
-              {config.customDeadlineISO ? (
+              {draft.customDeadlineISO ? (
                 <p className="text-[11px] leading-snug text-[var(--text-2)]">
-                  期限：{formatGoalDeadlineLabelWithWeekday(config.customDeadlineISO)}
+                  期限：{formatGoalDeadlineLabelWithWeekday(draft.customDeadlineISO)}
                 </p>
               ) : (
                 <p className="text-[11px] leading-snug text-[var(--text-3)]">
@@ -198,7 +234,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
         </div>
       </fieldset>
 
-      {config.enabled ? (
+      {draft.enabled ? (
         <div className="rounded-[14px] border border-border bg-[var(--bg-muted)]/40 px-4 py-3">
           <p className="text-[11px] font-semibold text-[var(--text-3)]">
             このプリセットだと
@@ -217,6 +253,39 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
           ) : null}
         </div>
       ) : null}
+
+      <div className="flex flex-col gap-2 rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="min-h-[18px] text-[11px] font-medium text-[var(--text-2)]">
+          {hasChanges
+            ? "保存すると他の端末にも反映されます。"
+            : savedNotice
+              ? "保存しました。"
+              : "保存済みです。"}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!hasChanges}
+            onClick={handleReset}
+            className="flex-1 sm:flex-none"
+          >
+            <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} />
+            元に戻す
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!hasChanges}
+            onClick={handleSave}
+            className="flex-1 sm:flex-none"
+          >
+            <Save className="h-3.5 w-3.5" strokeWidth={2.5} />
+            保存する
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
