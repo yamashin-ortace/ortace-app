@@ -78,7 +78,7 @@ export async function sendMagicLinkAction(email: string): Promise<ActionResult> 
  */
 export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
   // オンボ判定キャッシュ Cookie もクリア
   const cookieStore = await cookies();
   cookieStore.delete("ortace_onboarded");
