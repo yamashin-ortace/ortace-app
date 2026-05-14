@@ -8,27 +8,38 @@ import {
   serializeStudyGoalConfig,
   type StudyGoalConfig,
 } from ".";
+import {
+  pushStudyGoalConfigToDatabase,
+  syncStudyGoalConfigWithDatabase,
+  type StudyGoalConfigRecord,
+} from "@/lib/study-sync";
+import { useDataSync } from "@/lib/study-sync/use-data-sync";
 
 const CHANGE_EVENT = "ortace.studyGoal.changed";
+const UPDATED_AT_KEY = "updatedAt";
 
-function readConfig(): StudyGoalConfig {
-  if (typeof window === "undefined") return DEFAULT_STUDY_GOAL;
-  return parseStudyGoalConfig(
-    window.localStorage.getItem(STUDY_GOAL_STORAGE_KEY),
-  );
+function readConfigRecord(): StudyGoalConfigRecord {
+  if (typeof window === "undefined") {
+    return { config: DEFAULT_STUDY_GOAL, updatedAt: null };
+  }
+  const raw = window.localStorage.getItem(STUDY_GOAL_STORAGE_KEY);
+  return {
+    config: parseStudyGoalConfig(raw),
+    updatedAt: readUpdatedAt(raw),
+  };
 }
 
-let cached: StudyGoalConfig = readConfig();
+let cachedRecord: StudyGoalConfigRecord = readConfigRecord();
 
 function subscribe(listener: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   const handleStorage = (event: StorageEvent) => {
     if (event.key !== null && event.key !== STUDY_GOAL_STORAGE_KEY) return;
-    cached = readConfig();
+    cachedRecord = readConfigRecord();
     listener();
   };
   const handle = () => {
-    cached = readConfig();
+    cachedRecord = readConfigRecord();
     listener();
   };
   window.addEventListener("storage", handleStorage);
@@ -46,26 +57,62 @@ function subscribe(listener: () => void): () => void {
 export function useStudyGoalConfig() {
   const config = useSyncExternalStore(
     subscribe,
-    () => cached,
+    () => cachedRecord.config,
     () => DEFAULT_STUDY_GOAL,
   );
 
+  useDataSync({ key: "study-goal", run: runStudyGoalConfigSync });
+
   const setConfig = useCallback((next: StudyGoalConfig) => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      STUDY_GOAL_STORAGE_KEY,
-      serializeStudyGoalConfig(next),
-    );
-    cached = next;
+    const record = writeStudyGoalConfig(next, new Date().toISOString());
     window.dispatchEvent(new Event(CHANGE_EVENT));
+    void pushStudyGoalConfigToDatabase(record);
   }, []);
 
   const updateConfig = useCallback(
     (patch: Partial<StudyGoalConfig>) => {
-      setConfig({ ...cached, ...patch });
+      setConfig({ ...cachedRecord.config, ...patch });
     },
     [setConfig],
   );
 
   return { config, setConfig, updateConfig };
+}
+
+async function runStudyGoalConfigSync() {
+  const merged = await syncStudyGoalConfigWithDatabase(readConfigRecord());
+  if (!merged) return;
+  writeStudyGoalConfig(merged.config, merged.updatedAt);
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+function writeStudyGoalConfig(
+  config: StudyGoalConfig,
+  updatedAt: string | null,
+): StudyGoalConfigRecord {
+  const record = { config, updatedAt };
+  cachedRecord = record;
+  if (typeof window === "undefined") return record;
+
+  window.localStorage.setItem(
+    STUDY_GOAL_STORAGE_KEY,
+    JSON.stringify({
+      ...JSON.parse(serializeStudyGoalConfig(config)),
+      ...(updatedAt ? { [UPDATED_AT_KEY]: updatedAt } : {}),
+    }),
+  );
+  return record;
+}
+
+function readUpdatedAt(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const value = (parsed as Record<string, unknown>)[UPDATED_AT_KEY];
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
 }

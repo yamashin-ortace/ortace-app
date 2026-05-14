@@ -17,19 +17,31 @@ import {
   type BookmarksStore,
   type NotesStore,
 } from "@/lib/study-items";
+import {
+  parseStudyGoalConfig,
+  serializeStudyGoalConfig,
+  type StudyGoalConfig,
+} from "@/lib/study-goal";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type {
   AnswerHistoryInsert,
   AnswerHistoryRow,
   BookmarksInsert,
   BookmarksRow,
+  Json,
   DailyLimitsRow,
   NotesInsert,
   NotesRow,
+  StudyGoalSettingsRow,
 } from "@/lib/supabase/database.types";
 
 const ANSWER_HISTORY_DISPLAY_LIMIT = 10_000;
 const BOOKMARK_CATEGORY_IDS = BOOKMARK_CATEGORIES.map((category) => category.id);
+
+export type StudyGoalConfigRecord = {
+  config: StudyGoalConfig;
+  updatedAt: string | null;
+};
 
 export function mergeDailyLimitRecords(
   local: DailyLimitRecord,
@@ -164,6 +176,27 @@ export function mergeAnswerHistoryStores(
   return { version: 1, entries };
 }
 
+export function mergeStudyGoalConfigRecord(
+  local: StudyGoalConfigRecord,
+  remote: StudyGoalSettingsRow | null,
+): { record: StudyGoalConfigRecord; shouldPush: boolean } {
+  if (!remote) {
+    return { record: local, shouldPush: true };
+  }
+
+  if (local.updatedAt && local.updatedAt.localeCompare(remote.updated_at) > 0) {
+    return { record: local, shouldPush: true };
+  }
+
+  return {
+    record: {
+      config: parseStudyGoalConfig(JSON.stringify(remote.config)),
+      updatedAt: remote.updated_at,
+    },
+    shouldPush: false,
+  };
+}
+
 export function createAnswerHistoryEntryKey(entry: AnswerHistoryEntry): string {
   return [
     entry.id,
@@ -217,6 +250,47 @@ export async function pushDailyLimitToDatabase(
       count: normalized.count,
     },
     { onConflict: "user_id,date" },
+  );
+}
+
+export async function syncStudyGoalConfigWithDatabase(
+  local: StudyGoalConfigRecord,
+): Promise<StudyGoalConfigRecord | null> {
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
+
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("study_goal_settings")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) return null;
+
+  const merged = mergeStudyGoalConfigRecord(local, data);
+  if (!merged.shouldPush) return merged.record;
+
+  const updatedAt = merged.record.updatedAt ?? new Date().toISOString();
+  const record = { ...merged.record, updatedAt };
+  await pushStudyGoalConfigToDatabase(record);
+  return record;
+}
+
+export async function pushStudyGoalConfigToDatabase(
+  record: StudyGoalConfigRecord,
+): Promise<void> {
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+
+  const supabase = createSupabaseBrowserClient();
+  await supabase.from("study_goal_settings").upsert(
+    {
+      user_id: userId,
+      config: studyGoalConfigToJson(record.config),
+      updated_at: record.updatedAt ?? new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
   );
 }
 
@@ -493,6 +567,10 @@ function answerHistoryEntryToRow(
     display_number: entry.displayNumber,
     major_category: entry.majorCategory,
   };
+}
+
+function studyGoalConfigToJson(config: StudyGoalConfig): Json {
+  return JSON.parse(serializeStudyGoalConfig(config)) as Json;
 }
 
 function answerHistoryRowToEntry(row: AnswerHistoryRow): AnswerHistoryEntry | null {

@@ -11,6 +11,13 @@ export type Grade = "1年" | "2年" | "3年" | "4年" | "受験生";
 export type Goal = "基礎固め" | "苦手克服" | "本番対策";
 export type BillingPlan = "free" | "low" | "exam";
 export type BillingPlanStatus = "active" | "expired" | "payment_failed";
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export type ProfilesRow = {
   id: string;
@@ -160,6 +167,23 @@ export type AnswerHistoryUpdate = {
   major_category?: string;
 };
 
+export type StudyGoalSettingsRow = {
+  user_id: string;
+  config: Json;
+  updated_at: string;
+};
+
+export type StudyGoalSettingsInsert = {
+  user_id: string;
+  config?: Json;
+  updated_at?: string;
+};
+
+export type StudyGoalSettingsUpdate = {
+  config?: Json;
+  updated_at?: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -191,6 +215,12 @@ export type Database = {
         Row: AnswerHistoryRow;
         Insert: AnswerHistoryInsert;
         Update: AnswerHistoryUpdate;
+        Relationships: [];
+      };
+      study_goal_settings: {
+        Row: StudyGoalSettingsRow;
+        Insert: StudyGoalSettingsInsert;
+        Update: StudyGoalSettingsUpdate;
         Relationships: [];
       };
     };

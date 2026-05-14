@@ -5,8 +5,12 @@ import {
   mergeBookmarksStores,
   mergeDailyLimitRecords,
   mergeNotesStores,
+  mergeStudyGoalConfigRecord,
 } from ".";
-import type { AnswerHistoryRow } from "@/lib/supabase/database.types";
+import type {
+  AnswerHistoryRow,
+  StudyGoalSettingsRow,
+} from "@/lib/supabase/database.types";
 
 describe("study sync helpers", () => {
   it("daily limitは同じ日付なら大きいcountを採用する", () => {
@@ -166,5 +170,66 @@ describe("study sync helpers", () => {
     );
 
     expect(merged.entries).toHaveLength(2);
+  });
+
+  it("学習プリセットはremoteが新しければremoteを採用する", () => {
+    const remote: StudyGoalSettingsRow = {
+      user_id: "user-1",
+      config: {
+        enabled: true,
+        scope: "past_plus_original",
+        rounds: 2,
+        deadline: "exam",
+      },
+      updated_at: "2026-05-08T01:00:00.000Z",
+    };
+
+    const merged = mergeStudyGoalConfigRecord(
+      {
+        config: {
+          enabled: true,
+          scope: "past",
+          rounds: 1,
+          deadline: "1m_before",
+        },
+        updatedAt: "2026-05-08T00:00:00.000Z",
+      },
+      remote,
+    );
+
+    expect(merged.shouldPush).toBe(false);
+    expect(merged.record.config.scope).toBe("past_plus_original");
+    expect(merged.record.config.rounds).toBe(2);
+  });
+
+  it("学習プリセットはlocalが新しければpush対象にする", () => {
+    const remote: StudyGoalSettingsRow = {
+      user_id: "user-1",
+      config: {
+        enabled: false,
+        scope: "past",
+        rounds: 1,
+        deadline: "1m_before",
+      },
+      updated_at: "2026-05-08T00:00:00.000Z",
+    };
+
+    const merged = mergeStudyGoalConfigRecord(
+      {
+        config: {
+          enabled: true,
+          scope: "past_plus_original",
+          rounds: 3,
+          deadline: "custom",
+          customDeadlineISO: "2026-12-01",
+        },
+        updatedAt: "2026-05-08T01:00:00.000Z",
+      },
+      remote,
+    );
+
+    expect(merged.shouldPush).toBe(true);
+    expect(merged.record.config.rounds).toBe(3);
+    expect(merged.record.config.customDeadlineISO).toBe("2026-12-01");
   });
 });
