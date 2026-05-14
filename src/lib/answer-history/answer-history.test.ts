@@ -183,4 +183,33 @@ describe("answer-history", () => {
     });
     expect(store.entries[0].streak).toBe(0);
   });
+
+  it("3連続正解では卒業せず、4連続正解で復習対象から外れる", () => {
+    let store = createAnswerHistoryStore();
+    for (const now of [
+      "2026-05-01T01:00:00.000Z",
+      "2026-05-02T01:00:00.000Z",
+      "2026-05-05T01:00:00.000Z",
+    ]) {
+      store = recordAnswerHistory(store, {
+        question,
+        result: "correct",
+        selectedAnswers: ["1"],
+        now: new Date(now),
+      });
+    }
+
+    expect(store.entries[0].streak).toBe(3);
+    expect(store.entries[0].nextReviewAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+    store = recordAnswerHistory(store, {
+      question,
+      result: "correct",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-12T01:00:00.000Z"),
+    });
+
+    expect(store.entries[0].streak).toBe(4);
+    expect(store.entries[0].nextReviewAt).toBeNull();
+  });
 });
