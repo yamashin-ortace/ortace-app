@@ -60,9 +60,18 @@ export function QuizResultScreen({
   return (
     <div className="space-y-4 pt-2">
       {showToast ? (
-        <div className="pointer-events-none fixed top-[calc(env(safe-area-inset-top)+72px)] left-1/2 z-40 -translate-x-1/2 animate-result-toast overflow-hidden rounded-full border border-white/70 bg-white/90 px-4 py-2 text-[13px] font-bold text-[var(--text-1)] shadow-[0_14px_34px_rgba(58,107,95,0.22)] backdrop-blur-md dark:border-white/10 dark:bg-[var(--bg-card)]/90">
-          <span className="pointer-events-none absolute inset-x-3 top-0 h-px bg-linear-to-r from-transparent via-[var(--primary)]/70 to-transparent" />
-          <span className="relative">おつかれさま。{total}問完了しました</span>
+        <div className="pointer-events-none fixed top-1/2 left-1/2 z-40 grid w-[min(calc(100vw-48px),360px)] animate-result-toast place-items-center overflow-hidden rounded-[22px] border border-white/35 bg-linear-to-br from-[#2F7D6F] via-[#4B9D88] to-[#7EC9B2] px-6 py-4 text-center text-white shadow-[0_22px_52px_rgba(47,125,111,0.32)] backdrop-blur-md dark:border-white/15">
+          <span className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent" />
+          <span className="pointer-events-none absolute -top-12 right-8 h-24 w-24 rounded-full bg-white/22 blur-2xl" />
+          <span className="relative grid h-9 w-9 place-items-center rounded-full bg-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+            <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />
+          </span>
+          <span className="relative mt-2 text-[16px] font-extrabold tracking-tight">
+            おつかれさま
+          </span>
+          <span className="relative mt-0.5 text-[12px] font-bold text-white/90">
+            {total}問の演習が完了しました
+          </span>
         </div>
       ) : null}
 
