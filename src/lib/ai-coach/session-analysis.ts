@@ -120,19 +120,32 @@ function compareSummary(a: ClusterSummary, b: ClusterSummary): number {
 
 function buildAnalysisMessage(summary: ClusterSummary): string {
   const themePhrase = getThemePhrase(summary);
-  if (summary.highConfidenceIncorrect > 0) {
-    return `今回の解答では「${themePhrase}」を少し確認しておくと、判断が安定しそうです。`;
+  const clusterLabel = summary.label;
+  const high = summary.highConfidenceIncorrect;
+  const fast = summary.fastIncorrect;
+  const wrong = summary.incorrect;
+  const deliberate = summary.deliberateCorrect;
+
+  if (high > 0 && fast > 0) {
+    return `${clusterLabel}では「${themePhrase}」で自信ありの誤答が${high}問、急ぎ気味の誤答が${fast}問。問題文の条件を拾う流れと、覚え違いがないかの確認を両方やっておきましょう。`;
   }
-  if (summary.fastIncorrect > 0) {
-    return `今回の解答では「${themePhrase}」を短く確認して、問題文の条件を拾う流れを整えましょう。`;
+  if (high > 0) {
+    const others = wrong - high;
+    const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
+    return `${clusterLabel}で「${themePhrase}」を${high}問、自信ありで落としています${suffix}。覚え違いがないか解説で見直すと安定しそうです。`;
   }
-  if (summary.incorrect > 0) {
-    return `今回の解答では「${themePhrase}」に確認しておきたい点があります。似た問題を3問だけ解いて、判断の流れを整理しましょう。`;
+  if (fast > 0) {
+    const others = wrong - fast;
+    const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
+    return `${clusterLabel}で「${themePhrase}」を${fast}問、急ぎ気味に誤答しています${suffix}。問題文の条件を拾う流れを整えるところから始めましょう。`;
   }
-  if (summary.deliberateCorrect > 0) {
-    return `「${themePhrase}」は正解できていますが、少し時間をかけて判断した問題があります。短く確認しておくと、次はもっと安定しそうです。`;
+  if (wrong > 0) {
+    return `${clusterLabel}で「${themePhrase}」に確認したい誤答が${wrong}問あります。似た問題を3問だけ解いて、判断の流れを整理しましょう。`;
   }
-  return `今回の解答は安定しています。「${themePhrase}」を短く確認して、取れているテーマをそのまま固めておきましょう。`;
+  if (deliberate > 0) {
+    return `「${themePhrase}」は正解できていますが、${deliberate}問でやや時間をかけて判断しています。短い類題で流れを固めると、本番でも揺れにくくなります。`;
+  }
+  return `「${themePhrase}」は安定して取れています。類題を3問だけ解いて、得意テーマとして固めておきましょう。`;
 }
 
 function buildAnalysisDetails(
@@ -145,13 +158,26 @@ function buildAnalysisDetails(
   return ranked.slice(0, maxDetails).map((summary) => {
     const themePhrase = getThemePhrase(summary);
     if (summary.incorrect > 0) {
-      return `${summary.label}: ${themePhrase}で確認したい問題が${summary.incorrect}問あります。`;
+      const breakdown = buildIncorrectBreakdown(summary);
+      const suffix = breakdown ? `（${breakdown}）` : "";
+      return `${summary.label}: 「${themePhrase}」で確認したい誤答が${summary.incorrect}問${suffix}。`;
     }
     if (summary.deliberateCorrect > 0) {
-      return `${summary.label}: ${themePhrase}は正解できていますが、少し時間をかけて判断しています。`;
+      return `${summary.label}: 「${themePhrase}」は正解${summary.correct}問中、${summary.deliberateCorrect}問でやや時間がかかっています。`;
     }
-    return `${summary.label}: ${themePhrase}は安定して取れています。`;
+    return `${summary.label}: 「${themePhrase}」は${summary.correct}問とも安定して正解できています。`;
   });
+}
+
+function buildIncorrectBreakdown(summary: ClusterSummary): string {
+  const parts: string[] = [];
+  if (summary.highConfidenceIncorrect > 0) {
+    parts.push(`自信あり${summary.highConfidenceIncorrect}問`);
+  }
+  if (summary.fastIncorrect > 0) {
+    parts.push(`急ぎすぎ${summary.fastIncorrect}問`);
+  }
+  return parts.join("・");
 }
 
 function buildActionHref(

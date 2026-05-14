@@ -78,6 +78,98 @@ describe("AI coach recommendation", () => {
     expect(pickMisconceptionQuestions(questions, entries, 10)).toHaveLength(0);
   });
 
+  it("データが十分なユーザーは復習・弱点・思い込み・未回答を目標配合で出す", () => {
+    // review 候補(復習期限超過の誤答)を 8 問
+    const reviewQs = Array.from({ length: 8 }, (_, i) => ({
+      ...makeQuestions(1)[0],
+      id: `56-${100 + i}`,
+      displayNumber: 100 + i,
+      majorCategory: "眼光学・視力学・計算",
+      minorCategory: "屈折検査",
+    }));
+    // weak 候補(majorCategoryが弱点候補)を 8 問
+    const weakQs = Array.from({ length: 8 }, (_, i) => ({
+      ...makeQuestions(1)[0],
+      id: `56-${200 + i}`,
+      displayNumber: 200 + i,
+      majorCategory: "視能検査・検査機器",
+      minorCategory: "視力検査",
+    }));
+    // misconception 候補(自信あり誤答)を 5 問
+    const miscQs = Array.from({ length: 5 }, (_, i) => ({
+      ...makeQuestions(1)[0],
+      id: `56-${300 + i}`,
+      displayNumber: 300 + i,
+      majorCategory: "眼科疾患・神経眼科",
+      minorCategory: "神経眼科",
+    }));
+    // unanswered 候補を 15 問
+    const unansweredQs = Array.from({ length: 15 }, (_, i) => ({
+      ...makeQuestions(1)[0],
+      id: `56-${400 + i}`,
+      displayNumber: 400 + i,
+      majorCategory: "両眼視・斜視",
+      minorCategory: "斜視・眼球運動検査",
+    }));
+    const questions = [...reviewQs, ...weakQs, ...miscQs, ...unansweredQs];
+
+    // 履歴: review は復習期限超過のため過去日付で2回連続誤答、weak は誤答1回、misc は自信あり誤答、unanswered は履歴なし
+    const longAgo = "2025-12-01T00:00:00.000Z";
+    const recent = "2026-05-13T00:00:00.000Z";
+    const entries: AnswerHistoryEntry[] = [];
+    // review: 復習対象になる条件は実装に依存するため、誤答+古い日付で代用
+    for (const q of reviewQs) {
+      entries.push(
+        makeEntry(q.id, {
+          result: "incorrect",
+          majorCategory: q.majorCategory,
+          answeredAt: longAgo,
+        }),
+      );
+      entries.push(
+        makeEntry(q.id, {
+          result: "incorrect",
+          majorCategory: q.majorCategory,
+          answeredAt: recent,
+        }),
+      );
+    }
+    for (const q of weakQs) {
+      entries.push(
+        makeEntry(q.id, {
+          result: "incorrect",
+          majorCategory: q.majorCategory,
+          answeredAt: recent,
+        }),
+      );
+    }
+    for (const q of miscQs) {
+      entries.push(
+        makeEntry(q.id, {
+          result: "incorrect",
+          confidence: "high",
+          durationMs: 45_000,
+          majorCategory: q.majorCategory,
+          answeredAt: recent,
+        }),
+      );
+    }
+
+    const rec = pickAiCoachRecommended(questions, entries, 20);
+
+    expect(rec.questions).toHaveLength(20);
+    // 合計でユニーク20問
+    expect(new Set(rec.questions.map((q) => q.id)).size).toBe(20);
+    // 思い込みは最大3
+    expect(rec.buckets.misconception.length).toBeLessThanOrEqual(3);
+    // 未回答は最大6
+    expect(rec.buckets.unanswered.length).toBeLessThanOrEqual(6);
+    // 弱点は最大5
+    expect(rec.buckets.weak.length).toBeLessThanOrEqual(5);
+    // 復習は最大6
+    expect(rec.buckets.review.length).toBeLessThanOrEqual(6);
+  });
+
   it("テーマ名が少し違っても同じAIテーマクラスタなら反復ミスとして拾う", () => {
     const questions = [
       {

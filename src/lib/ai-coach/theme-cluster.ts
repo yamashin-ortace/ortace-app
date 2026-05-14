@@ -126,6 +126,7 @@ const MINOR_CLUSTER_IDS: Record<string, string> = {
   "偽斜視": "esotropia",
   "ボツリヌス療法": "strabismus-surgery",
   "アイフレイル": "law-social-system",
+  "複視": "paralytic-strabismus",
 };
 
 export function getAiThemeCluster(question: Question): AiThemeCluster {

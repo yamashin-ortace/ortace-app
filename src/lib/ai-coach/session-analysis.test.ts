@@ -47,6 +47,66 @@ describe("AI coach session analysis", () => {
     expect(analysis.actionHref).toBe("/study/unanswered?count=3");
   });
 
+  it("自信あり誤答は件数を入れて説明する", () => {
+    const questions = [
+      question({
+        id: "55-3",
+        majorCategory: "眼科疾患・神経眼科",
+        minorCategory: "神経眼科",
+        theme: "瞳孔反応解離",
+      }),
+      question({
+        id: "55-4",
+        majorCategory: "眼科疾患・神経眼科",
+        minorCategory: "神経眼科",
+        theme: "瞳孔反応解離",
+      }),
+    ];
+    const entries = [
+      entry("55-3", { result: "incorrect", confidence: "high", durationMs: 40_000 }),
+      entry("55-4", { result: "incorrect", confidence: "high", durationMs: 40_000 }),
+    ];
+
+    const analysis = analyzeAiCoachSession(
+      questions,
+      { "55-3": "incorrect", "55-4": "incorrect" },
+      entries,
+    );
+
+    expect(analysis.message).toContain("自信あり");
+    expect(analysis.message).toContain("2問");
+  });
+
+  it("自信あり誤答と急ぎすぎ誤答が両方あれば複合メッセージを出す", () => {
+    const questions = [
+      question({
+        id: "55-10",
+        majorCategory: "両眼視・斜視",
+        minorCategory: "斜視・眼球運動検査",
+        theme: "Hess赤緑試験",
+      }),
+      question({
+        id: "55-11",
+        majorCategory: "両眼視・斜視",
+        minorCategory: "斜視・眼球運動検査",
+        theme: "Hess赤緑試験",
+      }),
+    ];
+    const entries = [
+      entry("55-10", { result: "incorrect", confidence: "high", durationMs: 40_000 }),
+      entry("55-11", { result: "incorrect", confidence: "guess", durationMs: 9_000 }),
+    ];
+
+    const analysis = analyzeAiCoachSession(
+      questions,
+      { "55-10": "incorrect", "55-11": "incorrect" },
+      entries,
+    );
+
+    expect(analysis.message).toContain("自信あり");
+    expect(analysis.message).toContain("急ぎ気味");
+  });
+
   it("20問以上なら補足分析を複数出す", () => {
     const questions = Array.from({ length: 20 }, (_, index) =>
       question({

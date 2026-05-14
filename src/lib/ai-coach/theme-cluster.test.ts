@@ -36,6 +36,18 @@ describe("AI theme cluster", () => {
     ).toBe("glaucoma-clinical");
   });
 
+  it("複視は神経麻痺性斜視クラスタに寄せる", () => {
+    expect(
+      getAiThemeKey(
+        question({
+          majorCategory: "両眼視・斜視",
+          minorCategory: "複視",
+          theme: "同側性複視",
+        }),
+      ),
+    ).toBe("paralytic-strabismus");
+  });
+
   it("似たぶどう膜炎テーマは同じクラスタへ寄せる", () => {
     const a = question({
       majorCategory: "眼科疾患・神経眼科",
