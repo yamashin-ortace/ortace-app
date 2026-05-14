@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import { classifyAnswerDuration } from "@/lib/ai-coach/recommendation";
+import { getAiThemeKey, getAiThemeLabel } from "@/lib/ai-coach/theme-cluster";
 import type { Question } from "@/lib/questions";
 
 type Props = {
@@ -42,32 +43,32 @@ function pickInsightMessage(
 ): string | null {
   if (hasSimilarThemeMistake(question, questions, entries, latestEntry)) {
     return pickTemplate(question, [
-      `「${getThemeLabel(question)}」は似たミスが続いています。解説で条件の見分け方を一度整理しましょう。`,
-      `このテーマは前回もつまずいています。今日は「${getThemeLabel(question)}」の判断ポイントだけ押さえておきましょう。`,
-      `AIコーチ上は「${getThemeLabel(question)}」が反復ミス候補です。次に同じ型が来た時の合図を確認しましょう。`,
+      `「${getAiThemeLabel(question)}」は似たミスが続いています。解説で条件の見分け方を一度整理しましょう。`,
+      `このテーマは前回もつまずいています。今日は「${getAiThemeLabel(question)}」の判断ポイントだけ押さえておきましょう。`,
+      `AIコーチ上は「${getAiThemeLabel(question)}」が反復ミス候補です。次に同じ型が来た時の合図を確認しましょう。`,
     ]);
   }
 
   const duration = classifyAnswerDuration(latestEntry.durationMs);
   if (latestEntry.result === "incorrect" && duration === "fast") {
     return pickTemplate(question, [
-      `「${getThemeLabel(question)}」で少し急いで選んだ可能性があります。問題文の条件をもう一度確認してみましょう。`,
-      `解答時間が短めの誤答です。「${getThemeLabel(question)}」は読み飛ばしやすい条件に注意しましょう。`,
+      `「${getAiThemeLabel(question)}」で少し急いで選んだ可能性があります。問題文の条件をもう一度確認してみましょう。`,
+      `解答時間が短めの誤答です。「${getAiThemeLabel(question)}」は読み飛ばしやすい条件に注意しましょう。`,
       `AIコーチは急ぎすぎのミス候補として見ています。選択肢に入る前に、問題文の限定条件を拾い直しましょう。`,
     ]);
   }
   if (latestEntry.result === "incorrect" && duration === "deliberate") {
     return pickTemplate(question, [
-      `時間をかけて考えた問題です。「${getThemeLabel(question)}」の考え方の流れを解説で確認しておくと次につながります。`,
+      `時間をかけて考えた問題です。「${getAiThemeLabel(question)}」の考え方の流れを解説で確認しておくと次につながります。`,
       `迷ったうえでの誤答です。今日は答えだけでなく、なぜその選択肢を外すのかを見ておきましょう。`,
-      `AIコーチ上は理解整理の候補です。「${getThemeLabel(question)}」の判断手順を短く言えるか確認しましょう。`,
+      `AIコーチ上は理解整理の候補です。「${getAiThemeLabel(question)}」の判断手順を短く言えるか確認しましょう。`,
     ]);
   }
   if (latestEntry.result === "correct" && duration === "deliberate") {
     return pickTemplate(question, [
-      `正解できています。「${getThemeLabel(question)}」は少し迷いがありそうなので、あとで類題でもう一度確認すると安定しそうです。`,
+      `正解できています。「${getAiThemeLabel(question)}」は少し迷いがありそうなので、あとで類題でもう一度確認すると安定しそうです。`,
       `取れている問題です。ただ、解答時間は長めなので、次は判断を少しだけ速くできるか試してみましょう。`,
-      `AIコーチは定着途中の正解として見ています。「${getThemeLabel(question)}」は復習で安定化しやすいです。`,
+      `AIコーチは定着途中の正解として見ています。「${getAiThemeLabel(question)}」は復習で安定化しやすいです。`,
     ]);
   }
   return null;
@@ -86,21 +87,14 @@ function hasSimilarThemeMistake(
     if (entry.id === latestEntry.id && entry.answeredAt === latestEntry.answeredAt) {
       return false;
     }
-    if (entry.result === "correct") return false;
+    if (entry.result !== "incorrect") return false;
     const previousQuestion = questionById.get(entry.id);
     return previousQuestion ? makeThemeKey(previousQuestion) === themeKey : false;
   });
 }
 
 function makeThemeKey(question: Question): string {
-  return [
-    question.majorCategory,
-    question.minorCategory || question.theme || "",
-  ].join("|");
-}
-
-function getThemeLabel(question: Question): string {
-  return question.minorCategory || question.theme || question.majorCategory;
+  return getAiThemeKey(question);
 }
 
 function pickTemplate(question: Question, templates: readonly string[]): string {

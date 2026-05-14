@@ -77,6 +77,34 @@ describe("AI coach recommendation", () => {
 
     expect(pickMisconceptionQuestions(questions, entries, 10)).toHaveLength(0);
   });
+
+  it("テーマ名が少し違っても同じAIテーマクラスタなら反復ミスとして拾う", () => {
+    const questions = [
+      {
+        ...makeQuestions(1)[0],
+        id: "56-10",
+        majorCategory: "眼科疾患・神経眼科",
+        minorCategory: "緑内障",
+        theme: "緑内障視野",
+      },
+      {
+        ...makeQuestions(1)[0],
+        id: "56-11",
+        displayNumber: 11,
+        majorCategory: "眼科疾患・神経眼科",
+        minorCategory: "緑内障",
+        theme: "緑内障視野欠損",
+      },
+    ];
+    const entries: AnswerHistoryEntry[] = [
+      makeEntry("56-10", { result: "incorrect", majorCategory: "眼科疾患・神経眼科" }),
+      makeEntry("56-11", { result: "incorrect", majorCategory: "眼科疾患・神経眼科" }),
+    ];
+
+    expect(pickMisconceptionQuestions(questions, entries, 10).map((q) => q.id)).toContain(
+      "56-11",
+    );
+  });
 });
 
 function makeQuestions(count: number): Question[] {

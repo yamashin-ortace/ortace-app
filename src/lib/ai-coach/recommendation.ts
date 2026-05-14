@@ -7,6 +7,7 @@ import {
   getStagedWeakFields,
   getUntouchedQuestions,
 } from "@/lib/answer-history/status";
+import { getAiThemeKey } from "./theme-cluster";
 
 export const AI_COACH_RECOMMENDATION_LIMIT = 20;
 export const AI_COACH_DATA_READINESS_THRESHOLD = 30;
@@ -197,11 +198,7 @@ function buildMisconceptionPool(
 }
 
 function makeThemeKey(question: Question | undefined): string | null {
-  if (!question) return null;
-  return [
-    question.majorCategory,
-    question.minorCategory || question.theme || "",
-  ].join("|");
+  return question ? getAiThemeKey(question) : null;
 }
 
 function rankBySourceOrder(questions: readonly Question[]): Question[] {
