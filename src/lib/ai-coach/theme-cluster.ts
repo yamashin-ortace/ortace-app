@@ -177,6 +177,10 @@ export function getAiThemeCluster(question: Question): AiThemeCluster {
   return requireCluster("visual-physiology");
 }
 
+export function getAiThemeClusterById(id: string): AiThemeCluster | null {
+  return CLUSTER_BY_ID.get(id) ?? null;
+}
+
 export function getAiThemeKey(question: Question): string {
   return getAiThemeCluster(question).id;
 }

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Home, RotateCw, Trophy } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
 import { PrimaryCta } from "@/components/ui/primary-cta";
+import { AiCoachResultAnalysis } from "./ai-coach-result-analysis";
 import { QuestionReviewItem } from "./question-review-item";
 
 type Props = {
@@ -78,6 +79,12 @@ export function QuizResultScreen({
           colorClass="text-amber-700 dark:text-amber-400"
         />
       </div>
+
+      <AiCoachResultAnalysis
+        questions={questions}
+        judgements={judgements}
+        selectedAnswers={selectedAnswers}
+      />
 
       <section className="space-y-2">
         <button
