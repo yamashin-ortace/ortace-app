@@ -1,18 +1,40 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import type { Database } from "@/lib/supabase/database.types";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = normalizeNextPath(searchParams.get("next"));
 
   if (code) {
-    const supabase = await createSupabaseServerClient();
+    const redirectUrl = new URL(next, origin);
+    let response = NextResponse.redirect(redirectUrl);
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value),
+            );
+            response = NextResponse.redirect(redirectUrl);
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options),
+            );
+          },
+        },
+      },
+    );
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       revalidatePath("/", "layout");
-      return NextResponse.redirect(`${origin}${next}`);
+      return response;
     }
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(error.message)}`,
@@ -20,4 +42,9 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(`${origin}/login?error=missing_code`);
+}
+
+function normalizeNextPath(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
+  return value;
 }
