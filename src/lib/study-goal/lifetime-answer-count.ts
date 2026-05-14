@@ -7,32 +7,28 @@ import {
 export const LIFETIME_ANSWER_COUNT_KEY = "ortace.stats.lifetimeAnswerCount";
 
 /**
- * LocalStorage に保存済みの累計解答数（1問解答のたびに +1）。
- * 履歴500件トリムと無関係に「何回ボタンを押したか」を近似する。
+ * 同期済みの解答履歴から導出する累計解答数。
+ * 旧 localStorage カウンタは端末ごとに分岐するため、表示値としては使わない。
  */
 export function readLifetimeAnswerCount(): number {
   if (typeof window === "undefined") return 0;
   try {
-    const raw = window.localStorage.getItem(LIFETIME_ANSWER_COUNT_KEY);
-    if (raw !== null && raw !== "") {
-      const n = Number(raw);
-      if (Number.isFinite(n) && n >= 0) return Math.floor(n);
-    }
-    return bootstrapLifetimeFromHistory();
+    const count = countLifetimeAnswersFromHistoryRaw(
+      window.localStorage.getItem(ANSWER_HISTORY_STORAGE_KEY),
+    );
+    return count;
   } catch {
     return 0;
   }
 }
 
-/** 初回またはキー無し時、現存の履歴件数から補う（下限の近似） */
+/** 旧呼び出し互換。現在は常に同期済み履歴件数を返す。 */
 export function bootstrapLifetimeFromHistory(): number {
   if (typeof window === "undefined") return 0;
   try {
-    const historyRaw = window.localStorage.getItem(ANSWER_HISTORY_STORAGE_KEY);
-    const store = parseAnswerHistoryStore(historyRaw);
-    const n = getSortedAnswerHistoryEntries(store).length;
-    window.localStorage.setItem(LIFETIME_ANSWER_COUNT_KEY, String(n));
-    return n;
+    return countLifetimeAnswersFromHistoryRaw(
+      window.localStorage.getItem(ANSWER_HISTORY_STORAGE_KEY),
+    );
   } catch {
     return 0;
   }
@@ -40,15 +36,20 @@ export function bootstrapLifetimeFromHistory(): number {
 
 export const LIFETIME_ANSWER_UPDATED_EVENT = "ortace:lifetime-answer-updated";
 
-export function incrementLifetimeAnswerCount(): number {
+export function countLifetimeAnswersFromHistoryRaw(raw: string | null): number {
+  return getSortedAnswerHistoryEntries(parseAnswerHistoryStore(raw)).length;
+}
+
+export function notifyLifetimeAnswerCountUpdated(): number {
   if (typeof window === "undefined") return 0;
   try {
-    const cur = readLifetimeAnswerCount();
-    const next = cur + 1;
-    window.localStorage.setItem(LIFETIME_ANSWER_COUNT_KEY, String(next));
+    const next = readLifetimeAnswerCount();
     window.dispatchEvent(new Event(LIFETIME_ANSWER_UPDATED_EVENT));
     return next;
   } catch {
     return readLifetimeAnswerCount();
   }
 }
+
+/** @deprecated 累計数は answer_history から導出する。更新通知用途のみ残す。 */
+export const incrementLifetimeAnswerCount = notifyLifetimeAnswerCountUpdated;

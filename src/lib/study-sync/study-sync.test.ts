@@ -82,7 +82,7 @@ describe("study sync helpers", () => {
     const remote: AnswerHistoryRow = {
       id: "00000000-0000-0000-0000-000000000001",
       user_id: "user-1",
-      entry_key: "ignored",
+      entry_key: "52-101|2026-05-08T00:00:00.000Z|correct|1",
       question_id: "52-101",
       answered_at: "2026-05-08T00:00:00.000Z",
       result: "correct",
@@ -128,5 +128,43 @@ describe("study sync helpers", () => {
     expect(createAnswerHistoryEntryKey(merged.entries[1]!)).toBe(
       "52-101|2026-05-08T00:00:00.000Z|correct|1",
     );
+  });
+
+  it("解答履歴のremote行はDB stored entry_keyをそのまま信頼する", () => {
+    const remote: AnswerHistoryRow = {
+      id: "00000000-0000-0000-0000-000000000001",
+      user_id: "user-1",
+      entry_key: "db-stored-key-with-format-difference",
+      question_id: "52-101",
+      answered_at: "2026-05-08T00:00:00.000Z",
+      result: "correct",
+      selected_answers: ["1"],
+      round: 52,
+      session: "pm",
+      display_number: 1,
+      major_category: "眼科疾患・神経眼科",
+      created_at: "2026-05-08T00:00:00.000Z",
+    };
+
+    const merged = mergeAnswerHistoryStores(
+      {
+        version: 1,
+        entries: [
+          {
+            id: "52-101",
+            answeredAt: "2026-05-08T00:00:00.000Z",
+            result: "correct",
+            selectedAnswers: ["1"],
+            round: 52,
+            session: "pm",
+            displayNumber: 1,
+            majorCategory: "眼科疾患・神経眼科",
+          },
+        ],
+      },
+      [remote],
+    );
+
+    expect(merged.entries).toHaveLength(2);
   });
 });

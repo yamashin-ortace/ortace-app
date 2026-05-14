@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
+import { ANSWER_HISTORY_UPDATED_EVENT } from "@/lib/answer-history";
 import {
   LIFETIME_ANSWER_UPDATED_EVENT,
   readLifetimeAnswerCount,
@@ -13,10 +14,12 @@ function subscribe(onChange: () => void): () => void {
   const handle = () => onChange();
 
   window.addEventListener(LIFETIME_ANSWER_UPDATED_EVENT, handle);
+  window.addEventListener(ANSWER_HISTORY_UPDATED_EVENT, handle);
   window.addEventListener("storage", handle);
 
   return () => {
     window.removeEventListener(LIFETIME_ANSWER_UPDATED_EVENT, handle);
+    window.removeEventListener(ANSWER_HISTORY_UPDATED_EVENT, handle);
     window.removeEventListener("storage", handle);
   };
 }

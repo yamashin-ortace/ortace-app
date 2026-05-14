@@ -5,6 +5,7 @@ import type { AnswerJudgement } from "@/lib/quiz";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import {
   ANSWER_HISTORY_STORAGE_KEY,
+  ANSWER_HISTORY_UPDATED_EVENT,
   createAnswerHistoryStore,
   getSortedAnswerHistoryEntries,
   parseAnswerHistoryStore,
@@ -19,9 +20,7 @@ import {
   syncAnswerHistoryWithDatabase,
 } from "@/lib/study-sync";
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
-import { incrementLifetimeAnswerCount } from "@/lib/study-goal/lifetime-answer-count";
-
-const ANSWER_HISTORY_UPDATED_EVENT = "ortace:answer-history-updated";
+import { notifyLifetimeAnswerCountUpdated } from "@/lib/study-goal/lifetime-answer-count";
 
 export function useAnswerHistory() {
   useEnsureAnswerHistorySynced();
@@ -39,7 +38,7 @@ export function useAnswerHistory() {
       });
       writeAnswerHistoryStore(next);
       notifyAnswerHistoryUpdated();
-      incrementLifetimeAnswerCount();
+      notifyLifetimeAnswerCountUpdated();
       const recorded = next.entries.find(
         (entry) =>
           entry.id === params.question.id &&
