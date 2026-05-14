@@ -59,7 +59,7 @@ export function RecommendationSection({ totalQuestions }: Props) {
           href="/study/today"
           icon={<Sparkles className="h-6 w-6" strokeWidth={2.5} />}
           title="今日のおすすめ"
-          subtitle="復習・弱点・思い込み・未回答から20問を提案"
+          subtitle="回答履歴・正答率・自信度・解答時間から分析"
           trailing={<TodayRecommendedHowItWorksPopover />}
         />
         <RecommendStudyLink
@@ -94,9 +94,9 @@ export function RecommendationSection({ totalQuestions }: Props) {
             hydrated
               ? stats.weakLabel
                 ? stats.weakStage === "provisional"
-                  ? `直近の苦手（暫定）：${stats.weakLabel}`
-                  : `直近の苦手：${stats.weakLabel}`
-                : "正答率の低い分野を集中補強"
+                  ? `正答率から暫定分析：${stats.weakLabel}`
+                  : `正答率から分析：${stats.weakLabel}`
+                : "正答率の低い分野をAIコーチが集中補強"
               : "計算中…"
           }
           trailing={<WeakFieldHowItWorksPopover />}
@@ -105,7 +105,7 @@ export function RecommendationSection({ totalQuestions }: Props) {
           href="/study/misconception"
           icon={<BrainCircuit className="h-6 w-6" strokeWidth={2.5} />}
           title="思い込みチェック"
-          subtitle="自信ありの誤答や速すぎた誤答を見直します"
+          subtitle="自信あり誤答・急ぎすぎた誤答を分析"
           trailing={null}
         />
       </div>

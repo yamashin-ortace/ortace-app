@@ -46,7 +46,7 @@ export function HomeTodayCta({ totalQuestions }: Props) {
               AIコーチ 今日のおすすめ
             </span>
             <span className="mt-0.5 text-[12px] text-[var(--text-2)]">
-              復習・弱点・思い込み・未回答から今日の20問を提案
+              回答履歴・正答率・自信度を分析して今日の20問を提案
             </span>
           </div>
           <ChevronRight

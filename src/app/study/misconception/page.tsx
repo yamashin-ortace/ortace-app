@@ -25,7 +25,7 @@ export default async function MisconceptionPage() {
           AI思い込みチェック
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          自信があった誤答や、急ぎすぎた誤答を優先して見直します
+          自信があった誤答、急ぎすぎた誤答、同テーマの反復ミスを分析します
         </p>
       </div>
 

@@ -1,5 +1,5 @@
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
-import type { Question } from "@/lib/questions";
+import { isScorableQuestion, type Question } from "@/lib/questions";
 import {
   getFieldStats,
   getLatestEntryByQuestionId,
@@ -46,9 +46,12 @@ export function pickAiCoachRecommended(
   entries: readonly AnswerHistoryEntry[],
   limit = AI_COACH_RECOMMENDATION_LIMIT,
 ): AiCoachRecommendation {
+  const scorableQuestions = questions.filter(isScorableQuestion);
   const cappedLimit = Math.max(0, Math.min(limit, AI_COACH_RECOMMENDATION_LIMIT));
   const latest = getLatestEntryByQuestionId(entries);
-  const questionById = new Map(questions.map((question) => [question.id, question]));
+  const questionById = new Map(
+    scorableQuestions.map((question) => [question.id, question]),
+  );
   const buckets: Record<AiCoachBucket, Question[]> = {
     review: [],
     weak: [],
@@ -71,16 +74,18 @@ export function pickAiCoachRecommended(
 
   const reviewIds = getReviewTargetIds(entries);
   const reviewPool = rankBySourceOrder(
-    questions.filter((question) => reviewIds.has(question.id)),
+    scorableQuestions.filter((question) => reviewIds.has(question.id)),
   );
-  const weakPool = buildWeakPool(questions, entries, latest);
+  const weakPool = buildWeakPool(scorableQuestions, entries, latest);
   const misconceptionPool = buildMisconceptionPool(
-    questions,
+    scorableQuestions,
     entries,
     latest,
     questionById,
   );
-  const unansweredPool = rankBySourceOrder(getUntouchedQuestions(questions, entries));
+  const unansweredPool = rankBySourceOrder(
+    getUntouchedQuestions(scorableQuestions, entries),
+  );
 
   add("review", reviewPool, AI_COACH_TARGETS.review);
   add("weak", weakPool, AI_COACH_TARGETS.weak);
@@ -92,7 +97,7 @@ export function pickAiCoachRecommended(
     ...reviewPool,
     ...weakPool,
     ...misconceptionPool,
-    ...rankBySourceOrder(questions),
+    ...rankBySourceOrder(scorableQuestions),
   ];
   add("fill", fillPool, cappedLimit);
 
@@ -109,12 +114,17 @@ export function pickMisconceptionQuestions(
   entries: readonly AnswerHistoryEntry[],
   limit = AI_COACH_RECOMMENDATION_LIMIT,
 ): Question[] {
+  const scorableQuestions = questions.filter(isScorableQuestion);
   const latest = getLatestEntryByQuestionId(entries);
-  const questionById = new Map(questions.map((question) => [question.id, question]));
-  return buildMisconceptionPool(questions, entries, latest, questionById).slice(
-    0,
-    limit,
+  const questionById = new Map(
+    scorableQuestions.map((question) => [question.id, question]),
   );
+  return buildMisconceptionPool(
+    scorableQuestions,
+    entries,
+    latest,
+    questionById,
+  ).slice(0, limit);
 }
 
 function buildWeakPool(
@@ -131,7 +141,7 @@ function buildWeakPool(
     .filter((question) => fieldRank.has(question.majorCategory))
     .filter((question) => {
       const entry = latest.get(question.id);
-      return !entry || entry.result === "incorrect" || entry.result === "no_answer";
+      return !entry || entry.result === "incorrect";
     })
     .sort((a, b) => {
       const fieldDiff =
@@ -153,7 +163,7 @@ function buildMisconceptionPool(
 ): Question[] {
   const mistakeCountByTheme = new Map<string, number>();
   for (const entry of entries) {
-    if (entry.result === "correct") continue;
+    if (entry.result !== "incorrect") continue;
     const question = questionById.get(entry.id);
     const themeKey = makeThemeKey(question);
     if (!themeKey) continue;
@@ -164,13 +174,13 @@ function buildMisconceptionPool(
     .map((question) => {
       const entry = latest.get(question.id);
       if (!entry || entry.result === "correct") return { question, score: 0 };
+      if (entry.result === "no_answer") return { question, score: 0 };
       const themeMistakes = mistakeCountByTheme.get(makeThemeKey(question) ?? "") ?? 0;
       const durationBucket = classifyAnswerDuration(entry.durationMs);
       let score = 0;
       if (entry.confidence === "high") score += 100;
       if (durationBucket === "fast") score += 60;
       if (themeMistakes >= 2) score += 35;
-      if (entry.result === "no_answer") score += 10;
       return { question, score };
     })
     .filter((item) => item.score > 0)

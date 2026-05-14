@@ -456,7 +456,7 @@ export function QuizPlayer({
           <AnswerFeedback
             question={current}
             judgement={currentState.judgement}
-            variant="banner"
+            variant="toast"
           />
         ) : null}
 

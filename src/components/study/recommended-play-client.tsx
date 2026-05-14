@@ -10,7 +10,7 @@ import {
   type AllowedCount,
 } from "@/components/study/question-count-selector";
 import type { PlanType } from "@/lib/daily-limit";
-import type { Question } from "@/lib/questions";
+import { isScorableQuestion, type Question } from "@/lib/questions";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import {
@@ -123,30 +123,31 @@ function pickPoolByMode(
   entries: AnswerHistoryEntry[],
   limit: number,
 ): Question[] {
+  const scorableQuestions = questions.filter(isScorableQuestion);
   if (mode === "review") {
-    return getReviewQuestions(questions, entries);
+    return getReviewQuestions(scorableQuestions, entries);
   }
   if (mode === "unanswered") {
-    return getUntouchedQuestions(questions, entries).sort((a, b) => {
+    return getUntouchedQuestions(scorableQuestions, entries).sort((a, b) => {
       if (a.round !== b.round) return a.round - b.round;
       if (a.session !== b.session) return a.session === "am" ? -1 : 1;
       return a.displayNumber - b.displayNumber;
     });
   }
   if (mode === "weak") {
-    const stats = getFieldStats(questions, entries);
+    const stats = getFieldStats(scorableQuestions, entries);
     const staged = getStagedWeakFields(stats);
     // 確定（10問以上）を優先し、足りなければ暫定（5問以上）で補う。
     // 上位3分野まで対象にする。
     const ranked = [...staged.confirmed, ...staged.provisional];
     const topWeakFields = new Set(ranked.slice(0, 3).map((s) => s.field));
     if (topWeakFields.size === 0) return [];
-    return questions.filter((q) => topWeakFields.has(q.majorCategory));
+    return scorableQuestions.filter((q) => topWeakFields.has(q.majorCategory));
   }
   if (mode === "misconception") {
-    return pickMisconceptionQuestions(questions, entries, limit);
+    return pickMisconceptionQuestions(scorableQuestions, entries, limit);
   }
-  return pickAiCoachRecommended(questions, entries, limit).questions;
+  return pickAiCoachRecommended(scorableQuestions, entries, limit).questions;
 }
 
 function EmptyState({ title, message }: { title: string; message: string }) {

@@ -23,7 +23,7 @@ const INTERVALS_BY_STREAK: Record<number, number> = {
  *
  * - 不正解: streak=0、翌日復習
  * - 正解: streak=prevStreak+1、interval は INTERVALS_BY_STREAK に従う
- * - 出題ミス（no_answer）: streak=0、翌日復習（リトライ可能性のため）
+ * - 公式正答なし（no_answer）: streak=0、復習対象にはしない
  * - streak が GRADUATION に達したら nextReviewAt=null（卒業）
  */
 export function computeSpacedRepetition({
@@ -35,7 +35,10 @@ export function computeSpacedRepetition({
   previousStreak: number;
   now: Date;
 }): { streak: number; nextReviewAt: string | null } {
-  if (result === "incorrect" || result === "no_answer") {
+  if (result === "no_answer") {
+    return { streak: 0, nextReviewAt: null };
+  }
+  if (result === "incorrect") {
     return { streak: 0, nextReviewAt: formatLocalDate(addDays(now, 1)) };
   }
   const streak = previousStreak + 1;
@@ -64,8 +67,9 @@ export function isDueForReview(
   if (entry.nextReviewAt) {
     return entry.nextReviewAt <= todayLocalDate;
   }
+  if (entry.result === "no_answer") return false;
   // 旧データには nextReviewAt が無いので、従来挙動を維持
-  return entry.result === "incorrect" || entry.result === "no_answer";
+  return entry.result === "incorrect";
 }
 
 function addDays(date: Date, days: number): Date {

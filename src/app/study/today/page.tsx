@@ -25,7 +25,7 @@ export default async function TodayPage() {
           AIコーチ 今日のおすすめ
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          復習・弱点・思い込み・未回答から、今日の20問を自動で組みます
+          回答履歴・正答率・自信度・解答時間を分析して、今日の20問を自動で組みます
         </p>
       </div>
 

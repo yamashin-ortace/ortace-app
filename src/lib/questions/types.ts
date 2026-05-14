@@ -75,6 +75,11 @@ export type Question = {
   images?: string[];
 };
 
+/** 公式正答があり、ユーザーの正誤・弱点判定に使える問題か */
+export function isScorableQuestion(question: Pick<Question, "correctAnswers">): boolean {
+  return question.correctAnswers.length > 0;
+}
+
 /** 1回分のデータ（150問） */
 export type RoundData = {
   round: ExamRound;

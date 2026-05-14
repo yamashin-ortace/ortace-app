@@ -15,4 +15,4 @@ export type {
   Session,
 } from "./types";
 
-export { EXAM_ROUNDS, FIELDS } from "./types";
+export { EXAM_ROUNDS, FIELDS, isScorableQuestion } from "./types";

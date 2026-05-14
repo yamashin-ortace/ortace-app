@@ -187,6 +187,21 @@ describe("answer-history", () => {
     expect(store.entries[0].streak).toBe(0);
   });
 
+  it("正答未確定は復習対象にしない", () => {
+    const store = recordAnswerHistory(createAnswerHistoryStore(), {
+      question: { ...question, correctAnswer: "", correctAnswers: [] },
+      result: "no_answer",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-05T01:00:00.000Z"),
+    });
+
+    expect(store.entries[0]).toMatchObject({
+      result: "no_answer",
+      streak: 0,
+      nextReviewAt: null,
+    });
+  });
+
   it("3連続正解では卒業せず、4連続正解で復習対象から外れる", () => {
     let store = createAnswerHistoryStore();
     for (const now of [

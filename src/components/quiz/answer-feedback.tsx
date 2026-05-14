@@ -8,27 +8,27 @@ import { cn } from "@/lib/utils";
 type Props = {
   question: Question;
   judgement: AnswerJudgement;
-  variant?: "banner" | "explanation";
+  variant?: "toast" | "explanation";
 };
 
 /**
  * 解答結果（バナー）または解説の表示
  *
- * - variant="banner"：選択肢の上に置く中央寄せピル型バナー
+ * - variant="toast"：レイアウトを伸ばさない固定表示
  * - variant="explanation"：選択肢の下に置く解説カード
  */
 export function AnswerFeedback({
   question,
   judgement,
-  variant = "banner",
+  variant = "toast",
 }: Props) {
-  if (variant === "banner") {
-    return <FeedbackBanner question={question} judgement={judgement} />;
+  if (variant === "toast") {
+    return <FeedbackToast question={question} judgement={judgement} />;
   }
   return <Explanation explanation={question.explanation} />;
 }
 
-function FeedbackBanner({
+function FeedbackToast({
   question,
   judgement,
 }: {
@@ -42,12 +42,13 @@ function FeedbackBanner({
       <div
         className={cn(
           "animate-feedback-in",
-          "flex items-center justify-center gap-2 rounded-full px-6 py-3 text-center",
+          "pointer-events-none fixed top-[calc(env(safe-area-inset-top)+72px)] left-1/2 z-40 -translate-x-1/2",
+          "flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-center",
           "bg-[var(--success)] text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--success)_42%,transparent)]",
         )}
       >
-        <CheckCircle2 className="h-6 w-6 shrink-0" strokeWidth={2.5} />
-        <span className="text-[16px] font-extrabold tracking-wide">正解</span>
+        <CheckCircle2 className="h-[18px] w-[18px] shrink-0" strokeWidth={2.5} />
+        <span className="text-[13px] font-extrabold tracking-wide">正解</span>
       </div>
     );
   }
@@ -57,13 +58,14 @@ function FeedbackBanner({
       <div
         className={cn(
           "animate-feedback-in",
-          "flex items-center justify-center gap-3 rounded-full px-6 py-3 text-center",
+          "pointer-events-none fixed top-[calc(env(safe-area-inset-top)+72px)] left-1/2 z-40 -translate-x-1/2",
+          "flex items-center justify-center gap-2 rounded-full px-4 py-2 text-center",
           "bg-[var(--error)] text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--error)_42%,transparent)]",
         )}
       >
-        <XCircle className="h-6 w-6 shrink-0" strokeWidth={2.5} />
-        <span className="text-[16px] font-extrabold tracking-wide">不正解</span>
-        <span className="text-[12px] font-bold opacity-95">
+        <XCircle className="h-[18px] w-[18px] shrink-0" strokeWidth={2.5} />
+        <span className="text-[13px] font-extrabold tracking-wide">不正解</span>
+        <span className="text-[11px] font-bold opacity-95">
           正答 {correctText}
         </span>
       </div>
@@ -75,22 +77,18 @@ function FeedbackBanner({
     <div
       className={cn(
         "animate-feedback-in",
-        "flex items-start gap-2 rounded-[12px] border-2 border-amber-500 bg-amber-50 px-4 py-3",
-        "dark:bg-amber-950/40",
+        "pointer-events-none fixed top-[calc(env(safe-area-inset-top)+72px)] left-1/2 z-40 -translate-x-1/2",
+        "flex items-center gap-2 rounded-full border border-amber-500 bg-amber-50 px-4 py-2 shadow-[0_4px_14px_rgba(180,83,9,0.18)]",
+        "dark:bg-amber-950",
       )}
     >
       <AlertTriangle
-        className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400"
+        className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
         strokeWidth={2.5}
       />
-      <div className="space-y-0.5">
-        <p className="text-[14px] font-bold text-amber-900 dark:text-amber-200">
-          正答未確定
-        </p>
-        <p className="text-[12px] leading-relaxed text-amber-800 dark:text-amber-300">
-          試験委員会により出題ミス認定された問題です。正答が定まっていません。
-        </p>
-      </div>
+      <p className="text-[12px] font-bold text-amber-900 dark:text-amber-200">
+        正答なし
+      </p>
     </div>
   );
 }

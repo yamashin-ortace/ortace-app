@@ -28,6 +28,17 @@ describe("AI coach recommendation", () => {
     expect(new Set(recommendation.questions.map((q) => q.id)).size).toBe(20);
   });
 
+  it("正答未確定問題はAIコーチ推薦から除外する", () => {
+    const questions = [
+      ...makeQuestions(3),
+      { ...makeQuestions(1)[0], id: "56-99", correctAnswer: "", correctAnswers: [] },
+    ];
+
+    const recommendation = pickAiCoachRecommended(questions, [], 20);
+
+    expect(recommendation.questions.map((q) => q.id)).not.toContain("56-99");
+  });
+
   it("自信あり誤答と速すぎた誤答を思い込み候補にする", () => {
     const questions = makeQuestions(5);
     const entries: AnswerHistoryEntry[] = [
@@ -52,6 +63,19 @@ describe("AI coach recommendation", () => {
       "56-1",
       "56-2",
     ]);
+  });
+
+  it("no_answer履歴は思い込み候補にしない", () => {
+    const questions = makeQuestions(2);
+    const entries: AnswerHistoryEntry[] = [
+      makeEntry("56-1", {
+        result: "no_answer",
+        confidence: "high",
+        durationMs: 10_000,
+      }),
+    ];
+
+    expect(pickMisconceptionQuestions(questions, entries, 10)).toHaveLength(0);
   });
 });
 
