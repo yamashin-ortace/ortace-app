@@ -43,10 +43,10 @@ export function HomeTodayCta({ totalQuestions }: Props) {
           </span>
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-[16px] font-extrabold tracking-tight text-[var(--text-1)]">
-              今日のおすすめ
+              AIコーチ 今日のおすすめ
             </span>
             <span className="mt-0.5 text-[12px] text-[var(--text-2)]">
-              迷ったらここから。出題数は10/15/20問から選べます
+              復習・弱点・思い込み・未回答から今日の20問を提案
             </span>
           </div>
           <ChevronRight

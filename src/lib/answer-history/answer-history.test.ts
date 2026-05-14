@@ -40,6 +40,7 @@ describe("answer-history", () => {
       question: { ...question, id: "56-102", displayNumber: 2, number: 102 },
       result: "incorrect",
       selectedAnswers: ["2"],
+      durationMs: 12_345,
       now: new Date("2026-05-08T00:01:00.000Z"),
     });
 
@@ -55,6 +56,7 @@ describe("answer-history", () => {
       session: "pm",
       displayNumber: 2,
       majorCategory: "視能検査・検査機器",
+      durationMs: 12_345,
     });
   });
 
@@ -120,6 +122,7 @@ describe("answer-history", () => {
           displayNumber: 1,
           majorCategory: "視能検査・検査機器",
           confidence: null,
+          durationMs: null,
           streak: 1,
         },
       ],

@@ -30,6 +30,7 @@ export function useAnswerHistory() {
       result: AnswerJudgement;
       selectedAnswers: readonly ChoiceKey[];
       confidence?: ConfidenceLevel | null;
+      durationMs?: number | null;
     }) => {
       const now = new Date();
       const next = recordAnswerHistory(readAnswerHistoryStore(), {
@@ -64,6 +65,16 @@ export function useAnswerHistory() {
       if (next === current) return;
       writeAnswerHistoryStore(next);
       notifyAnswerHistoryUpdated();
+      const updated = next.entries.find(
+        (entry) =>
+          entry.id === params.questionId &&
+          (!params.answeredAt || entry.answeredAt === params.answeredAt),
+      );
+      if (updated) {
+        void pushAnswerHistoryEntryToDatabase(updated).then((ok) => {
+          if (!ok) void runAnswerHistorySync();
+        });
+      }
     },
     [],
   );

@@ -19,6 +19,8 @@ export type AnswerHistoryEntry = {
   majorCategory: string;
   /** 解答時の自信度（任意・未入力なら null） */
   confidence?: ConfidenceLevel | null;
+  /** 問題表示から解答確定までの時間（ミリ秒・未計測なら null） */
+  durationMs?: number | null;
   /** この問題での連続正解数（0=未連続、誤答でリセット） */
   streak?: number;
   /** 次回復習日（"YYYY-MM-DD"・卒業や対象外なら null） */
@@ -71,11 +73,19 @@ export function recordAnswerHistory(
     result: AnswerJudgement;
     selectedAnswers: readonly ChoiceKey[];
     confidence?: ConfidenceLevel | null;
+    durationMs?: number | null;
     now?: Date;
   },
 ): AnswerHistoryStore {
   const current = normalizeAnswerHistoryStore(store);
-  const { question, result, selectedAnswers, confidence = null, now = new Date() } = params;
+  const {
+    question,
+    result,
+    selectedAnswers,
+    confidence = null,
+    durationMs = null,
+    now = new Date(),
+  } = params;
 
   const previousLatest = current.entries.find(
     (entry) => entry.id === question.id,
@@ -98,6 +108,7 @@ export function recordAnswerHistory(
     displayNumber: question.displayNumber,
     majorCategory: question.majorCategory,
     confidence,
+    durationMs: normalizeDurationMs(durationMs),
     streak,
     nextReviewAt,
   };
@@ -182,6 +193,9 @@ function isAnswerHistoryEntry(value: unknown): value is AnswerHistoryEntry {
     (value.confidence === undefined ||
       value.confidence === null ||
       isConfidenceLevel(value.confidence)) &&
+    (value.durationMs === undefined ||
+      value.durationMs === null ||
+      isValidDurationMs(value.durationMs)) &&
     (value.streak === undefined ||
       (typeof value.streak === "number" && Number.isFinite(value.streak))) &&
     (value.nextReviewAt === undefined ||
@@ -193,6 +207,21 @@ function isAnswerHistoryEntry(value: unknown): value is AnswerHistoryEntry {
 
 function isConfidenceLevel(value: unknown): value is ConfidenceLevel {
   return value === "high" || value === "mid" || value === "guess";
+}
+
+function normalizeDurationMs(value: number | null): number | null {
+  if (value === null) return null;
+  if (!isValidDurationMs(value)) return null;
+  return Math.round(value);
+}
+
+function isValidDurationMs(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= 86_400_000
+  );
 }
 
 function uniqueChoiceKeys(value: readonly ChoiceKey[]): ChoiceKey[] {

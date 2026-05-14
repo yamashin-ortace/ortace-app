@@ -25,6 +25,7 @@ import {
 } from "@/lib/quiz-progress";
 import { AttemptCountBadge } from "./attempt-count-badge";
 import { AttemptHistory } from "./attempt-history";
+import { AiCoachAnswerInsight } from "./ai-coach-answer-insight";
 import { ChoiceCard, type ChoiceState } from "./choice-card";
 import { QuestionView } from "./question-view";
 import { QuestionStudyActions } from "./question-study-actions";
@@ -105,6 +106,7 @@ export function QuizPlayer({
   const [pendingFinish, setPendingFinish] = useState(false);
   const [unansweredSweepMode, setUnansweredSweepMode] = useState(false);
   const consumingQuestionIdsRef = useRef<Set<string>>(new Set());
+  const questionStartedAtRef = useRef<Map<string, number>>(new Map());
   const quizTopRef = useRef<HTMLDivElement | null>(null);
   const feedbackAnchorRef = useRef<HTMLDivElement | null>(null);
   const sessionCompleteOnceRef = useRef(false);
@@ -193,10 +195,16 @@ export function QuizPlayer({
 
       // 必要数に達した瞬間に判定
       const judgement = judgeAnswer(current, next);
+      const startedAt = questionStartedAtRef.current.get(current.id);
+      const durationMs =
+        typeof startedAt === "number"
+          ? Math.max(0, Date.now() - startedAt)
+          : null;
       recordAnswer({
         question: current,
         result: judgement,
         selectedAnswers: next,
+        durationMs,
       });
       setStates((prev) => ({
         ...prev,
@@ -279,8 +287,14 @@ export function QuizPlayer({
     setStates({});
     setIsFinished(false);
     consumingQuestionIdsRef.current.clear();
+    questionStartedAtRef.current.clear();
     scrollToQuestionTop();
   }, [scrollToQuestionTop]);
+
+  useEffect(() => {
+    if (!current || isAnswered || isFinished) return;
+    questionStartedAtRef.current.set(current.id, Date.now());
+  }, [current, isAnswered, isFinished]);
 
   useEffect(() => {
     if (!isFinished) {
@@ -456,6 +470,14 @@ export function QuizPlayer({
 
         {isAnswered && currentState.judgement !== "no_answer" ? (
           <ConfidenceRating questionId={current.id} />
+        ) : null}
+
+        {isAnswered ? (
+          <AiCoachAnswerInsight
+            question={current}
+            questions={questions}
+            entries={historyEntries}
+          />
         ) : null}
 
         {isAnswered ? <AttemptHistory questionId={current.id} /> : null}

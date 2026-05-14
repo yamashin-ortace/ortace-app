@@ -22,7 +22,7 @@ export default async function WeakPage() {
       <div className="space-y-1">
         <BackLink href="/study" label="学習" />
         <h1 className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
-          苦手分野から解く
+          AI弱点リペア
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
           確定苦手（10問以上）と暫定苦手（5問以上）の3分野からランダム出題
@@ -40,7 +40,7 @@ export default async function WeakPage() {
         questions={questions}
         mode="weak"
         limit={20}
-        resumeLabel="苦手分野"
+        resumeLabel="AI弱点リペア"
         emptyTitle="苦手分野の判定にはデータが足りません"
         emptyMessage="少し問題を解くと、正答率の低い分野からおすすめできるようになります。"
         plan={plan}

@@ -43,7 +43,7 @@ export function TodayRecommendedHowItWorksPopover({ className }: Props) {
             initialFocus={false}
           >
             <p className="text-[13px] font-bold text-[var(--text-1)]">
-              今日やる問題の決め方
+              AIコーチの選び方
             </p>
             <div className="mt-2">
               <TodayRecommendedSelectionCopy />

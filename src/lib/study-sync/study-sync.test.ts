@@ -95,6 +95,8 @@ describe("study sync helpers", () => {
       session: "pm",
       display_number: 1,
       major_category: "眼科疾患・神経眼科",
+      confidence: null,
+      duration_ms: null,
       created_at: "2026-05-08T00:00:00.000Z",
     };
 
@@ -147,6 +149,8 @@ describe("study sync helpers", () => {
       session: "pm",
       display_number: 1,
       major_category: "眼科疾患・神経眼科",
+      confidence: null,
+      duration_ms: null,
       created_at: "2026-05-08T00:00:00.000Z",
     };
 
@@ -170,6 +174,33 @@ describe("study sync helpers", () => {
     );
 
     expect(merged.entries).toHaveLength(2);
+  });
+
+  it("解答履歴の自信度と解答時間をremoteから復元する", () => {
+    const remote: AnswerHistoryRow = {
+      id: "00000000-0000-0000-0000-000000000001",
+      user_id: "user-1",
+      entry_key: "52-103|2026-05-08T02:00:00.000Z|incorrect|2",
+      question_id: "52-103",
+      answered_at: "2026-05-08T02:00:00.000Z",
+      result: "incorrect",
+      selected_answers: ["2"],
+      round: 52,
+      session: "pm",
+      display_number: 3,
+      major_category: "眼科疾患・神経眼科",
+      confidence: "high",
+      duration_ms: 12_345,
+      created_at: "2026-05-08T02:00:00.000Z",
+    };
+
+    const merged = mergeAnswerHistoryStores({ version: 1, entries: [] }, [remote]);
+
+    expect(merged.entries[0]).toMatchObject({
+      id: "52-103",
+      confidence: "high",
+      durationMs: 12_345,
+    });
   });
 
   it("学習プリセットはremoteが新しければremoteを採用する", () => {

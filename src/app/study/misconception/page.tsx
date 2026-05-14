@@ -6,7 +6,7 @@ import { getEffectivePlan } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { loadAllQuestions } from "@/lib/questions/loader";
 
-export default async function TodayPage() {
+export default async function MisconceptionPage() {
   const questions = await loadAllQuestions();
   const sessionContext = await getSessionContext();
   const plan = sessionContext?.profile
@@ -20,29 +20,29 @@ export default async function TodayPage() {
   return (
     <div className="space-y-4 pt-2">
       <div className="space-y-1">
-        <BackLink href="/" label="ホーム" />
+        <BackLink href="/study" label="学習" />
         <h1 className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
-          AIコーチ 今日のおすすめ
+          AI思い込みチェック
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          復習・弱点・思い込み・未回答から、今日の20問を自動で組みます
+          自信があった誤答や、急ぎすぎた誤答を優先して見直します
         </p>
       </div>
 
-      <QuestionCountSelector defaultCount={20} />
+      <QuestionCountSelector defaultCount={10} />
 
       <DataReadinessHint
         threshold={30}
-        benefitMessage="あと少し解くと、復習・弱点・思い込みの判定が効くようになり、おすすめの的中度が上がります。"
+        benefitMessage="自信度と解答履歴が増えるほど、思い込みの検出が安定します。"
       />
 
       <RecommendedPlayClient
         questions={questions}
-        mode="today"
-        limit={20}
-        resumeLabel="AIコーチ 今日のおすすめ"
-        emptyTitle="今日のおすすめが用意できませんでした"
-        emptyMessage="少し問題を解いて履歴を作ると、毎日のおすすめがここに表示されます。"
+        mode="misconception"
+        limit={10}
+        resumeLabel="AI思い込みチェック"
+        emptyTitle="思い込みチェックの候補はまだありません"
+        emptyMessage="解答後に自信度をつけると、自信ありの誤答や急ぎすぎた誤答を見つけやすくなります。"
         plan={plan}
       />
     </div>

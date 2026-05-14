@@ -566,6 +566,8 @@ function answerHistoryEntryToRow(
     session: entry.session,
     display_number: entry.displayNumber,
     major_category: entry.majorCategory,
+    confidence: entry.confidence ?? null,
+    duration_ms: entry.durationMs ?? null,
   };
 }
 
@@ -604,5 +606,17 @@ function answerHistoryRowToEntry(row: AnswerHistoryRow): AnswerHistoryEntry | nu
     displayNumber: typeof row.display_number === "number" ? row.display_number : 1,
     majorCategory:
       typeof row.major_category === "string" ? row.major_category : "",
+    confidence:
+      row.confidence === "high" ||
+      row.confidence === "mid" ||
+      row.confidence === "guess"
+        ? row.confidence
+        : null,
+    durationMs:
+      typeof row.duration_ms === "number" &&
+      Number.isFinite(row.duration_ms) &&
+      row.duration_ms >= 0
+        ? row.duration_ms
+        : null,
   };
 }

@@ -2,8 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Inbox, RefreshCcw, Target } from "lucide-react";
+import {
+  BrainCircuit,
+  ChevronRight,
+  Inbox,
+  RefreshCcw,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import { ReviewQueueHowItWorksPopover } from "@/components/study/review-queue-how-it-works-popover";
+import { TodayRecommendedHowItWorksPopover } from "@/components/study/today-recommended-how-it-works-popover";
 import { UnansweredHowItWorksPopover } from "@/components/study/unanswered-how-it-works-popover";
 import { WeakFieldHowItWorksPopover } from "@/components/study/weak-field-how-it-works-popover";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
@@ -44,9 +52,16 @@ export function RecommendationSection({ totalQuestions }: Props) {
   return (
     <section className="space-y-2">
       <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
-        おすすめ
+        AIコーチ
       </h2>
       <div className="space-y-2">
+        <RecommendStudyLink
+          href="/study/today"
+          icon={<Sparkles className="h-6 w-6" strokeWidth={2.5} />}
+          title="今日のおすすめ"
+          subtitle="復習・弱点・思い込み・未回答から20問を提案"
+          trailing={<TodayRecommendedHowItWorksPopover />}
+        />
         <RecommendStudyLink
           href="/study/review"
           icon={<RefreshCcw className="h-6 w-6" strokeWidth={2.5} />}
@@ -74,7 +89,7 @@ export function RecommendationSection({ totalQuestions }: Props) {
         <RecommendStudyLink
           href="/study/weak"
           icon={<Target className="h-6 w-6" strokeWidth={2.5} />}
-          title="苦手分野から解く"
+          title="弱点リペア"
           subtitle={
             hydrated
               ? stats.weakLabel
@@ -85,6 +100,13 @@ export function RecommendationSection({ totalQuestions }: Props) {
               : "計算中…"
           }
           trailing={<WeakFieldHowItWorksPopover />}
+        />
+        <RecommendStudyLink
+          href="/study/misconception"
+          icon={<BrainCircuit className="h-6 w-6" strokeWidth={2.5} />}
+          title="思い込みチェック"
+          subtitle="自信ありの誤答や速すぎた誤答を見直します"
+          trailing={null}
         />
       </div>
     </section>

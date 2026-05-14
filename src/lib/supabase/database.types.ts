@@ -137,6 +137,8 @@ export type AnswerHistoryRow = {
   session: "am" | "pm";
   display_number: number;
   major_category: string;
+  confidence: "high" | "mid" | "guess" | null;
+  duration_ms: number | null;
   created_at: string;
 };
 
@@ -152,6 +154,8 @@ export type AnswerHistoryInsert = {
   session: "am" | "pm";
   display_number: number;
   major_category?: string;
+  confidence?: "high" | "mid" | "guess" | null;
+  duration_ms?: number | null;
   created_at?: string;
 };
 
@@ -165,6 +169,8 @@ export type AnswerHistoryUpdate = {
   session?: "am" | "pm";
   display_number?: number;
   major_category?: string;
+  confidence?: "high" | "mid" | "guess" | null;
+  duration_ms?: number | null;
 };
 
 export type StudyGoalSettingsRow = {

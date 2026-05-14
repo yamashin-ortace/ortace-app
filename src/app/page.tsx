@@ -48,10 +48,10 @@ export default async function HomePage() {
       <HomeGreeting />
       <DiagnosticBanner />
       <HomeExamCountdown totalQuestions={questions.length} />
-      <HomeEstimatedScore questions={questions} />
-      <HomeStatsRow />
-      <HomeTrendChart />
       <HomeTodayCta totalQuestions={questions.length} />
+      <HomeStatsRow />
+      <HomeEstimatedScore questions={questions} />
+      <HomeTrendChart />
       <HomeDashboard
         questionTotals={{
           total: questions.length,

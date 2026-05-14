@@ -18,11 +18,19 @@ import {
   getUntouchedQuestions,
   getStagedWeakFields,
   getFieldStats,
-  pickTodaysRecommended,
 } from "@/lib/answer-history/status";
+import {
+  pickAiCoachRecommended,
+  pickMisconceptionQuestions,
+} from "@/lib/ai-coach/recommendation";
 import { shuffle } from "@/lib/quiz";
 
-export type RecommendedMode = "review" | "unanswered" | "weak" | "today";
+export type RecommendedMode =
+  | "review"
+  | "unanswered"
+  | "weak"
+  | "misconception"
+  | "today";
 
 type Props = {
   questions: Question[];
@@ -98,12 +106,14 @@ export function RecommendedPlayClient({
 
 /**
  * モードごとに pool の並びを「最終的な出題順」に整える（凍結前の1回だけ）。
- * - today/unanswered：すでに pickPoolByMode 内で並び順が確定しているのでそのまま
+ * - today/unanswered/misconception：すでに pickPoolByMode 内で並び順が確定しているのでそのまま
  * - review/weak：ランダム性を持たせるためここで一度だけ shuffle する
  */
 function orderPoolForMode(mode: RecommendedMode, pool: Question[]): Question[] {
   if (pool.length === 0) return [];
-  if (mode === "today" || mode === "unanswered") return pool;
+  if (mode === "today" || mode === "unanswered" || mode === "misconception") {
+    return pool;
+  }
   return shuffle(pool);
 }
 
@@ -133,7 +143,10 @@ function pickPoolByMode(
     if (topWeakFields.size === 0) return [];
     return questions.filter((q) => topWeakFields.has(q.majorCategory));
   }
-  return pickTodaysRecommended(questions, entries, limit);
+  if (mode === "misconception") {
+    return pickMisconceptionQuestions(questions, entries, limit);
+  }
+  return pickAiCoachRecommended(questions, entries, limit).questions;
 }
 
 function EmptyState({ title, message }: { title: string; message: string }) {
