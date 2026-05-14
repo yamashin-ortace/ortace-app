@@ -19,6 +19,7 @@ export type AiCoachSessionAnalysis = {
 type ClusterSummary = {
   id: string;
   label: string;
+  themes: Map<string, number>;
   total: number;
   correct: number;
   incorrect: number;
@@ -45,6 +46,7 @@ export function analyzeAiCoachSession(
     const summary = summaries.get(cluster.id) ?? {
       id: cluster.id,
       label: cluster.label,
+      themes: new Map<string, number>(),
       total: 0,
       correct: 0,
       incorrect: 0,
@@ -56,6 +58,8 @@ export function analyzeAiCoachSession(
     const entry = latest.get(question.id);
     const duration = classifyAnswerDuration(entry?.durationMs);
     summary.total += 1;
+    const themeLabel = getThemeLabel(question);
+    summary.themes.set(themeLabel, (summary.themes.get(themeLabel) ?? 0) + 1);
 
     if (judgement === "incorrect") {
       summary.incorrect += 1;
@@ -95,13 +99,14 @@ export function analyzeAiCoachSession(
 
   const ranked = [...summaries.values()].sort(compareSummary);
   const questionIds = questions.map((question) => question.id).join(",");
+  const focusTheme = getPrimaryTheme(selected);
   return {
     status: "ready",
     clusterId: selected.id,
     clusterLabel: selected.label,
     message: buildAnalysisMessage(selected),
     details: buildAnalysisDetails(ranked, questions.length),
-    actionHref: `/study/ai-theme/${encodeURIComponent(selected.id)}?count=3&exclude=${encodeURIComponent(questionIds)}`,
+    actionHref: buildActionHref(selected.id, questionIds, focusTheme),
     actionLabel: "このテーマを3問だけ確認",
   };
 }
@@ -114,19 +119,20 @@ function compareSummary(a: ClusterSummary, b: ClusterSummary): number {
 }
 
 function buildAnalysisMessage(summary: ClusterSummary): string {
+  const themePhrase = getThemePhrase(summary);
   if (summary.highConfidenceIncorrect > 0) {
-    return `今回の解答では「${summary.label}」を少し確認しておくと、判断が安定しそうです。`;
+    return `今回の解答では「${themePhrase}」を少し確認しておくと、判断が安定しそうです。`;
   }
   if (summary.fastIncorrect > 0) {
-    return `今回の解答では「${summary.label}」を短く確認して、問題文の条件を拾う流れを整えましょう。`;
+    return `今回の解答では「${themePhrase}」を短く確認して、問題文の条件を拾う流れを整えましょう。`;
   }
   if (summary.incorrect > 0) {
-    return `今回の解答では「${summary.label}」に確認しておきたい点があります。似た問題を3問だけ解いて、判断の流れを整理しましょう。`;
+    return `今回の解答では「${themePhrase}」に確認しておきたい点があります。似た問題を3問だけ解いて、判断の流れを整理しましょう。`;
   }
   if (summary.deliberateCorrect > 0) {
-    return `「${summary.label}」は正解できていますが、少し時間をかけて判断した問題があります。短く確認しておくと、次はもっと安定しそうです。`;
+    return `「${themePhrase}」は正解できていますが、少し時間をかけて判断した問題があります。短く確認しておくと、次はもっと安定しそうです。`;
   }
-  return `今回の解答は安定しています。「${summary.label}」を短く確認して、取れているテーマをそのまま固めておきましょう。`;
+  return `今回の解答は安定しています。「${themePhrase}」を短く確認して、取れているテーマをそのまま固めておきましょう。`;
 }
 
 function buildAnalysisDetails(
@@ -137,12 +143,54 @@ function buildAnalysisDetails(
   if (maxDetails === 0) return [];
 
   return ranked.slice(0, maxDetails).map((summary) => {
+    const themePhrase = getThemePhrase(summary);
     if (summary.incorrect > 0) {
-      return `${summary.label}: 確認したい問題が${summary.incorrect}問あります。`;
+      return `${summary.label}: ${themePhrase}で確認したい問題が${summary.incorrect}問あります。`;
     }
     if (summary.deliberateCorrect > 0) {
-      return `${summary.label}: 正解できていますが、少し時間をかけて判断しています。`;
+      return `${summary.label}: ${themePhrase}は正解できていますが、少し時間をかけて判断しています。`;
     }
-    return `${summary.label}: 今回は安定して取れています。`;
+    return `${summary.label}: ${themePhrase}は安定して取れています。`;
   });
+}
+
+function buildActionHref(
+  clusterId: string,
+  excludeQuestionIds: string,
+  focusTheme: string,
+): string {
+  const params = new URLSearchParams({
+    count: "3",
+    exclude: excludeQuestionIds,
+    focus: focusTheme,
+  });
+  return `/study/ai-theme/${encodeURIComponent(clusterId)}?${params.toString()}`;
+}
+
+function getThemeLabel(question: Question): string {
+  const theme = question.theme.trim();
+  if (theme.length > 0) return theme;
+  const minor = question.minorCategory.trim();
+  if (minor.length > 0) return minor;
+  return question.majorCategory;
+}
+
+function getPrimaryTheme(summary: ClusterSummary): string {
+  return [...summary.themes.entries()].sort((a, b) => {
+    if (a[1] !== b[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0], "ja");
+  })[0]?.[0] ?? summary.label;
+}
+
+function getThemePhrase(summary: ClusterSummary): string {
+  const themes = [...summary.themes.entries()]
+    .sort((a, b) => {
+      if (a[1] !== b[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0], "ja");
+    })
+    .slice(0, 2)
+    .map(([label]) => label);
+  if (themes.length === 0) return summary.label;
+  if (themes.length === 1) return themes[0];
+  return `${themes[0]}・${themes[1]}`;
 }

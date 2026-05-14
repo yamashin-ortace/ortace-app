@@ -139,7 +139,6 @@ export function FilterSettingsClient({ rounds, fields, questions }: Props) {
         >
           <HorizontalSnapRow
             ariaLabel="第47回〜第56回の選択"
-            showDots={false}
             itemClassName="min-w-[28%] basis-[28%] shrink-0 snap-start sm:min-w-[110px] sm:basis-[110px]"
             items={allRounds.map((item) => (
               <OptionButton

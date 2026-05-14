@@ -13,10 +13,10 @@ export const AI_COACH_RECOMMENDATION_LIMIT = 20;
 export const AI_COACH_DATA_READINESS_THRESHOLD = 30;
 
 export const AI_COACH_TARGETS = {
-  review: 8,
-  weak: 6,
+  review: 6,
+  weak: 5,
   misconception: 3,
-  unanswered: 3,
+  unanswered: 6,
 } as const;
 
 export type AnswerDurationBucket = "fast" | "standard" | "deliberate";
@@ -103,7 +103,7 @@ export function pickAiCoachRecommended(
   add("fill", fillPool, cappedLimit);
 
   return {
-    questions: selected,
+    questions: shuffleForSession(selected),
     buckets,
     dataReadiness:
       latest.size >= AI_COACH_DATA_READINESS_THRESHOLD ? "ready" : "collecting",
@@ -203,6 +203,15 @@ function makeThemeKey(question: Question | undefined): string | null {
 
 function rankBySourceOrder(questions: readonly Question[]): Question[] {
   return [...questions].sort(compareQuestionSource);
+}
+
+function shuffleForSession(questions: readonly Question[]): Question[] {
+  const result = [...questions];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
 function compareQuestionSource(a: Question, b: Question): number {

@@ -12,6 +12,7 @@ import type { Question } from "@/lib/questions";
 type Props = {
   questions: Question[];
   clusterLabel: string;
+  focusTheme: string | null;
   count: number;
   plan: PlanType;
 };
@@ -19,6 +20,7 @@ type Props = {
 export function AiThemePlayClient({
   questions,
   clusterLabel,
+  focusTheme,
   count,
   plan,
 }: Props) {
@@ -27,7 +29,7 @@ export function AiThemePlayClient({
 
   useEffect(() => {
     if (frozenPool !== null) return;
-    const ordered = orderAiThemeQuestions(questions, entries);
+    const ordered = orderAiThemeQuestions(questions, entries, focusTheme);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 初回に3問の出題プールを固定する
     setFrozenPool(ordered.slice(0, count));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回マウント時のみ pool を凍結する
@@ -82,10 +84,12 @@ export function AiThemePlayClient({
 function orderAiThemeQuestions(
   questions: readonly Question[],
   entries: readonly AnswerHistoryEntry[],
+  focusTheme: string | null,
 ): Question[] {
   const latest = getLatestEntryByQuestionId(entries);
   return [...questions].sort((a, b) => {
-    const scoreDiff = scoreQuestion(b, latest) - scoreQuestion(a, latest);
+    const scoreDiff =
+      scoreQuestion(b, latest, focusTheme) - scoreQuestion(a, latest, focusTheme);
     if (scoreDiff !== 0) return scoreDiff;
     return compareQuestionSource(a, b);
   });
@@ -94,13 +98,25 @@ function orderAiThemeQuestions(
 function scoreQuestion(
   question: Question,
   latest: Map<string, AnswerHistoryEntry>,
+  focusTheme: string | null,
 ): number {
   const entry = latest.get(question.id);
-  if (!entry) return 70;
-  if (entry.result === "incorrect") return 100;
-  if (entry.result === "no_answer") return 0;
-  if (entry.result === "correct" && (entry.durationMs ?? 0) >= 60_000) return 45;
-  return 20;
+  const focusBonus = focusTheme && getQuestionThemeLabel(question) === focusTheme ? 45 : 0;
+  if (!entry) return 70 + focusBonus;
+  if (entry.result === "incorrect") return 100 + focusBonus;
+  if (entry.result === "no_answer") return focusBonus;
+  if (entry.result === "correct" && (entry.durationMs ?? 0) >= 60_000) {
+    return 45 + focusBonus;
+  }
+  return 20 + focusBonus;
+}
+
+function getQuestionThemeLabel(question: Question): string {
+  const theme = question.theme.trim();
+  if (theme.length > 0) return theme;
+  const minor = question.minorCategory.trim();
+  if (minor.length > 0) return minor;
+  return question.majorCategory;
 }
 
 function getLatestEntryByQuestionId(

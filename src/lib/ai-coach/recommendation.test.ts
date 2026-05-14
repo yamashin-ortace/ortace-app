@@ -23,8 +23,8 @@ describe("AI coach recommendation", () => {
 
     expect(recommendation.dataReadiness).toBe("collecting");
     expect(recommendation.questions).toHaveLength(20);
-    expect(recommendation.buckets.unanswered).toHaveLength(3);
-    expect(recommendation.buckets.fill).toHaveLength(17);
+    expect(recommendation.buckets.unanswered).toHaveLength(6);
+    expect(recommendation.buckets.fill).toHaveLength(14);
     expect(new Set(recommendation.questions.map((q) => q.id)).size).toBe(20);
   });
 

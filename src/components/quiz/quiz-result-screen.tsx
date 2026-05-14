@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronDown, ChevronUp, Home, RotateCw } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  CircleSlash,
+  Home,
+  RotateCw,
+  XCircle,
+} from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
 import { PrimaryCta } from "@/components/ui/primary-cta";
@@ -45,15 +53,16 @@ export function QuizResultScreen({
   const ratio = total === 0 ? 0 : Math.round((correct / total) * 100);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setShowToast(false), 2600);
+    const timer = window.setTimeout(() => setShowToast(false), 4400);
     return () => window.clearTimeout(timer);
   }, []);
 
   return (
     <div className="space-y-4 pt-2">
       {showToast ? (
-        <div className="pointer-events-none fixed top-[calc(env(safe-area-inset-top)+72px)] left-1/2 z-40 -translate-x-1/2 animate-feedback-in rounded-full bg-[var(--text-1)] px-4 py-2 text-[13px] font-bold text-[var(--bg-card)] shadow-[0_10px_28px_rgba(0,0,0,0.18)]">
-          おつかれさま。{total}問完了しました
+        <div className="pointer-events-none fixed top-[calc(env(safe-area-inset-top)+72px)] left-1/2 z-40 -translate-x-1/2 animate-result-toast overflow-hidden rounded-full border border-white/70 bg-white/90 px-4 py-2 text-[13px] font-bold text-[var(--text-1)] shadow-[0_14px_34px_rgba(58,107,95,0.22)] backdrop-blur-md dark:border-white/10 dark:bg-[var(--bg-card)]/90">
+          <span className="pointer-events-none absolute inset-x-3 top-0 h-px bg-linear-to-r from-transparent via-[var(--primary)]/70 to-transparent" />
+          <span className="relative">おつかれさま。{total}問完了しました</span>
         </div>
       ) : null}
 
@@ -79,20 +88,29 @@ export function QuizResultScreen({
             </p>
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <StatTile label="正解" value={correct} colorClass="text-[#1F5E3F]" />
-        <StatTile
-          label="不正解"
-          value={incorrect}
-          colorClass="text-[#9B1E1E]"
-        />
-        <StatTile
-          label="正答なし"
-          value={noAnswer}
-          colorClass="text-amber-700 dark:text-amber-400"
-        />
+        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
+          <StatTile
+            label="正解"
+            value={correct}
+            icon={<CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />}
+            colorClass="text-[#1F5E3F]"
+            bgClass="bg-[#EAF7EF]"
+          />
+          <StatTile
+            label="不正解"
+            value={incorrect}
+            icon={<XCircle className="h-3.5 w-3.5" strokeWidth={2.5} />}
+            colorClass="text-[#9B1E1E]"
+            bgClass="bg-[#FDECEC]"
+          />
+          <StatTile
+            label="正答なし"
+            value={noAnswer}
+            icon={<CircleSlash className="h-3.5 w-3.5" strokeWidth={2.5} />}
+            colorClass="text-amber-700 dark:text-amber-400"
+            bgClass="bg-amber-50 dark:bg-amber-950/30"
+          />
+        </div>
       </div>
 
       {showAiCoachAnalysis ? (
@@ -159,15 +177,24 @@ export function QuizResultScreen({
 function StatTile({
   label,
   value,
+  icon,
   colorClass,
+  bgClass,
 }: {
   label: string;
   value: number;
+  icon: ReactNode;
   colorClass: string;
+  bgClass: string;
 }) {
   return (
-    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] py-3 text-center">
-      <p className="text-[10px] font-semibold tracking-wider text-[var(--text-3)] uppercase">
+    <div className={`rounded-[12px] px-2.5 py-2.5 text-center ${bgClass}`}>
+      <p
+        className={`mx-auto grid h-6 w-6 place-items-center rounded-full bg-white/75 ${colorClass} dark:bg-white/10`}
+      >
+        {icon}
+      </p>
+      <p className="mt-1 text-[10px] font-semibold tracking-wider text-[var(--text-3)] uppercase">
         {label}
       </p>
       <p className={`mt-0.5 text-[22px] font-extrabold tabular-nums ${colorClass}`}>

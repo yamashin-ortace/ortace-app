@@ -1,16 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  History,
-  Sparkles,
-  TrendingUp,
-  XCircle,
-} from "lucide-react";
+import { useMemo } from "react";
+import { AlertTriangle, CheckCircle2, History, XCircle } from "lucide-react";
 import type { AnswerHistoryEntry, ConfidenceLevel } from "@/lib/answer-history";
 import {
   ATTEMPT_HISTORY_RECENT_LIMIT,
@@ -31,12 +22,10 @@ const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
 
 /**
  * 解答後に「この問題の挑戦履歴」を表示する。
- * - 直近5件を一覧で、それ以前があれば展開ボタンで全件閲覧。
- * - 注意喚起（同じ選択肢で連続ミス・全件ミス・連続正解）はバナーで添える。
+ * - 直近3件だけを淡々と表示する。注意喚起は出さない。
  */
 export function AttemptHistory({ questionId }: Props) {
   const { entries } = useAnswerHistoryList();
-  const [expanded, setExpanded] = useState(false);
 
   const summary = useMemo(
     () => getAttemptHistory(entries, questionId),
@@ -45,37 +34,16 @@ export function AttemptHistory({ questionId }: Props) {
 
   if (summary.totalAttempts === 0) return null;
 
-  const visibleEntries = expanded ? summary.all : summary.recent;
+  const visibleEntries = summary.recent;
   const hasMore = summary.all.length > summary.recent.length;
   const currentEntry = summary.all[0];
 
   return (
     <div className="rounded-[12px] border border-border bg-[var(--bg-card)] p-3">
-      <div className="flex items-center justify-between">
-        <p className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[var(--text-2)]">
-          <History className="h-3.5 w-3.5" strokeWidth={2.5} />
-          この問題の挑戦履歴（{summary.totalAttempts}回目）
-        </p>
-        {hasMore ? (
-          <button
-            type="button"
-            onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold text-[var(--text-2)] hover:bg-[var(--bg-muted)]"
-          >
-            {expanded ? (
-              <>
-                折りたたむ <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
-              </>
-            ) : (
-              <>
-                すべて見る <ChevronDown className="h-3 w-3" strokeWidth={2.5} />
-              </>
-            )}
-          </button>
-        ) : null}
-      </div>
-
-      <AttentionBanner summary={summary} />
+      <p className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[var(--text-2)]">
+        <History className="h-3.5 w-3.5" strokeWidth={2.5} />
+        この問題の挑戦履歴（{summary.totalAttempts}回目）
+      </p>
 
       <ul className="mt-2 space-y-1.5">
         {visibleEntries.map((entry, index) => (
@@ -83,16 +51,11 @@ export function AttemptHistory({ questionId }: Props) {
             key={`${entry.id}-${entry.answeredAt}-${index}`}
             entry={entry}
             isLatest={entry === currentEntry}
-            isRepeatedMistake={
-              summary.repeatedMistake !== null &&
-              entry.result === "incorrect" &&
-              entry.selectedAnswers.join("+") === summary.repeatedMistake.choiceKey
-            }
           />
         ))}
       </ul>
 
-      {!expanded && hasMore ? (
+      {hasMore ? (
         <p className="mt-2 text-[10px] text-[var(--text-3)]">
           ※ 直近{ATTEMPT_HISTORY_RECENT_LIMIT}件を表示しています。
         </p>
@@ -104,11 +67,9 @@ export function AttemptHistory({ questionId }: Props) {
 function AttemptRow({
   entry,
   isLatest,
-  isRepeatedMistake,
 }: {
   entry: AnswerHistoryEntry;
   isLatest: boolean;
-  isRepeatedMistake: boolean;
 }) {
   const dateLabel = formatShortDate(entry.answeredAt);
   const choiceLabel =
@@ -128,7 +89,6 @@ function AttemptRow({
         isLatest
           ? "border-[var(--primary)]/40 bg-[var(--primary-soft)]/40"
           : "border-border bg-[var(--bg-muted)]/35",
-        isRepeatedMistake && "ring-1 ring-[var(--error)]/40",
       )}
     >
       <ResultIcon result={entry.result} />
@@ -173,46 +133,6 @@ function ResultIcon({ result }: { result: AnswerHistoryEntry["result"] }) {
       strokeWidth={2.5}
     />
   );
-}
-
-function AttentionBanner({
-  summary,
-}: {
-  summary: ReturnType<typeof getAttemptHistory>;
-}) {
-  if (summary.repeatedMistake) {
-    return (
-      <p className="mt-2 inline-flex items-start gap-1.5 rounded-[8px] bg-[var(--error)]/10 px-2 py-1 text-[11px] font-bold text-[var(--error)]">
-        <AlertTriangle className="mt-px h-3 w-3" strokeWidth={2.5} />
-        同じ選択肢で{summary.repeatedMistake.count}回ミスしています。思い込みに注意。
-      </p>
-    );
-  }
-  if (summary.recentAllIncorrect) {
-    return (
-      <p className="mt-2 inline-flex items-start gap-1.5 rounded-[8px] bg-[var(--error)]/10 px-2 py-1 text-[11px] font-bold text-[var(--error)]">
-        <AlertTriangle className="mt-px h-3 w-3" strokeWidth={2.5} />
-        直近{ATTEMPT_HISTORY_RECENT_LIMIT}回すべて不正解です。解説を読み直しましょう。
-      </p>
-    );
-  }
-  if (summary.recentAllCorrect) {
-    return (
-      <p className="mt-2 inline-flex items-start gap-1.5 rounded-[8px] bg-[var(--success)]/10 px-2 py-1 text-[11px] font-bold text-[var(--success)]">
-        <TrendingUp className="mt-px h-3 w-3" strokeWidth={2.5} />
-        3回連続で正解しています。定着OK。
-      </p>
-    );
-  }
-  if (summary.totalAttempts === 1) {
-    return (
-      <p className="mt-2 inline-flex items-start gap-1.5 rounded-[8px] bg-[var(--primary-soft)] px-2 py-1 text-[11px] font-bold text-[var(--primary-dark)]">
-        <Sparkles className="mt-px h-3 w-3" strokeWidth={2.5} />
-        初挑戦の問題です。
-      </p>
-    );
-  }
-  return null;
 }
 
 function formatShortDate(iso: string): string {

@@ -2,12 +2,12 @@
  * 問題ごとの挑戦履歴ヘルパー
  *
  * - 同じ問題の過去解答を集約して、UI で扱いやすい形に整える。
- * - 解答前は `Try #N` バッジ、解答後は直近5件のリストとして利用する。
+ * - 解答前は `Try #N` バッジ、解答後は直近3件のリストとして利用する。
  */
 
 import type { AnswerHistoryEntry } from ".";
 
-export const ATTEMPT_HISTORY_RECENT_LIMIT = 5;
+export const ATTEMPT_HISTORY_RECENT_LIMIT = 3;
 export const ATTEMPT_HISTORY_CONSECUTIVE_CORRECT_LIMIT = 3;
 
 export type AttemptHistory = {

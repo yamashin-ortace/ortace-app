@@ -28,9 +28,11 @@ describe("AI coach session analysis", () => {
     expect(analysis.status).toBe("ready");
     expect(analysis.clusterLabel).toBe("緑内障と視野変化");
     expect(analysis.message).toContain("条件を拾う流れ");
-    expect(analysis.actionHref).toBe(
-      "/study/ai-theme/glaucoma-visual-field?count=3&exclude=56-1%2C56-2",
+    expect(analysis.actionHref).toContain(
+      "/study/ai-theme/glaucoma-visual-field?count=3",
     );
+    expect(analysis.actionHref).toContain("exclude=56-1%2C56-2");
+    expect(analysis.actionHref).toContain("focus=");
     expect(analysis.actionLabel).toBe("このテーマを3問だけ確認");
   });
 

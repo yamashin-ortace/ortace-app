@@ -12,7 +12,7 @@ import {
 
 type Props = {
   params: Promise<{ clusterId: string }>;
-  searchParams: Promise<{ count?: string; exclude?: string }>;
+  searchParams: Promise<{ count?: string; exclude?: string; focus?: string }>;
 };
 
 export default async function AiThemePage({ params, searchParams }: Props) {
@@ -24,6 +24,7 @@ export default async function AiThemePage({ params, searchParams }: Props) {
 
   const count = parseCount(query.count);
   const excludeIds = parseExcludeIds(query.exclude);
+  const focusTheme = parseFocusTheme(query.focus);
   const allQuestions = await loadAllQuestions();
   const questions = allQuestions.filter(
     (question) =>
@@ -57,11 +58,18 @@ export default async function AiThemePage({ params, searchParams }: Props) {
       <AiThemePlayClient
         questions={questions}
         clusterLabel={cluster.label}
+        focusTheme={focusTheme}
         count={count}
         plan={plan}
       />
     </div>
   );
+}
+
+function parseFocusTheme(value: string | undefined): string | null {
+  const normalized = value?.trim();
+  if (!normalized) return null;
+  return normalized.slice(0, 80);
 }
 
 function parseCount(value: string | undefined): number {
