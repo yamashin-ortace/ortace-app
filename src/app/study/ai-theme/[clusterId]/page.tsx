@@ -12,7 +12,7 @@ import {
 
 type Props = {
   params: Promise<{ clusterId: string }>;
-  searchParams: Promise<{ count?: string }>;
+  searchParams: Promise<{ count?: string; exclude?: string }>;
 };
 
 export default async function AiThemePage({ params, searchParams }: Props) {
@@ -23,10 +23,13 @@ export default async function AiThemePage({ params, searchParams }: Props) {
   if (!cluster) notFound();
 
   const count = parseCount(query.count);
+  const excludeIds = parseExcludeIds(query.exclude);
   const allQuestions = await loadAllQuestions();
   const questions = allQuestions.filter(
     (question) =>
-      isScorableQuestion(question) && getAiThemeKey(question) === cluster.id,
+      isScorableQuestion(question) &&
+      getAiThemeKey(question) === cluster.id &&
+      !excludeIds.has(question.id),
   );
   if (questions.length === 0) notFound();
 
@@ -65,4 +68,14 @@ function parseCount(value: string | undefined): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 3;
   return Math.min(3, Math.max(1, Math.floor(parsed)));
+}
+
+function parseExcludeIds(value: string | undefined): Set<string> {
+  if (!value) return new Set();
+  return new Set(
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => /^\d{2}-\d{1,3}$/.test(item)),
+  );
 }

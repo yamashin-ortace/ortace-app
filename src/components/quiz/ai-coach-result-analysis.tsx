@@ -15,10 +15,10 @@ type Props = {
 };
 
 const STEPS = [
-  "回答履歴を読み込み中",
-  "正答率・自信度・解答時間を分析中",
-  "AIテーマクラスタを確認中",
-  "確認しておきたいテーマを選定中",
+  "履歴を確認中",
+  "解答傾向を分析中",
+  "テーマを整理中",
+  "確認テーマを選定中",
 ] as const;
 
 export function AiCoachResultAnalysis({
@@ -49,14 +49,16 @@ export function AiCoachResultAnalysis({
     if (isAnalyzing) return;
     setStepIndex(0);
     for (let index = 1; index <= STEPS.length; index += 1) {
-      window.setTimeout(() => setStepIndex(index), index * 520);
+      window.setTimeout(() => setStepIndex(index), index * 780);
     }
   };
 
   return (
-    <section className="rounded-[16px] border border-[var(--primary)]/25 bg-[var(--bg-card)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <section className="relative overflow-hidden rounded-[16px] border border-[var(--primary)]/25 bg-[var(--bg-card)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[var(--primary)]/55 to-transparent" />
+      <div className="pointer-events-none absolute -top-20 right-6 h-28 w-28 rounded-full bg-[var(--primary)]/10 blur-2xl" />
       <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-linear-to-br from-[var(--primary-soft)] to-white text-[var(--primary-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_5px_14px_rgba(0,0,0,0.08)] dark:to-[var(--bg-card)]">
           <Sparkles className="h-5 w-5" strokeWidth={2.5} />
         </span>
         <div className="min-w-0 flex-1">
@@ -72,7 +74,7 @@ export function AiCoachResultAnalysis({
       {!isDone ? (
         <div className="mt-4 space-y-3">
           {isAnalyzing ? (
-            <div className="rounded-[12px] border border-border bg-[var(--bg-muted)]/50 px-3 py-3">
+            <div className="rounded-[12px] border border-[var(--primary)]/20 bg-linear-to-br from-[var(--primary-soft)]/55 to-[var(--bg-card)] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
               <div className="flex items-center gap-2 text-[13px] font-bold text-[var(--text-1)]">
                 <LoaderCircle
                   className="h-4 w-4 animate-spin text-[var(--primary-dark)]"
@@ -97,12 +99,24 @@ export function AiCoachResultAnalysis({
           <div className="rounded-[12px] border border-[var(--primary)]/20 bg-[var(--primary-soft)]/45 px-3 py-3">
             {analysis.clusterLabel ? (
               <p className="mb-1 text-[11px] font-bold text-[var(--primary-dark)]">
-                注目テーマ: {analysis.clusterLabel}
+                注目テーマ候補: {analysis.clusterLabel}
               </p>
             ) : null}
             <p className="text-[13px] leading-relaxed text-[var(--text-1)]">
               {analysis.message}
             </p>
+            {analysis.details.length > 0 ? (
+              <div className="mt-2 space-y-1.5">
+                {analysis.details.map((detail) => (
+                  <p
+                    key={detail}
+                    className="rounded-[10px] bg-[var(--bg-card)]/75 px-2.5 py-2 text-[12px] leading-relaxed text-[var(--text-2)]"
+                  >
+                    {detail}
+                  </p>
+                ))}
+              </div>
+            ) : null}
           </div>
           {analysis.actionHref && analysis.actionLabel ? (
             <Link

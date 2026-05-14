@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Home, RotateCw, Trophy } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, Home, RotateCw } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
 import { PrimaryCta } from "@/components/ui/primary-cta";
@@ -18,6 +18,7 @@ type Props = {
   /** 結果画面下部の戻り先リンク。既定は学習タブ */
   backHref?: string;
   backLabel?: string;
+  showAiCoachAnalysis?: boolean;
 };
 
 export function QuizResultScreen({
@@ -27,8 +28,10 @@ export function QuizResultScreen({
   onRestart,
   backHref = "/study",
   backLabel = "学習タブへ戻る",
+  showAiCoachAnalysis = true,
 }: Props) {
   const [reviewOpen, setReviewOpen] = useState(true);
+  const [showToast, setShowToast] = useState(true);
   const total = questions.length;
   const correct = questions.filter(
     (q) => judgements[q.id] === "correct",
@@ -41,29 +44,41 @@ export function QuizResultScreen({
   ).length;
   const ratio = total === 0 ? 0 : Math.round((correct / total) * 100);
 
-  return (
-    <div className="space-y-6 pt-4">
-      <div className="flex flex-col items-center gap-2 py-4 text-center">
-        <span className="grid h-16 w-16 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary-dark)]">
-          <Trophy className="h-8 w-8" strokeWidth={2} />
-        </span>
-        <h1 className="text-[24px] font-extrabold tracking-tight text-[var(--text-1)]">
-          おつかれさま
-        </h1>
-        <p className="text-[12px] text-[var(--text-3)]">{total}問の演習を完了</p>
-      </div>
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowToast(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, []);
 
-      <div className="rounded-[16px] border border-border bg-[var(--bg-card)] p-6 text-center">
-        <p className="text-[12px] font-semibold tracking-wider text-[var(--text-3)] uppercase">
-          正答率
-        </p>
-        <p className="mt-1 text-[44px] font-extrabold tracking-tight text-[var(--text-1)] tabular-nums">
-          {ratio}
-          <span className="text-[20px] font-bold text-[var(--text-3)]">%</span>
-        </p>
-        <p className="mt-1 text-[14px] text-[var(--text-2)] tabular-nums">
-          {correct} / {total}問正解
-        </p>
+  return (
+    <div className="space-y-4 pt-2">
+      {showToast ? (
+        <div className="pointer-events-none fixed top-[calc(env(safe-area-inset-top)+72px)] left-1/2 z-40 -translate-x-1/2 animate-feedback-in rounded-full bg-[var(--text-1)] px-4 py-2 text-[13px] font-bold text-[var(--bg-card)] shadow-[0_10px_28px_rgba(0,0,0,0.18)]">
+          おつかれさま。{total}問完了しました
+        </div>
+      ) : null}
+
+      <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold tracking-wider text-[var(--text-3)] uppercase">
+              正答率
+            </p>
+            <p className="mt-0.5 text-[12px] text-[var(--text-2)] tabular-nums">
+              {correct} / {total}問正解
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-[var(--text-1)]">
+            <CheckCircle2
+              className="h-5 w-5 text-[#4CAF7A]"
+              strokeWidth={2.5}
+              aria-hidden
+            />
+            <p className="text-[34px] font-extrabold tracking-tight tabular-nums">
+              {ratio}
+              <span className="text-[16px] font-bold text-[var(--text-3)]">%</span>
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
@@ -80,11 +95,13 @@ export function QuizResultScreen({
         />
       </div>
 
-      <AiCoachResultAnalysis
-        questions={questions}
-        judgements={judgements}
-        selectedAnswers={selectedAnswers}
-      />
+      {showAiCoachAnalysis ? (
+        <AiCoachResultAnalysis
+          questions={questions}
+          judgements={judgements}
+          selectedAnswers={selectedAnswers}
+        />
+      ) : null}
 
       <section className="space-y-2">
         <button

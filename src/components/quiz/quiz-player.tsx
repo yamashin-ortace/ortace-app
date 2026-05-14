@@ -25,7 +25,6 @@ import {
 } from "@/lib/quiz-progress";
 import { AttemptCountBadge } from "./attempt-count-badge";
 import { AttemptHistory } from "./attempt-history";
-import { AiCoachAnswerInsight } from "./ai-coach-answer-insight";
 import { ChoiceCard, type ChoiceState } from "./choice-card";
 import { QuestionView } from "./question-view";
 import { QuestionStudyActions } from "./question-study-actions";
@@ -55,6 +54,8 @@ type Props = {
   /** 結果画面下部の戻り先リンク。既定は「学習タブへ戻る」（/study） */
   resultBackHref?: string;
   resultBackLabel?: string;
+  /** 結果画面のAIコーチ分析カードを表示するか。AIテーマ3問確認では再分析ループ防止のためOFFにする。 */
+  showAiCoachResultAnalysis?: boolean;
   /**
    * 単問モード（記録ページからブックマーク・ノート・履歴の1問を解く導線）。
    * 結果画面に飛ばず、フッターの「戻る／次へ」で前後の問題に直接遷移する。
@@ -92,6 +93,7 @@ export function QuizPlayer({
   hideRestartOnResult = false,
   resultBackHref,
   resultBackLabel,
+  showAiCoachResultAnalysis = true,
   singleMode = false,
   prevQuestionHref = null,
   nextQuestionHref = null,
@@ -383,6 +385,7 @@ export function QuizPlayer({
         onRestart={hideRestartOnResult ? undefined : handleRestart}
         backHref={resultBackHref}
         backLabel={resultBackLabel}
+        showAiCoachAnalysis={showAiCoachResultAnalysis}
       />
     );
   }
@@ -470,14 +473,6 @@ export function QuizPlayer({
 
         {isAnswered && currentState.judgement !== "no_answer" ? (
           <ConfidenceRating questionId={current.id} />
-        ) : null}
-
-        {isAnswered ? (
-          <AiCoachAnswerInsight
-            question={current}
-            questions={questions}
-            entries={historyEntries}
-          />
         ) : null}
 
         {isAnswered ? <AttemptHistory questionId={current.id} /> : null}

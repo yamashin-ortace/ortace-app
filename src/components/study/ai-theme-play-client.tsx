@@ -74,6 +74,7 @@ export function AiThemePlayClient({
       resumeLabel={`${clusterLabel} 3問確認`}
       resultBackHref="/study"
       resultBackLabel="学習タブへ戻る"
+      showAiCoachResultAnalysis={false}
     />
   );
 }

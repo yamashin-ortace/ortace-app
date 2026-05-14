@@ -27,8 +27,10 @@ describe("AI coach session analysis", () => {
 
     expect(analysis.status).toBe("ready");
     expect(analysis.clusterLabel).toBe("緑内障と視野変化");
-    expect(analysis.message).toContain("少し急いだミス");
-    expect(analysis.actionHref).toBe("/study/ai-theme/glaucoma-visual-field?count=3");
+    expect(analysis.message).toContain("条件を拾う流れ");
+    expect(analysis.actionHref).toBe(
+      "/study/ai-theme/glaucoma-visual-field?count=3&exclude=56-1%2C56-2",
+    );
     expect(analysis.actionLabel).toBe("このテーマを3問だけ確認");
   });
 
@@ -41,6 +43,27 @@ describe("AI coach session analysis", () => {
 
     expect(analysis.status).toBe("collecting");
     expect(analysis.actionHref).toBe("/study/unanswered?count=3");
+  });
+
+  it("20問以上なら補足分析を複数出す", () => {
+    const questions = Array.from({ length: 20 }, (_, index) =>
+      question({
+        id: `56-${index + 1}`,
+        displayNumber: index + 1,
+        minorCategory: index < 10 ? "緑内障" : "視力検査",
+        theme: index < 10 ? "緑内障視野" : "視力検査",
+      }),
+    );
+    const judgements = Object.fromEntries(
+      questions.map((item, index) => [
+        item.id,
+        index % 5 === 0 ? "incorrect" : "correct",
+      ]),
+    );
+
+    const analysis = analyzeAiCoachSession(questions, judgements, []);
+
+    expect(analysis.details.length).toBeGreaterThanOrEqual(2);
   });
 });
 

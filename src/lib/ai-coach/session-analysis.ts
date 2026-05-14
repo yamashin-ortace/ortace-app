@@ -11,6 +11,7 @@ export type AiCoachSessionAnalysis = {
   clusterId: string | null;
   clusterLabel: string | null;
   message: string;
+  details: string[];
   actionHref: string | null;
   actionLabel: string | null;
 };
@@ -86,17 +87,21 @@ export function analyzeAiCoachSession(
       clusterLabel: null,
       message:
         "まだ分析材料を集めている段階です。数問解くと、AIコーチの提案が具体的になります。",
+      details: [],
       actionHref: "/study/unanswered?count=3",
       actionLabel: "未回答から3問解く",
     };
   }
 
+  const ranked = [...summaries.values()].sort(compareSummary);
+  const questionIds = questions.map((question) => question.id).join(",");
   return {
     status: "ready",
     clusterId: selected.id,
     clusterLabel: selected.label,
     message: buildAnalysisMessage(selected),
-    actionHref: `/study/ai-theme/${encodeURIComponent(selected.id)}?count=3`,
+    details: buildAnalysisDetails(ranked, questions.length),
+    actionHref: `/study/ai-theme/${encodeURIComponent(selected.id)}?count=3&exclude=${encodeURIComponent(questionIds)}`,
     actionLabel: "このテーマを3問だけ確認",
   };
 }
@@ -110,10 +115,10 @@ function compareSummary(a: ClusterSummary, b: ClusterSummary): number {
 
 function buildAnalysisMessage(summary: ClusterSummary): string {
   if (summary.highConfidenceIncorrect > 0) {
-    return `今回の解答では「${summary.label}」に、自信があったミスが含まれています。覚え違いが残っていないか、似た問題で確認しておくと安定しそうです。`;
+    return `今回の解答では「${summary.label}」を少し確認しておくと、判断が安定しそうです。`;
   }
   if (summary.fastIncorrect > 0) {
-    return `今回の解答では「${summary.label}」で、少し急いだミスが出ています。似た問題を少し確認して、問題文の条件を拾う流れを整えましょう。`;
+    return `今回の解答では「${summary.label}」を短く確認して、問題文の条件を拾う流れを整えましょう。`;
   }
   if (summary.incorrect > 0) {
     return `今回の解答では「${summary.label}」に確認しておきたい点があります。似た問題を3問だけ解いて、判断の流れを整理しましょう。`;
@@ -122,4 +127,22 @@ function buildAnalysisMessage(summary: ClusterSummary): string {
     return `「${summary.label}」は正解できていますが、少し時間をかけて判断した問題があります。短く確認しておくと、次はもっと安定しそうです。`;
   }
   return `今回の解答は安定しています。「${summary.label}」を短く確認して、取れているテーマをそのまま固めておきましょう。`;
+}
+
+function buildAnalysisDetails(
+  ranked: readonly ClusterSummary[],
+  questionCount: number,
+): string[] {
+  const maxDetails = questionCount >= 50 ? 4 : questionCount >= 20 ? 2 : 0;
+  if (maxDetails === 0) return [];
+
+  return ranked.slice(0, maxDetails).map((summary) => {
+    if (summary.incorrect > 0) {
+      return `${summary.label}: 確認したい問題が${summary.incorrect}問あります。`;
+    }
+    if (summary.deliberateCorrect > 0) {
+      return `${summary.label}: 正解できていますが、少し時間をかけて判断しています。`;
+    }
+    return `${summary.label}: 今回は安定して取れています。`;
+  });
 }
