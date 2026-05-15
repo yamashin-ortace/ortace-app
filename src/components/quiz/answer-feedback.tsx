@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, BookOpen } from "lucide-react";
 import type { Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
 import { cn } from "@/lib/utils";
@@ -95,11 +95,21 @@ function FeedbackToast({
 
 function Explanation({ explanation }: { explanation: string }) {
   return (
-    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] p-4">
-      <h3 className="mb-2 text-[12px] font-bold tracking-wider text-[var(--text-3)] uppercase">
-        解説
-      </h3>
-      <p className="text-[14px] leading-7 whitespace-pre-wrap text-[var(--text-1)]">
+    <div className="relative overflow-hidden rounded-[14px] border-2 border-[var(--primary)]/30 bg-[var(--bg-card)] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-[var(--primary)]"
+      />
+      <div className="mb-2.5 flex items-center gap-1.5 pl-2">
+        <BookOpen
+          className="h-4 w-4 text-[var(--primary-dark)]"
+          strokeWidth={2.5}
+        />
+        <h3 className="text-[14px] font-extrabold tracking-tight text-[var(--primary-dark)]">
+          解説
+        </h3>
+      </div>
+      <p className="pl-2 text-[15px] leading-[1.85] font-medium whitespace-pre-wrap text-[var(--text-1)]">
         {explanation}
       </p>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  BookOpen,
   ChevronDown,
   ChevronUp,
   Circle,
@@ -135,9 +136,21 @@ export function QuestionReviewItem({
           </ul>
 
           {question.explanation ? (
-            <div className="rounded-[10px] border border-border bg-[var(--bg-muted)]/40 px-3 py-2.5">
-              <p className="text-[11px] font-bold text-[var(--text-3)]">解説</p>
-              <p className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed text-[var(--text-2)]">
+            <div className="relative overflow-hidden rounded-[12px] border-2 border-[var(--primary)]/25 bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-[var(--primary)]"
+              />
+              <div className="mb-1.5 flex items-center gap-1.5 pl-2">
+                <BookOpen
+                  className="h-3.5 w-3.5 text-[var(--primary-dark)]"
+                  strokeWidth={2.5}
+                />
+                <p className="text-[12px] font-extrabold tracking-tight text-[var(--primary-dark)]">
+                  解説
+                </p>
+              </div>
+              <p className="pl-2 text-[13px] leading-[1.8] font-medium whitespace-pre-wrap text-[var(--text-1)]">
                 {question.explanation}
               </p>
             </div>

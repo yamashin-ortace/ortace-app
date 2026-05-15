@@ -265,6 +265,16 @@ html:not([data-theme]),
   animation: result-toast 4300ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* トースト「保存中…」のドット */
+@keyframes saving-dot {
+  0%, 60%, 100% { opacity: 0.2; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-1px); }
+}
+.animate-saving-dot {
+  display: inline-block;
+  animation: saving-dot 900ms ease-in-out infinite;
+}
+
 /* 不正解時の震え */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }

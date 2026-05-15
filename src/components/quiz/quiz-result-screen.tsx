@@ -8,7 +8,9 @@ import {
   ChevronUp,
   CircleSlash,
   Home,
+  LoaderCircle,
   RotateCw,
+  Sparkles,
   XCircle,
 } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
@@ -40,6 +42,7 @@ export function QuizResultScreen({
 }: Props) {
   const [reviewOpen, setReviewOpen] = useState(true);
   const [showToast, setShowToast] = useState(true);
+  const [toastPhase, setToastPhase] = useState<"saving" | "ready">("saving");
   const total = questions.length;
   const correct = questions.filter(
     (q) => judgements[q.id] === "correct",
@@ -53,8 +56,12 @@ export function QuizResultScreen({
   const ratio = total === 0 ? 0 : Math.round((correct / total) * 100);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setShowToast(false), 4400);
-    return () => window.clearTimeout(timer);
+    const phaseTimer = window.setTimeout(() => setToastPhase("ready"), 1800);
+    const hideTimer = window.setTimeout(() => setShowToast(false), 4400);
+    return () => {
+      window.clearTimeout(phaseTimer);
+      window.clearTimeout(hideTimer);
+    };
   }, []);
 
   return (
@@ -64,13 +71,31 @@ export function QuizResultScreen({
           <span className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent" />
           <span className="pointer-events-none absolute -top-12 right-8 h-24 w-24 rounded-full bg-white/22 blur-2xl" />
           <span className="relative grid h-9 w-9 place-items-center rounded-full bg-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-            <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />
+            {toastPhase === "saving" ? (
+              <LoaderCircle className="h-5 w-5 animate-spin" strokeWidth={2.5} />
+            ) : (
+              <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />
+            )}
           </span>
           <span className="relative mt-2 text-[16px] font-extrabold tracking-tight">
-            おつかれさま
+            おつかれさまでした
           </span>
-          <span className="relative mt-0.5 text-[12px] font-bold text-white/90">
-            {total}問の演習が完了しました
+          <span className="relative mt-1 inline-flex items-center gap-1 text-[12px] font-bold text-white/95">
+            {toastPhase === "saving" ? (
+              <>
+                <span>回答を保存中</span>
+                <span className="inline-flex gap-0.5">
+                  <span className="animate-saving-dot">.</span>
+                  <span className="animate-saving-dot [animation-delay:160ms]">.</span>
+                  <span className="animate-saving-dot [animation-delay:320ms]">.</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+                <span>AIコーチが次の提案に反映しました</span>
+              </>
+            )}
           </span>
         </div>
       ) : null}
