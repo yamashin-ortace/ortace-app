@@ -19,6 +19,7 @@ import {
   getReviewTargetIds,
   getWeakFieldFromHistory,
 } from "@/lib/answer-history/status";
+import { countMisconceptionCandidates } from "@/lib/ai-coach/recommendation";
 
 type Props = {
   totalQuestions: number;
@@ -35,17 +36,25 @@ export function RecommendationSection({ totalQuestions }: Props) {
 
   const stats = useMemo(() => {
     if (!hydrated) {
-      return { reviewCount: 0, untouchedCount: 0, weakLabel: "", weakStage: null as null | "confirmed" | "provisional" };
+      return {
+        reviewCount: 0,
+        untouchedCount: 0,
+        weakLabel: "",
+        weakStage: null as null | "confirmed" | "provisional",
+        misconceptionCount: 0,
+      };
     }
     const reviewCount = getReviewTargetIds(entries).size;
     const answered = new Set(entries.map((entry) => entry.id));
     const untouchedCount = Math.max(0, totalQuestions - answered.size);
     const weak = getWeakFieldFromHistory(entries);
+    const misconceptionCount = countMisconceptionCandidates(entries);
     return {
       reviewCount,
       untouchedCount,
       weakLabel: weak?.field ?? "",
       weakStage: weak?.stage === "confirmed" || weak?.stage === "provisional" ? weak.stage : null,
+      misconceptionCount,
     };
   }, [entries, hydrated, totalQuestions]);
 
@@ -105,7 +114,18 @@ export function RecommendationSection({ totalQuestions }: Props) {
           href="/study/misconception"
           icon={<BrainCircuit className="h-6 w-6" strokeWidth={2.5} />}
           title="思い込みチェック"
-          subtitle="自信あり誤答・急ぎすぎた誤答を分析"
+          subtitle={
+            hydrated
+              ? stats.misconceptionCount > 0
+                ? `候補 ${stats.misconceptionCount}問（自信あり誤答・急ぎすぎ誤答）`
+                : "自信あり誤答・急ぎすぎた誤答を分析"
+              : "計算中…"
+          }
+          badge={
+            hydrated && stats.misconceptionCount > 0
+              ? stats.misconceptionCount
+              : null
+          }
           trailing={null}
         />
       </div>
@@ -119,12 +139,14 @@ function RecommendStudyLink({
   title,
   subtitle,
   trailing,
+  badge,
 }: {
   href: string;
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   trailing: React.ReactNode;
+  badge?: number | null;
 }) {
   return (
     <div className="flex items-center gap-2 rounded-[16px] border border-border bg-[var(--bg-card)] p-4 text-[var(--text-1)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-px hover:border-[var(--primary)]/35 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)]">
@@ -136,8 +158,15 @@ function RecommendStudyLink({
           {icon}
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[16px] font-extrabold tracking-tight text-[var(--text-1)]">
-            {title}
+          <span className="flex items-center gap-2">
+            <span className="text-[16px] font-extrabold tracking-tight text-[var(--text-1)]">
+              {title}
+            </span>
+            {badge && badge > 0 ? (
+              <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-[10px] font-extrabold text-white tabular-nums">
+                {badge}
+              </span>
+            ) : null}
           </span>
           <span className="mt-0.5 text-[12px] text-[var(--text-2)]">
             {subtitle}

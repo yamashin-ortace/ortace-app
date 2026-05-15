@@ -3,6 +3,7 @@ import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import type { Question } from "@/lib/questions";
 import {
   classifyAnswerDuration,
+  countMisconceptionCandidates,
   pickAiCoachRecommended,
   pickMisconceptionQuestions,
 } from "./recommendation";
@@ -63,6 +64,35 @@ describe("AI coach recommendation", () => {
       "56-1",
       "56-2",
     ]);
+  });
+
+  it("countMisconceptionCandidates は自信あり誤答と急ぎ誤答の合算件数を返す", () => {
+    const entries: AnswerHistoryEntry[] = [
+      makeEntry("56-1", { result: "incorrect", confidence: "high", durationMs: 45_000 }),
+      makeEntry("56-2", { result: "incorrect", confidence: "guess", durationMs: 8_000 }),
+      makeEntry("56-3", { result: "correct", confidence: "high", durationMs: 5_000 }),
+      makeEntry("56-4", { result: "incorrect", confidence: "mid", durationMs: 40_000 }),
+    ];
+    // 56-1（自信あり誤答）と 56-2（急ぎ誤答）の2件
+    expect(countMisconceptionCandidates(entries)).toBe(2);
+  });
+
+  it("countMisconceptionCandidates は同じ問題は最新エントリだけで判定", () => {
+    const entries: AnswerHistoryEntry[] = [
+      makeEntry("56-5", {
+        result: "incorrect",
+        confidence: "high",
+        durationMs: 40_000,
+        answeredAt: "2026-04-01T00:00:00.000Z",
+      }),
+      makeEntry("56-5", {
+        result: "correct",
+        confidence: "mid",
+        durationMs: 30_000,
+        answeredAt: "2026-05-01T00:00:00.000Z",
+      }),
+    ];
+    expect(countMisconceptionCandidates(entries)).toBe(0);
   });
 
   it("no_answer履歴は思い込み候補にしない", () => {

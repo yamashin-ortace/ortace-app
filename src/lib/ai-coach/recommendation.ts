@@ -110,6 +110,25 @@ export function pickAiCoachRecommended(
   };
 }
 
+/**
+ * 思い込みミス候補の件数を、回答履歴だけから素早く算出する。
+ * 「最新が誤答」かつ「自信あり または 解答時間が15秒未満」の数を返す。
+ * テーマ反復ミスは含まないので pickMisconceptionQuestions の実数より小さくなる場合がある。
+ */
+export function countMisconceptionCandidates(
+  entries: readonly AnswerHistoryEntry[],
+): number {
+  const latest = getLatestEntryByQuestionId(entries);
+  let count = 0;
+  for (const entry of latest.values()) {
+    if (entry.result !== "incorrect") continue;
+    const isHighConfidence = entry.confidence === "high";
+    const isFast = classifyAnswerDuration(entry.durationMs) === "fast";
+    if (isHighConfidence || isFast) count += 1;
+  }
+  return count;
+}
+
 export function pickMisconceptionQuestions(
   questions: readonly Question[],
   entries: readonly AnswerHistoryEntry[],
