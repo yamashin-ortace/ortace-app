@@ -57,7 +57,14 @@ const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
 const RECORDS_SCROLL_KEY = "ortace.records.scrollY";
 const HISTORY_PAGE_SIZE = 50;
 type RecordsTab = "bookmarks" | "notes" | "history";
-type HistoryScope = "all" | "today";
+type HistoryScope = "all" | "today" | "week" | "month";
+
+const HISTORY_SCOPE_LABELS: Record<HistoryScope, string> = {
+  all: "すべて",
+  today: "今日",
+  week: "1週間",
+  month: "1ヶ月",
+};
 
 export function RecordsClient({ questions }: Props) {
   const router = useRouter();
@@ -75,7 +82,7 @@ export function RecordsClient({ questions }: Props) {
     },
   );
   const [historyScope, setHistoryScope] = useState<HistoryScope>(() =>
-    searchParams.get("range") === "today" ? "today" : "all",
+    parseHistoryScope(searchParams.get("range")),
   );
   const [visibleHistoryCount, setVisibleHistoryCount] =
     useState(HISTORY_PAGE_SIZE);
@@ -127,9 +134,9 @@ export function RecordsClient({ questions }: Props) {
 
   const displayedHistory = useMemo(() => {
     const byScope =
-      historyScope === "today"
-        ? answerHistory.filter((entry) => isAnsweredToday(entry))
-        : answerHistory;
+      historyScope === "all"
+        ? answerHistory
+        : answerHistory.filter((entry) => isWithinScope(entry, historyScope));
     return byScope.filter((entry) =>
       matchesSearch(entry.id, noteTextMap.get(entry.id) ?? ""),
     );
@@ -169,8 +176,8 @@ export function RecordsClient({ questions }: Props) {
       } else {
         params.delete("category");
       }
-      if (nextTab === "history" && nextHistoryScope === "today") {
-        params.set("range", "today");
+      if (nextTab === "history" && nextHistoryScope !== "all") {
+        params.set("range", nextHistoryScope);
       } else {
         params.delete("range");
       }
@@ -319,18 +326,17 @@ export function RecordsClient({ questions }: Props) {
         ) : (
           <>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              <FilterChip
-                selected={historyScope === "all"}
-                onClick={() => handleHistoryScopeChange("all")}
-              >
-                すべて
-              </FilterChip>
-              <FilterChip
-                selected={historyScope === "today"}
-                onClick={() => handleHistoryScopeChange("today")}
-              >
-                今日だけ
-              </FilterChip>
+              {(Object.keys(HISTORY_SCOPE_LABELS) as HistoryScope[]).map(
+                (scope) => (
+                  <FilterChip
+                    key={scope}
+                    selected={historyScope === scope}
+                    onClick={() => handleHistoryScopeChange(scope)}
+                  >
+                    {HISTORY_SCOPE_LABELS[scope]}
+                  </FilterChip>
+                ),
+              )}
             </div>
 
             {displayedHistory.length === 0 ? (
@@ -348,7 +354,7 @@ export function RecordsClient({ questions }: Props) {
               />
             ) : (
               <>
-                <FieldSummaryList summaries={fieldSummaries} />
+                <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
                 {visibleHistory.map((entry) => {
                   const question = questionMap.get(entry.id);
                   if (!question) return null;
@@ -557,14 +563,14 @@ function AnswerHistoryCard({
   entry: AnswerHistoryEntry;
   question: QuestionSummary;
   onOpenDetail: () => void;
-  historyScope: "all" | "today";
+  historyScope: HistoryScope;
 }) {
   const stem = question.questionText.replace(/\s+/g, " ").trim();
   const result = getAnswerResultDisplay(entry.result);
   const ResultIcon = result.icon;
   const href = (() => {
     const params = new URLSearchParams({ from: "history" });
-    if (historyScope === "today") params.set("range", "today");
+    if (historyScope !== "all") params.set("range", historyScope);
     return `/study/question/${question.id}?${params.toString()}`;
   })();
 
@@ -606,71 +612,84 @@ function AnswerHistoryCard({
 
 function FieldSummaryList({
   summaries,
+  scope,
 }: {
   summaries: FieldSummary[];
+  scope: HistoryScope;
 }) {
   if (summaries.length === 0) return null;
 
+  const scopeSummary =
+    scope === "all"
+      ? "これまでの解答全体"
+      : `直近 ${HISTORY_SCOPE_LABELS[scope]} の解答`;
+
   return (
-    <section className="space-y-2.5 rounded-[14px] border border-border bg-[var(--bg-card)] p-3.5 shadow-sm">
-      <div className="space-y-0.5">
+    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="mb-2 px-1">
         <h3 className="text-[15px] font-bold text-[var(--text-1)]">
           分野別の成績
         </h3>
-        <p className="text-[12px] text-[var(--text-3)]">
-          得意な分野と、もう一度見直したい分野がわかります
+        <p className="mt-0.5 text-[11px] text-[var(--text-3)]">
+          {scopeSummary}の正答率と解答数
         </p>
       </div>
-      <div className="space-y-1.5">
-        {summaries.map((summary) => {
-          const accuracy = formatRate(summary.accuracy);
-          return (
-            <div
-              key={summary.majorCategory}
-              className="space-y-1.5 rounded-[12px] bg-[var(--bg-muted)]/45 px-3 py-2.5"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="min-w-0 text-[14px] leading-snug font-bold text-[var(--text-1)]">
-                  {summary.majorCategory}
-                </p>
-                <div className="grid h-9 w-[104px] shrink-0 grid-cols-[40px_1fr] items-center rounded-[12px] bg-[var(--bg-card)] px-2 text-center shadow-sm">
-                  <p className="grid h-full place-items-center text-[10px] leading-none font-bold text-[var(--text-3)]">
-                    正答率
-                  </p>
-                  <p className="grid h-full place-items-center text-[18px] leading-none font-extrabold tabular-nums text-[var(--primary-dark)]">
-                    {accuracy}%
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <MiniMetric label="解答数" value={summary.total} />
-                <MiniMetric label="正解数" value={summary.correct} />
-              </div>
-              {summary.noAnswer > 0 ? (
-                <p className="text-[11px] text-[var(--text-3)]">
-                  正答なし: {summary.noAnswer}問
-                </p>
-              ) : null}
-            </div>
-          );
-        })}
+      <div className="divide-y divide-border/70">
+        {summaries.map((summary) => (
+          <FieldSummaryRow key={summary.majorCategory} summary={summary} />
+        ))}
       </div>
     </section>
   );
 }
 
-function MiniMetric({ label, value }: { label: string; value: number }) {
+function FieldSummaryRow({ summary }: { summary: FieldSummary }) {
+  const accuracy = summary.accuracy;
   return (
-    <div className="flex items-end justify-between gap-2 rounded-[10px] bg-[var(--bg-card)] px-3 py-2 shadow-sm">
-      <p className="text-[10px] leading-none font-bold text-[var(--text-3)]">
-        {label}
-      </p>
-      <p className="text-[18px] leading-none font-extrabold tabular-nums text-[var(--text-1)]">
-        {value}
-        <span className="ml-0.5 text-[10px] font-bold text-[var(--text-3)]">
+    <div className="px-1 py-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="min-w-0 flex-1 text-[13px] font-bold text-[var(--text-1)]">
+          {summary.majorCategory}
+        </p>
+        <p className="shrink-0 text-[11px] font-semibold text-[var(--text-3)]">
+          正答率{" "}
+          <span className="text-[17px] font-extrabold tabular-nums text-[var(--primary-dark)]">
+            {accuracy === null ? "--" : accuracy}
+          </span>
+          %
+        </p>
+      </div>
+      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
+        <div
+          className="h-full rounded-full bg-[var(--primary)] transition-[width]"
+          style={{ width: `${Math.max(0, Math.min(100, accuracy ?? 0))}%` }}
+        />
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--text-3)]">
+        <span>
+          解答{" "}
+          <span className="font-bold tabular-nums text-[var(--text-2)]">
+            {summary.total}
+          </span>
           問
         </span>
-      </p>
+        <span>
+          正解{" "}
+          <span className="font-bold tabular-nums text-[var(--text-2)]">
+            {summary.correct}
+          </span>
+          問
+        </span>
+        {summary.noAnswer > 0 ? (
+          <span>
+            正答なし{" "}
+            <span className="font-bold tabular-nums text-[var(--text-2)]">
+              {summary.noAnswer}
+            </span>
+            問
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -812,8 +831,22 @@ function isAnsweredToday(entry: AnswerHistoryEntry): boolean {
   return getTokyoDateString(date) === getTokyoDateString();
 }
 
-function formatRate(value: number | null): string {
-  return value === null ? "--" : String(value);
+function isWithinScope(
+  entry: AnswerHistoryEntry,
+  scope: HistoryScope,
+): boolean {
+  if (scope === "all") return true;
+  if (scope === "today") return isAnsweredToday(entry);
+  const date = new Date(entry.answeredAt);
+  if (Number.isNaN(date.getTime())) return false;
+  const days = scope === "week" ? 7 : 30;
+  const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
+  return date.getTime() >= threshold;
+}
+
+function parseHistoryScope(value: string | null): HistoryScope {
+  if (value === "today" || value === "week" || value === "month") return value;
+  return "all";
 }
 
 function isBookmarkCategory(value: string | null): value is BookmarkCategory {

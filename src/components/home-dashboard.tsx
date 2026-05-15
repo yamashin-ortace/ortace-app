@@ -89,13 +89,13 @@ export function HomeDashboard({ questionTotals }: Props) {
           <div className="space-y-2">
             <div className="space-y-0.5">
               <p className="text-[12px] font-semibold text-[var(--text-3)]">
-                分野別（タップで未着手の問題を解く）
+                分野別の進捗（タップで未着手の問題を解く）
               </p>
               <p className="text-[10px] text-[var(--text-3)]">
                 ※正答率は最新解答ベース
               </p>
             </div>
-            <div className="space-y-2">
+            <div className="divide-y divide-border/70">
               {progress.fields.map((field) => (
                 <FieldProgressRow key={field.name} field={field} />
               ))}
@@ -173,34 +173,35 @@ function FieldProgressRow({
     <Link
       href={buildFieldStudyHref(field.name)}
       aria-label={`${field.name}：タップで未着手の問題を解く`}
-      className="group block rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+      className="group -mx-2 block rounded-[8px] px-2 py-2.5 transition-colors duration-150 hover:bg-[var(--bg-muted)]/50"
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="min-w-0 truncate text-[13px] font-bold text-[var(--text-1)]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="min-w-0 flex-1 truncate text-[13px] font-bold text-[var(--text-1)]">
           {field.name}
         </span>
-        {field.accuracy !== null ? (
-          <span className="shrink-0 text-[11px] text-[var(--text-3)]">
-            正答率{" "}
-            <span className="text-[13px] font-bold tabular-nums text-[var(--text-1)]">
-              {field.accuracy}
+        <div className="flex shrink-0 items-center gap-3 tabular-nums">
+          <span className="text-[11px] text-[var(--text-3)]">
+            <span className="text-[13px] font-extrabold text-[var(--text-1)]">
+              {field.rate}
             </span>
             %
           </span>
-        ) : (
-          <span className="shrink-0 text-[11px] text-[var(--text-3)]">
-            正答率 --
-          </span>
-        )}
-      </div>
-      <div className="mt-1 text-[12px] leading-snug text-[var(--text-2)]">
-        解いた割合{" "}
-        <span className="font-semibold tabular-nums text-[var(--text-1)]">
-          {field.rate}%
-        </span>
-        <span className="text-[var(--text-3)]">
-          （{field.answered}/{field.total}問）
-        </span>
+          {field.accuracy !== null ? (
+            <span className="text-[11px] text-[var(--text-3)]">
+              正答率{" "}
+              <span className="text-[12px] font-bold text-[var(--text-2)]">
+                {field.accuracy}
+              </span>
+              %
+            </span>
+          ) : (
+            <span className="text-[11px] text-[var(--text-3)]">正答率 --</span>
+          )}
+          <ChevronRight
+            className="h-3.5 w-3.5 text-[var(--text-3)] transition-transform duration-200 group-hover:translate-x-0.5"
+            strokeWidth={2.5}
+          />
+        </div>
       </div>
       <div className="mt-1.5">
         <ProgressBar value={field.rate} />
