@@ -12,27 +12,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Bookmark,
   CheckCircle2,
-  Clock,
   FileText,
-  Gauge,
   HelpCircle,
   History,
-  Lightbulb,
   Search,
-  Sparkles,
   Trash2,
   X,
   XCircle,
 } from "lucide-react";
-import {
-  analyzeAnswerTimeQuadrants,
-  type AnswerTimeQuadrant,
-} from "@/lib/ai-coach/answer-time-quadrants";
-import {
-  analyzeClusterWeakness,
-  type ClusterWeaknessRow,
-  type QuestionClusterLookup,
-} from "@/lib/ai-coach/cluster-weakness";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -62,15 +49,8 @@ export type QuestionSummary = {
   majorCategory: string;
 };
 
-export type QuestionClusterEntry = {
-  id: string;
-  clusterId: string;
-  clusterLabel: string;
-};
-
 type Props = {
   questions: QuestionSummary[];
-  clusters: QuestionClusterEntry[];
 };
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
@@ -86,7 +66,7 @@ const HISTORY_SCOPE_LABELS: Record<HistoryScope, string> = {
   month: "1ヶ月",
 };
 
-export function RecordsClient({ questions, clusters }: Props) {
+export function RecordsClient({ questions }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -164,22 +144,6 @@ export function RecordsClient({ questions, clusters }: Props) {
   const fieldSummaries = useMemo(
     () => calculateFieldSummaries(displayedHistory),
     [displayedHistory],
-  );
-  const quadrantSummary = useMemo(
-    () => analyzeAnswerTimeQuadrants(displayedHistory),
-    [displayedHistory],
-  );
-  const clusterLookup = useMemo<QuestionClusterLookup>(
-    () => ({
-      byId: new Map(
-        clusters.map((c) => [c.id, { id: c.clusterId, label: c.clusterLabel }]),
-      ),
-    }),
-    [clusters],
-  );
-  const clusterWeakness = useMemo(
-    () => analyzeClusterWeakness(displayedHistory, clusterLookup),
-    [clusterLookup, displayedHistory],
   );
   const visibleHistory = displayedHistory.slice(0, visibleHistoryCount);
   const hasMoreHistory = visibleHistory.length < displayedHistory.length;
@@ -390,14 +354,6 @@ export function RecordsClient({ questions, clusters }: Props) {
               />
             ) : (
               <>
-                <AnswerTimeQuadrantsCard
-                  summary={quadrantSummary}
-                  scope={historyScope}
-                />
-                <ClusterWeaknessCard
-                  rows={clusterWeakness}
-                  scope={historyScope}
-                />
                 <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
                 {visibleHistory.map((entry) => {
                   const question = questionMap.get(entry.id);
@@ -654,200 +610,6 @@ function AnswerHistoryCard({
   );
 }
 
-function AnswerTimeQuadrantsCard({
-  summary,
-  scope,
-}: {
-  summary: ReturnType<typeof analyzeAnswerTimeQuadrants>;
-  scope: HistoryScope;
-}) {
-  const totalIn4 = summary.quadrants.reduce((sum, q) => sum + q.count, 0);
-  if (totalIn4 === 0 && summary.standardCount === 0) return null;
-
-  const scopeSummary =
-    scope === "all"
-      ? "これまでの解答全体"
-      : `直近 ${HISTORY_SCOPE_LABELS[scope]} の解答`;
-
-  return (
-    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="mb-2 flex items-center gap-1.5 px-1">
-        <Sparkles
-          className="h-3.5 w-3.5 text-[var(--primary-dark)]"
-          strokeWidth={2.5}
-        />
-        <h3 className="text-[15px] font-bold text-[var(--text-1)]">
-          解答パターン
-        </h3>
-      </div>
-      <p className="mb-2.5 px-1 text-[11px] text-[var(--text-3)]">
-        {scopeSummary}を「正誤 × 解答時間」の4象限で見えるようにします
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        {summary.quadrants.map((q) => (
-          <QuadrantTile key={q.id} quadrant={q} />
-        ))}
-      </div>
-      {summary.standardCount > 0 ||
-      summary.noAnswerCount > 0 ||
-      summary.unknownCount > 0 ? (
-        <p className="mt-2 px-1 text-[10.5px] text-[var(--text-3)]">
-          {summary.standardCount > 0 ? (
-            <span>
-              標準時間{" "}
-              <span className="font-bold tabular-nums text-[var(--text-2)]">
-                {summary.standardCount}
-              </span>
-              問
-            </span>
-          ) : null}
-          {summary.noAnswerCount > 0 ? (
-            <>
-              {summary.standardCount > 0 ? <span> ・ </span> : null}
-              <span>
-                正答なし{" "}
-                <span className="font-bold tabular-nums text-[var(--text-2)]">
-                  {summary.noAnswerCount}
-                </span>
-                問
-              </span>
-            </>
-          ) : null}
-          {summary.unknownCount > 0 ? (
-            <>
-              {summary.standardCount > 0 || summary.noAnswerCount > 0 ? (
-                <span> ・ </span>
-              ) : null}
-              <span>時間未記録 {summary.unknownCount}問</span>
-            </>
-          ) : null}
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-const QUADRANT_VISUAL: Record<
-  AnswerTimeQuadrant["id"],
-  { tone: string; icon: typeof Sparkles }
-> = {
-  "correct-fast": {
-    tone: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-    icon: CheckCircle2,
-  },
-  "correct-deliberate": {
-    tone: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
-    icon: Clock,
-  },
-  "incorrect-fast": {
-    tone: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
-    icon: Lightbulb,
-  },
-  "incorrect-deliberate": {
-    tone: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
-    icon: Gauge,
-  },
-};
-
-function QuadrantTile({ quadrant }: { quadrant: AnswerTimeQuadrant }) {
-  const visual = QUADRANT_VISUAL[quadrant.id];
-  const Icon = visual.icon;
-  return (
-    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`grid h-6 w-6 shrink-0 place-items-center rounded-[8px] ${visual.tone}`}
-        >
-          <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
-        </span>
-        <span className="text-[12px] font-extrabold text-[var(--text-1)]">
-          {quadrant.label}
-        </span>
-      </div>
-      <p className="mt-1.5 text-[20px] font-extrabold leading-none tabular-nums text-[var(--text-1)]">
-        {quadrant.count}
-        <span className="ml-0.5 text-[11px] font-bold text-[var(--text-3)]">
-          問
-        </span>
-      </p>
-      <p className="mt-1 text-[10.5px] leading-snug text-[var(--text-3)]">
-        {quadrant.description}
-      </p>
-    </div>
-  );
-}
-
-function ClusterWeaknessCard({
-  rows,
-  scope,
-}: {
-  rows: ClusterWeaknessRow[];
-  scope: HistoryScope;
-}) {
-  if (rows.length === 0) return null;
-  const scopeSummary =
-    scope === "all"
-      ? "これまでの解答全体"
-      : `直近 ${HISTORY_SCOPE_LABELS[scope]} の解答`;
-
-  return (
-    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="mb-1 flex items-center gap-1.5 px-1">
-        <Sparkles
-          className="h-3.5 w-3.5 text-[var(--primary-dark)]"
-          strokeWidth={2.5}
-        />
-        <h3 className="text-[15px] font-bold text-[var(--text-1)]">
-          弱点クラスタ
-        </h3>
-      </div>
-      <p className="mb-2 px-1 text-[11px] text-[var(--text-3)]">
-        {scopeSummary}を、AIテーマクラスタごとに正答率が低い順で並べました（3問以上解答したものから）
-      </p>
-      <ul className="divide-y divide-border/70">
-        {rows.map((row) => (
-          <li key={row.clusterId}>
-            <Link
-              href={`/study/ai-theme/${encodeURIComponent(row.clusterId)}?count=3`}
-              className="group -mx-1 flex items-center gap-3 rounded-[10px] px-1 py-2.5 transition-colors duration-150 hover:bg-[var(--bg-muted)]/50"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-bold text-[var(--text-1)]">
-                  {row.clusterLabel}
-                </p>
-                <p className="mt-0.5 text-[11px] text-[var(--text-3)]">
-                  解答{" "}
-                  <span className="font-bold tabular-nums text-[var(--text-2)]">
-                    {row.judged}
-                  </span>
-                  問 ・ 正解{" "}
-                  <span className="font-bold tabular-nums text-[var(--text-2)]">
-                    {row.correct}
-                  </span>
-                  問
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-[var(--text-3)]">
-                  正答率
-                </p>
-                <p className="text-[18px] font-extrabold leading-none tabular-nums text-[var(--primary-dark)]">
-                  {row.accuracy}
-                  <span className="text-[11px] font-bold">%</span>
-                </p>
-              </div>
-              <Sparkles
-                className="h-3.5 w-3.5 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:translate-x-0.5"
-                strokeWidth={2.5}
-              />
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 function FieldSummaryList({
   summaries,
   scope,
@@ -857,10 +619,7 @@ function FieldSummaryList({
 }) {
   if (summaries.length === 0) return null;
 
-  const scopeSummary =
-    scope === "all"
-      ? "これまでの解答全体"
-      : `直近 ${HISTORY_SCOPE_LABELS[scope]} の解答`;
+  const scopeSummary = describeHistoryScope(scope);
 
   return (
     <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -1080,6 +839,12 @@ function isWithinScope(
   const days = scope === "week" ? 7 : 30;
   const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
   return date.getTime() >= threshold;
+}
+
+function describeHistoryScope(scope: HistoryScope): string {
+  if (scope === "all") return "これまでの解答全体";
+  if (scope === "today") return "今日の解答";
+  return `直近${HISTORY_SCOPE_LABELS[scope]}の解答`;
 }
 
 function parseHistoryScope(value: string | null): HistoryScope {

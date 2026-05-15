@@ -6,11 +6,13 @@ import { RandomModeCard } from "@/components/study/random-mode-card";
 import { RecommendationSection } from "@/components/study/recommendation-section";
 import { RoundCard } from "@/components/study/round-card";
 import { BookmarkSetSection } from "@/components/study/bookmark-set-section";
+import { WeakClusterSection } from "@/components/study/weak-cluster-section";
 import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
 import { getEffectivePlan } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { EXAM_ROUNDS } from "@/lib/questions";
 import { loadAllQuestions } from "@/lib/questions/loader";
+import { getAiThemeCluster } from "@/lib/ai-coach/theme-cluster";
 
 export default async function StudyPage() {
   const session = await getSessionContext();
@@ -23,6 +25,10 @@ export default async function StudyPage() {
     : "free";
 
   const questions = await loadAllQuestions();
+  const clusters = questions.map((q) => {
+    const cluster = getAiThemeCluster(q);
+    return { id: q.id, clusterId: cluster.id, clusterLabel: cluster.label };
+  });
 
   return (
     <div className="space-y-6 pt-2">
@@ -32,6 +38,7 @@ export default async function StudyPage() {
 
       <DailyLimitBanner plan={plan} />
       <RecommendationSection totalQuestions={questions.length} />
+      <WeakClusterSection clusters={clusters} />
       <ContinueQuizCard />
 
       <section className="space-y-2">

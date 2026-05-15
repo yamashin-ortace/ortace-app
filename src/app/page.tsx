@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { HomeGreeting } from "@/components/home-greeting";
-import { HomeAiCoachComment } from "@/components/home-ai-coach-comment";
 import { HomeDashboard } from "@/components/home-dashboard";
 import { HomeEstimatedScore } from "@/components/home-estimated-score";
 import { HomeExamCountdown } from "@/components/home-exam-countdown";
@@ -12,6 +11,7 @@ import { LandingPage } from "@/components/landing/landing-page";
 import { getSessionContext } from "@/lib/auth/profile";
 import { FIELDS, type Field } from "@/lib/questions";
 import { loadAllQuestions } from "@/lib/questions/loader";
+import { getAiThemeCluster } from "@/lib/ai-coach/theme-cluster";
 
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getSessionContext();
@@ -43,14 +43,17 @@ export default async function HomePage() {
       questions.filter((question) => question.majorCategory === field).length,
     ]),
   ) as Record<Field, number>;
+  const clusters = questions.map((q) => {
+    const cluster = getAiThemeCluster(q);
+    return { id: q.id, clusterId: cluster.id, clusterLabel: cluster.label };
+  });
 
   return (
     <div className="space-y-6 pt-2">
       <HomeGreeting />
       <DiagnosticBanner />
       <HomeExamCountdown totalQuestions={questions.length} />
-      <HomeAiCoachComment />
-      <HomeTodayCta totalQuestions={questions.length} />
+      <HomeTodayCta totalQuestions={questions.length} clusters={clusters} />
       <HomeStatsRow />
       <HomeEstimatedScore questions={questions} />
       <HomeTrendChart />

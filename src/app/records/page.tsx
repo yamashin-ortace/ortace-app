@@ -1,10 +1,8 @@
 import {
   RecordsClient,
   type QuestionSummary,
-  type QuestionClusterEntry,
 } from "@/components/records/records-client";
 import { loadAllQuestions } from "@/lib/questions/loader";
-import { getAiThemeCluster } from "@/lib/ai-coach/theme-cluster";
 
 export default async function RecordsPage() {
   const questions = await loadAllQuestions();
@@ -16,10 +14,6 @@ export default async function RecordsPage() {
     questionText: q.questionText,
     majorCategory: q.majorCategory,
   }));
-  const clusters: QuestionClusterEntry[] = questions.map((q) => {
-    const cluster = getAiThemeCluster(q);
-    return { id: q.id, clusterId: cluster.id, clusterLabel: cluster.label };
-  });
 
   return (
     <div className="space-y-5 pt-2">
@@ -32,7 +26,7 @@ export default async function RecordsPage() {
         </p>
       </div>
 
-      <RecordsClient questions={summaries} clusters={clusters} />
+      <RecordsClient questions={summaries} />
     </div>
   );
 }

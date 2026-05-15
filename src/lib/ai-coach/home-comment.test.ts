@@ -33,7 +33,7 @@ describe("buildHomeAiCoachComment", () => {
     expect(result.message).toContain("3問");
   });
 
-  it("直近1週間で急ぎ誤答が3問以上なら今日のおすすめ導線", () => {
+  it("直近1週間で急ぎ誤答が3問以上なら fast_miss", () => {
     const entries = [
       ...thirtyAnsweredAt(NOW, 10),
       entry({
@@ -60,7 +60,7 @@ describe("buildHomeAiCoachComment", () => {
     ];
     const result = buildHomeAiCoachComment(entries, NOW);
     expect(result.kind).toBe("fast_miss");
-    expect(result.cta?.href).toBe("/study/today");
+    expect(result.message).toContain("急ぎ気味");
   });
 
   it("直近正答率が前週より上がっていれば accuracy_up", () => {
@@ -82,6 +82,77 @@ describe("buildHomeAiCoachComment", () => {
     const result = buildHomeAiCoachComment(entries, NOW);
     expect(result.kind).toBe("accuracy_down");
     expect(result.cta?.href).toBe("/study/weak");
+  });
+
+  it("弱点クラスタが渡されると cluster_focus で具体テーマ名を入れる", () => {
+    const lookup = {
+      byId: new Map(
+        Array.from({ length: 30 }, (_, i) => [
+          `47-${i + 1}`,
+          { id: "neuro-ophthalmology", label: "神経眼科" },
+        ]),
+      ),
+    };
+    const entries = Array.from({ length: 30 }, (_, i) =>
+      entry({
+        id: `47-${i + 1}`,
+        answeredAt: daysAgo(NOW, 5 + (i % 5)),
+        result: i < 18 ? "incorrect" : "correct",
+      }),
+    );
+
+    const result = buildHomeAiCoachComment(entries, NOW, {
+      clusterLookup: lookup,
+    });
+    expect(result.kind).toBe("cluster_focus");
+    expect(result.message).toContain("神経眼科");
+    expect(result.message).toContain("%");
+  });
+
+  it("4象限で『時間をかけたのに誤答』が3問以上なら quadrant_focus", () => {
+    // 直近・前週とも 80% 正答率にして accuracy_up/down を回避し、じっくり誤答3問を直近に置く
+    // 直近・前週とも 正解多めの構成にする
+    const recent = Array.from({ length: 20 }, (_, i) =>
+      entry({
+        id: `55-r${i}`,
+        result: "correct",
+        durationMs: 30_000,
+        answeredAt: daysAgo(NOW, (i % 7) + 1),
+      }),
+    );
+    const previous = Array.from({ length: 20 }, (_, i) =>
+      entry({
+        id: `55-p${i}`,
+        result: i < 17 ? "correct" : "incorrect",
+        durationMs: 30_000,
+        answeredAt: daysAgo(NOW, 7 + (i % 7) + 1),
+      }),
+    );
+    const entries = [
+      ...previous,
+      ...recent,
+      entry({
+        id: "55-d1",
+        result: "incorrect",
+        durationMs: 80_000,
+        answeredAt: daysAgo(NOW, 1),
+      }),
+      entry({
+        id: "55-d2",
+        result: "incorrect",
+        durationMs: 90_000,
+        answeredAt: daysAgo(NOW, 2),
+      }),
+      entry({
+        id: "55-d3",
+        result: "incorrect",
+        durationMs: 75_000,
+        answeredAt: daysAgo(NOW, 3),
+      }),
+    ];
+    const result = buildHomeAiCoachComment(entries, NOW);
+    expect(result.kind).toBe("quadrant_focus");
+    expect(result.message).toContain("時間をかけた");
   });
 
   it("3日連続学習なら streak_steady", () => {
