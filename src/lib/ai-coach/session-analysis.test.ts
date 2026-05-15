@@ -107,6 +107,116 @@ describe("AI coach session analysis", () => {
     expect(analysis.message).toContain("急ぎ気味");
   });
 
+  it("誤答3問以上+自信あり+急ぎ気味なら重症複合メッセージ", () => {
+    const questions = Array.from({ length: 4 }, (_, i) =>
+      question({
+        id: `55-${100 + i}`,
+        displayNumber: 100 + i,
+        majorCategory: "眼科疾患・神経眼科",
+        minorCategory: "神経眼科",
+        theme: "瞳孔反応解離",
+      }),
+    );
+    const entries = [
+      entry("55-100", { result: "incorrect", confidence: "high", durationMs: 8_000 }),
+      entry("55-101", { result: "incorrect", confidence: "high", durationMs: 40_000 }),
+      entry("55-102", { result: "incorrect", confidence: "guess", durationMs: 10_000 }),
+      entry("55-103", { result: "incorrect", confidence: "guess", durationMs: 40_000 }),
+    ];
+
+    const analysis = analyzeAiCoachSession(
+      questions,
+      {
+        "55-100": "incorrect",
+        "55-101": "incorrect",
+        "55-102": "incorrect",
+        "55-103": "incorrect",
+      },
+      entries,
+    );
+
+    expect(analysis.message).toContain("少し荒れています");
+    expect(analysis.message).toContain("自信あり");
+    expect(analysis.message).toContain("急ぎすぎ");
+  });
+
+  it("同じテーマで誤答が複数なら集中ミス文言を出す", () => {
+    const questions = [
+      question({
+        id: "55-200",
+        majorCategory: "眼科疾患・神経眼科",
+        minorCategory: "緑内障",
+        theme: "急性緑内障発作",
+      }),
+      question({
+        id: "55-201",
+        displayNumber: 201,
+        majorCategory: "眼科疾患・神経眼科",
+        minorCategory: "緑内障",
+        theme: "急性緑内障発作",
+      }),
+    ];
+    const entries = [
+      entry("55-200", { result: "incorrect", confidence: "guess", durationMs: 40_000 }),
+      entry("55-201", { result: "incorrect", confidence: "guess", durationMs: 40_000 }),
+    ];
+
+    const analysis = analyzeAiCoachSession(
+      questions,
+      { "55-200": "incorrect", "55-201": "incorrect" },
+      entries,
+    );
+
+    expect(analysis.message).toContain("急性緑内障発作");
+    expect(analysis.message).toContain("続けて落としています");
+  });
+
+  it("自信あり1問だけなら『1問』『軽く』のトーンで出す", () => {
+    const questions = [
+      question({
+        id: "55-300",
+        majorCategory: "両眼視・斜視",
+        minorCategory: "内斜視",
+        theme: "調節性内斜視",
+      }),
+    ];
+    const entries = [
+      entry("55-300", { result: "incorrect", confidence: "high", durationMs: 40_000 }),
+    ];
+
+    const analysis = analyzeAiCoachSession(
+      questions,
+      { "55-300": "incorrect" },
+      entries,
+    );
+
+    expect(analysis.message).toContain("1問");
+    expect(analysis.message).toContain("自信あり");
+    expect(analysis.message).toContain("軽く");
+  });
+
+  it("正解だけで時間が長い問題が1問あれば『1問だけ時間』のトーン", () => {
+    const questions = [
+      question({
+        id: "55-400",
+        majorCategory: "視能検査・検査機器",
+        minorCategory: "視力検査",
+        theme: "視力検査",
+      }),
+    ];
+    const entries = [
+      entry("55-400", { result: "correct", durationMs: 90_000 }),
+    ];
+
+    const analysis = analyzeAiCoachSession(
+      questions,
+      { "55-400": "correct" },
+      entries,
+    );
+
+    expect(analysis.message).toContain("1問だけ時間");
+  });
+
   it("20問以上なら補足分析を複数出す", () => {
     const questions = Array.from({ length: 20 }, (_, index) =>
       question({

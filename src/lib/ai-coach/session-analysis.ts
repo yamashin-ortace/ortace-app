@@ -20,6 +20,7 @@ type ClusterSummary = {
   id: string;
   label: string;
   themes: Map<string, number>;
+  themesIncorrect: Map<string, number>;
   total: number;
   correct: number;
   incorrect: number;
@@ -47,6 +48,7 @@ export function analyzeAiCoachSession(
       id: cluster.id,
       label: cluster.label,
       themes: new Map<string, number>(),
+      themesIncorrect: new Map<string, number>(),
       total: 0,
       correct: 0,
       incorrect: 0,
@@ -63,6 +65,10 @@ export function analyzeAiCoachSession(
 
     if (judgement === "incorrect") {
       summary.incorrect += 1;
+      summary.themesIncorrect.set(
+        themeLabel,
+        (summary.themesIncorrect.get(themeLabel) ?? 0) + 1,
+      );
       summary.score += 100;
       if (duration === "fast") {
         summary.fastIncorrect += 1;
@@ -125,27 +131,74 @@ function buildAnalysisMessage(summary: ClusterSummary): string {
   const fast = summary.fastIncorrect;
   const wrong = summary.incorrect;
   const deliberate = summary.deliberateCorrect;
+  const correct = summary.correct;
+  const topIncorrectTheme = getTopIncorrectTheme(summary);
 
+  // 1. 重症複合: 誤答3問以上 + 自信あり + 急ぎ
+  if (wrong >= 3 && high > 0 && fast > 0) {
+    return `${clusterLabel}は今回少し荒れています。「${themePhrase}」で誤答${wrong}問（自信あり${high}・急ぎすぎ${fast}）。要点の取り違えと判断スピードの両方を、解説を見ながら整え直しておきましょう。`;
+  }
+  // 2. 自信×急ぎ複合（軽め）
   if (high > 0 && fast > 0) {
     return `${clusterLabel}では「${themePhrase}」で自信ありの誤答が${high}問、急ぎ気味の誤答が${fast}問。問題文の条件を拾う流れと、覚え違いがないかの確認を両方やっておきましょう。`;
   }
-  if (high > 0) {
+  // 3. 自信あり多発
+  if (high >= 2) {
     const others = wrong - high;
     const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
-    return `${clusterLabel}で「${themePhrase}」を${high}問、自信ありで落としています${suffix}。覚え違いがないか解説で見直すと安定しそうです。`;
+    return `${clusterLabel}で「${themePhrase}」を${high}問、自信ありで落としています${suffix}。覚え違いが連続しているサイン。解説で要点を1つずつ拾い直しておきましょう。`;
   }
-  if (fast > 0) {
+  // 4. 自信あり単発
+  if (high === 1) {
+    const others = wrong - high;
+    const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
+    return `${clusterLabel}で「${themePhrase}」を1問、自信ありで落としています${suffix}。本番で危ない覚え違いになりやすいので、軽く解説で確認しておきましょう。`;
+  }
+  // 5. 急ぎ多発
+  if (fast >= 2) {
     const others = wrong - fast;
     const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
-    return `${clusterLabel}で「${themePhrase}」を${fast}問、急ぎ気味に誤答しています${suffix}。問題文の条件を拾う流れを整えるところから始めましょう。`;
+    return `${clusterLabel}で「${themePhrase}」を${fast}問、急ぎ気味に誤答しています${suffix}。問題文を読むペースが少し速め。条件を拾う流れを整えるところから整えましょう。`;
   }
+  // 6. 急ぎ単発
+  if (fast === 1) {
+    const others = wrong - fast;
+    const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
+    return `${clusterLabel}で「${themePhrase}」を1問、急ぎ気味に誤答しています${suffix}。ひと呼吸置いて条件を拾う流れを意識できれば取れた問題かも。軽く確認しておきましょう。`;
+  }
+  // 7. 同テーマ集中ミス（誤答2問以上、上位テーマが2問以上）
+  if (wrong >= 2 && topIncorrectTheme && topIncorrectTheme.count >= 2) {
+    return `${clusterLabel}は「${topIncorrectTheme.label}」で${topIncorrectTheme.count}問続けて落としています。同じテーマで繰り返しつまずいているので、ピンポイントで解説と類題を見直しましょう。`;
+  }
+  // 8. 広く取りこぼし（誤答3問以上、テーマ分散）
+  if (wrong >= 3) {
+    return `${clusterLabel}は今回「${themePhrase}」を中心に誤答${wrong}問と幅広く取りこぼしています。クラスタのベースを固め直す価値あり。3問だけ解いて土台を整えましょう。`;
+  }
+  // 9. 誤答少数（1〜2問、その他条件には当てはまらない）
   if (wrong > 0) {
-    return `${clusterLabel}で「${themePhrase}」に確認したい誤答が${wrong}問あります。似た問題を3問だけ解いて、判断の流れを整理しましょう。`;
+    return `${clusterLabel}で「${themePhrase}」を${wrong}問、確認したい誤答があります。似た問題を3問だけ解いて、判断の流れを軽く整理しておきましょう。`;
   }
-  if (deliberate > 0) {
-    return `「${themePhrase}」は正解できていますが、${deliberate}問でやや時間をかけて判断しています。短い類題で流れを固めると、本番でも揺れにくくなります。`;
+  // 10. じっくり正解多数
+  if (deliberate >= 2) {
+    return `「${themePhrase}」は${correct}問とも正解できていますが、${deliberate}問でやや時間をかけて判断しています。短い類題で流れを固めると、本番でも安定しそうです。`;
   }
-  return `「${themePhrase}」は安定して取れています。類題を3問だけ解いて、得意テーマとして固めておきましょう。`;
+  // 11. じっくり正解1問
+  if (deliberate === 1) {
+    return `「${themePhrase}」は正解できていますが、1問だけ時間をかけて判断しています。軽く確認しておくと、迷いが残らず本番でも揺れにくくなります。`;
+  }
+  // 12. 全問安定（じっくりもなし）
+  return `「${themePhrase}」は${correct}問とも安定して取れています。類題を3問だけ解いて、得意テーマとしてそのまま固めておきましょう。`;
+}
+
+function getTopIncorrectTheme(
+  summary: ClusterSummary,
+): { label: string; count: number } | null {
+  const top = [...summary.themesIncorrect.entries()].sort((a, b) => {
+    if (a[1] !== b[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0], "ja");
+  })[0];
+  if (!top) return null;
+  return { label: top[0], count: top[1] };
 }
 
 function buildAnalysisDetails(
