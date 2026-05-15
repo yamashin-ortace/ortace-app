@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HomeGreeting } from "@/components/home-greeting";
+import { HomeAiCoachComment } from "@/components/home-ai-coach-comment";
 import { HomeDashboard } from "@/components/home-dashboard";
 import { HomeEstimatedScore } from "@/components/home-estimated-score";
 import { HomeExamCountdown } from "@/components/home-exam-countdown";
@@ -48,6 +49,7 @@ export default async function HomePage() {
       <HomeGreeting />
       <DiagnosticBanner />
       <HomeExamCountdown totalQuestions={questions.length} />
+      <HomeAiCoachComment />
       <HomeTodayCta totalQuestions={questions.length} />
       <HomeStatsRow />
       <HomeEstimatedScore questions={questions} />
