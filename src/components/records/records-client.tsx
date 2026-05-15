@@ -12,14 +12,22 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Bookmark,
   CheckCircle2,
+  Clock,
   FileText,
+  Gauge,
   HelpCircle,
   History,
+  Lightbulb,
   Search,
+  Sparkles,
   Trash2,
   X,
   XCircle,
 } from "lucide-react";
+import {
+  analyzeAnswerTimeQuadrants,
+  type AnswerTimeQuadrant,
+} from "@/lib/ai-coach/answer-time-quadrants";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -143,6 +151,10 @@ export function RecordsClient({ questions }: Props) {
   }, [answerHistory, historyScope, matchesSearch, noteTextMap]);
   const fieldSummaries = useMemo(
     () => calculateFieldSummaries(displayedHistory),
+    [displayedHistory],
+  );
+  const quadrantSummary = useMemo(
+    () => analyzeAnswerTimeQuadrants(displayedHistory),
     [displayedHistory],
   );
   const visibleHistory = displayedHistory.slice(0, visibleHistoryCount);
@@ -354,6 +366,10 @@ export function RecordsClient({ questions }: Props) {
               />
             ) : (
               <>
+                <AnswerTimeQuadrantsCard
+                  summary={quadrantSummary}
+                  scope={historyScope}
+                />
                 <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
                 {visibleHistory.map((entry) => {
                   const question = questionMap.get(entry.id);
@@ -607,6 +623,129 @@ function AnswerHistoryCard({
         </div>
       </Link>
     </article>
+  );
+}
+
+function AnswerTimeQuadrantsCard({
+  summary,
+  scope,
+}: {
+  summary: ReturnType<typeof analyzeAnswerTimeQuadrants>;
+  scope: HistoryScope;
+}) {
+  const totalIn4 = summary.quadrants.reduce((sum, q) => sum + q.count, 0);
+  if (totalIn4 === 0 && summary.standardCount === 0) return null;
+
+  const scopeSummary =
+    scope === "all"
+      ? "これまでの解答全体"
+      : `直近 ${HISTORY_SCOPE_LABELS[scope]} の解答`;
+
+  return (
+    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="mb-2 flex items-center gap-1.5 px-1">
+        <Sparkles
+          className="h-3.5 w-3.5 text-[var(--primary-dark)]"
+          strokeWidth={2.5}
+        />
+        <h3 className="text-[15px] font-bold text-[var(--text-1)]">
+          解答パターン
+        </h3>
+      </div>
+      <p className="mb-2.5 px-1 text-[11px] text-[var(--text-3)]">
+        {scopeSummary}を「正誤 × 解答時間」の4象限で見えるようにします
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {summary.quadrants.map((q) => (
+          <QuadrantTile key={q.id} quadrant={q} />
+        ))}
+      </div>
+      {summary.standardCount > 0 ||
+      summary.noAnswerCount > 0 ||
+      summary.unknownCount > 0 ? (
+        <p className="mt-2 px-1 text-[10.5px] text-[var(--text-3)]">
+          {summary.standardCount > 0 ? (
+            <span>
+              標準時間{" "}
+              <span className="font-bold tabular-nums text-[var(--text-2)]">
+                {summary.standardCount}
+              </span>
+              問
+            </span>
+          ) : null}
+          {summary.noAnswerCount > 0 ? (
+            <>
+              {summary.standardCount > 0 ? <span> ・ </span> : null}
+              <span>
+                正答なし{" "}
+                <span className="font-bold tabular-nums text-[var(--text-2)]">
+                  {summary.noAnswerCount}
+                </span>
+                問
+              </span>
+            </>
+          ) : null}
+          {summary.unknownCount > 0 ? (
+            <>
+              {summary.standardCount > 0 || summary.noAnswerCount > 0 ? (
+                <span> ・ </span>
+              ) : null}
+              <span>時間未記録 {summary.unknownCount}問</span>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+const QUADRANT_VISUAL: Record<
+  AnswerTimeQuadrant["id"],
+  { tone: string; icon: typeof Sparkles }
+> = {
+  "correct-fast": {
+    tone: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    icon: CheckCircle2,
+  },
+  "correct-deliberate": {
+    tone: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    icon: Clock,
+  },
+  "incorrect-fast": {
+    tone: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
+    icon: Lightbulb,
+  },
+  "incorrect-deliberate": {
+    tone: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+    icon: Gauge,
+  },
+};
+
+function QuadrantTile({ quadrant }: { quadrant: AnswerTimeQuadrant }) {
+  const visual = QUADRANT_VISUAL[quadrant.id];
+  const Icon = visual.icon;
+  return (
+    <div className="rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
+      <div className="flex items-center gap-1.5">
+        <span
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-[8px] ${visual.tone}`}
+        >
+          <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </span>
+        <span className="text-[12px] font-extrabold text-[var(--text-1)]">
+          {quadrant.label}
+        </span>
+      </div>
+      <p className="mt-1.5 text-[20px] font-extrabold leading-none tabular-nums text-[var(--text-1)]">
+        {quadrant.count}
+        <span className="ml-0.5 text-[11px] font-bold text-[var(--text-3)]">
+          問
+        </span>
+      </p>
+      <p className="mt-1 text-[10.5px] leading-snug text-[var(--text-3)]">
+        {quadrant.description}
+      </p>
+    </div>
   );
 }
 
