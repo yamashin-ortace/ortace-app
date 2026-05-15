@@ -28,6 +28,11 @@ import {
   analyzeAnswerTimeQuadrants,
   type AnswerTimeQuadrant,
 } from "@/lib/ai-coach/answer-time-quadrants";
+import {
+  analyzeClusterWeakness,
+  type ClusterWeaknessRow,
+  type QuestionClusterLookup,
+} from "@/lib/ai-coach/cluster-weakness";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,8 +62,15 @@ export type QuestionSummary = {
   majorCategory: string;
 };
 
+export type QuestionClusterEntry = {
+  id: string;
+  clusterId: string;
+  clusterLabel: string;
+};
+
 type Props = {
   questions: QuestionSummary[];
+  clusters: QuestionClusterEntry[];
 };
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
@@ -74,7 +86,7 @@ const HISTORY_SCOPE_LABELS: Record<HistoryScope, string> = {
   month: "1ヶ月",
 };
 
-export function RecordsClient({ questions }: Props) {
+export function RecordsClient({ questions, clusters }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -156,6 +168,18 @@ export function RecordsClient({ questions }: Props) {
   const quadrantSummary = useMemo(
     () => analyzeAnswerTimeQuadrants(displayedHistory),
     [displayedHistory],
+  );
+  const clusterLookup = useMemo<QuestionClusterLookup>(
+    () => ({
+      byId: new Map(
+        clusters.map((c) => [c.id, { id: c.clusterId, label: c.clusterLabel }]),
+      ),
+    }),
+    [clusters],
+  );
+  const clusterWeakness = useMemo(
+    () => analyzeClusterWeakness(displayedHistory, clusterLookup),
+    [clusterLookup, displayedHistory],
   );
   const visibleHistory = displayedHistory.slice(0, visibleHistoryCount);
   const hasMoreHistory = visibleHistory.length < displayedHistory.length;
@@ -368,6 +392,10 @@ export function RecordsClient({ questions }: Props) {
               <>
                 <AnswerTimeQuadrantsCard
                   summary={quadrantSummary}
+                  scope={historyScope}
+                />
+                <ClusterWeaknessCard
+                  rows={clusterWeakness}
                   scope={historyScope}
                 />
                 <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
@@ -746,6 +774,77 @@ function QuadrantTile({ quadrant }: { quadrant: AnswerTimeQuadrant }) {
         {quadrant.description}
       </p>
     </div>
+  );
+}
+
+function ClusterWeaknessCard({
+  rows,
+  scope,
+}: {
+  rows: ClusterWeaknessRow[];
+  scope: HistoryScope;
+}) {
+  if (rows.length === 0) return null;
+  const scopeSummary =
+    scope === "all"
+      ? "これまでの解答全体"
+      : `直近 ${HISTORY_SCOPE_LABELS[scope]} の解答`;
+
+  return (
+    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="mb-1 flex items-center gap-1.5 px-1">
+        <Sparkles
+          className="h-3.5 w-3.5 text-[var(--primary-dark)]"
+          strokeWidth={2.5}
+        />
+        <h3 className="text-[15px] font-bold text-[var(--text-1)]">
+          弱点クラスタ
+        </h3>
+      </div>
+      <p className="mb-2 px-1 text-[11px] text-[var(--text-3)]">
+        {scopeSummary}を、AIテーマクラスタごとに正答率が低い順で並べました（3問以上解答したものから）
+      </p>
+      <ul className="divide-y divide-border/70">
+        {rows.map((row) => (
+          <li key={row.clusterId}>
+            <Link
+              href={`/study/ai-theme/${encodeURIComponent(row.clusterId)}?count=3`}
+              className="group -mx-1 flex items-center gap-3 rounded-[10px] px-1 py-2.5 transition-colors duration-150 hover:bg-[var(--bg-muted)]/50"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-bold text-[var(--text-1)]">
+                  {row.clusterLabel}
+                </p>
+                <p className="mt-0.5 text-[11px] text-[var(--text-3)]">
+                  解答{" "}
+                  <span className="font-bold tabular-nums text-[var(--text-2)]">
+                    {row.judged}
+                  </span>
+                  問 ・ 正解{" "}
+                  <span className="font-bold tabular-nums text-[var(--text-2)]">
+                    {row.correct}
+                  </span>
+                  問
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-[var(--text-3)]">
+                  正答率
+                </p>
+                <p className="text-[18px] font-extrabold leading-none tabular-nums text-[var(--primary-dark)]">
+                  {row.accuracy}
+                  <span className="text-[11px] font-bold">%</span>
+                </p>
+              </div>
+              <Sparkles
+                className="h-3.5 w-3.5 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:translate-x-0.5"
+                strokeWidth={2.5}
+              />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
