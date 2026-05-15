@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function LandingFooter() {
   return (
     <footer
@@ -15,19 +17,36 @@ export function LandingFooter() {
         <nav aria-label="フッターリンク">
           <ul className="flex flex-col gap-2 md:text-right">
             <li>
-              <span className="cursor-default text-[var(--text-4)]">
-                利用規約（準備中）
-              </span>
+              <Link
+                href="/legal/terms"
+                className="text-[var(--text-3)] hover:text-[var(--text-1)]"
+              >
+                利用規約
+              </Link>
             </li>
             <li>
-              <span className="cursor-default text-[var(--text-4)]">
-                プライバシーポリシー（準備中）
-              </span>
+              <Link
+                href="/legal/privacy"
+                className="text-[var(--text-3)] hover:text-[var(--text-1)]"
+              >
+                プライバシーポリシー
+              </Link>
             </li>
             <li>
-              <span className="cursor-default text-[var(--text-4)]">
-                特定商取引法に基づく表記（準備中）
-              </span>
+              <Link
+                href="/legal/tokushoho"
+                className="text-[var(--text-3)] hover:text-[var(--text-1)]"
+              >
+                特定商取引法に基づく表記
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/contact"
+                className="text-[var(--text-3)] hover:text-[var(--text-1)]"
+              >
+                お問い合わせ
+              </Link>
             </li>
           </ul>
         </nav>
