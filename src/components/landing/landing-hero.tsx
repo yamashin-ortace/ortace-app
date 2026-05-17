@@ -52,15 +52,17 @@ export function LandingHero() {
           </p>
           <h1
             id="landing-hero-heading"
-            className="max-w-[560px] text-[42px] font-extrabold leading-[1.08] text-[var(--text-1)] sm:text-[54px] md:text-[62px]"
+            className="max-w-[560px] text-[34px] font-extrabold leading-[1.12] text-[var(--text-1)] sm:text-[48px] md:text-[62px]"
           >
             何から解くべきか、
             <br />
             もう迷わない。
           </h1>
-          <p className="landing-hero-readable mt-6 max-w-[620px] space-y-1.5 text-[15px] font-medium leading-[1.9] text-[var(--text-1)] md:text-[16px]">
-            <span className="block text-[16px] font-bold text-[var(--text-1)] md:text-[17px]">
-              ORT ACEは、視能訓練士国家試験のためのAIコーチ付き過去問演習アプリです。
+          <p className="landing-hero-readable mt-6 max-w-[620px] space-y-1.5 text-[14px] font-medium leading-[1.9] text-[var(--text-1)] md:text-[16px]">
+            <span className="block text-[15px] font-bold text-[var(--text-1)] md:text-[17px]">
+              ORT ACEは、視能訓練士国家試験のための
+              <span className="whitespace-nowrap">AIコーチ付き</span>
+              過去問演習アプリです。
             </span>
             <span className="block">
               何から手をつけるか、どれだけ進めるか、自分の弱点はどこか。
@@ -69,7 +71,7 @@ export function LandingHero() {
               あなたの学習履歴から苦手・思い込み・復習タイミングを整理し、
             </span>
             <span className="block">
-              <span className="font-extrabold text-[#16717c]">
+              <span className="whitespace-nowrap font-extrabold text-[#16717c]">
                 AIコーチMiLu先生
               </span>
               が次の一歩を提案します。

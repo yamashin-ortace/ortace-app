@@ -83,7 +83,7 @@ export function LandingPricing() {
         <p className="text-[12px] font-extrabold tracking-[0.12em] text-[var(--primary-dark)]">
           PRICING
         </p>
-        <h2 className="text-[24px] font-extrabold text-[var(--text-1)] md:text-[30px]">
+        <h2 className="text-[20px] font-extrabold leading-[1.4] text-[var(--text-1)] md:text-[30px]">
           あなたのフェーズで選ぶ料金プラン
         </h2>
         <p className="text-[14px] leading-relaxed text-[var(--text-3)] md:text-[15px]">

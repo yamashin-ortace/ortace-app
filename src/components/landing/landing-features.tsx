@@ -92,7 +92,7 @@ export function LandingFeatures() {
             <p className="text-[12px] font-extrabold tracking-[0.12em] text-white/60">
               WHY ORT ACE
             </p>
-            <h2 className="text-[26px] font-extrabold leading-[1.35] text-white md:text-[32px]">
+            <h2 className="text-[22px] font-extrabold leading-[1.4] text-white md:text-[32px]">
               解くほど、次にやることが決まる。
               <br />
               だから計画で止まらない。
@@ -174,7 +174,7 @@ export function LandingFeatures() {
             </p>
             <h2
               id="landing-app-flow-heading"
-              className="text-[24px] font-extrabold leading-[1.35] text-[var(--text-1)] md:text-[30px]"
+              className="text-[20px] font-extrabold leading-[1.42] text-[var(--text-1)] md:text-[30px]"
             >
               実習も、レポートもある。
               <br />
