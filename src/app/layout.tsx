@@ -7,6 +7,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { NavigationPendingIndicator } from "@/components/navigation-pending-indicator";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { AppHeader } from "@/components/app-header";
 import { MarketingHeader } from "@/components/marketing-header";
 import { getSessionContext } from "@/lib/auth/profile";
@@ -131,6 +132,7 @@ export default async function RootLayout({
             <NavigationPendingIndicator />
             {showAppChrome ? <BottomNav /> : null}
           </div>
+          <ServiceWorkerRegister />
         </ThemeProvider>
         {gaId ? (
           <>

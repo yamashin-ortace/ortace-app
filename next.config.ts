@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withSerwistInit from "@serwist/next";
 
 /**
  * セキュリティ・プライバシー系の共通レスポンスヘッダー。
@@ -29,7 +30,7 @@ const SECURITY_HEADERS = [
   },
 ];
 
-const nextConfig: NextConfig = {
+const baseNextConfig: NextConfig = {
   /**
    * 開発時の左下「N」は Next.js DevTools。文言が英語固定のため非表示
    * （`npm run build` 後の本番相当ではもともと出ない）
@@ -46,6 +47,24 @@ const nextConfig: NextConfig = {
     ];
   },
 };
+
+/**
+ * Serwist（Service Worker）ラッパー。
+ * - swSrc: SW のソース（src/app/sw.ts）
+ * - swDest: ビルド時の出力先（public/sw.js → /sw.js で配信）
+ * - 開発モードでは無効化（disable: NODE_ENV !== 'production'）
+ * - 公開アクセス用ルートと、ログイン後の動的ページが混在するため
+ *   ランタイムキャッシュは defaultCache に任せる
+ */
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  cacheOnNavigation: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV !== "production",
+});
+
+const nextConfig = withSerwist(baseNextConfig);
 
 /**
  * Sentry のラッパー。DSN・AuthToken が未設定でも build は通る設計。
