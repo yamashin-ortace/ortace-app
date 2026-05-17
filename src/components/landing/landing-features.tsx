@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { LandingQuestionPhone } from "@/components/landing/landing-question-phone";
+import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
 import {
   Bookmark,
   BookOpen,
@@ -69,7 +70,7 @@ const APP_FLOW = [
   {
     icon: Home,
     title: "ホーム",
-    body: "今日やること、続きから解く問題、AIコーチMiLu先生からの提案を最初に確認。",
+    body: "今日やること、続きから解く問題、AIコーチMiLu先生からの提案を最初に確認できます。",
   },
   {
     icon: BookOpen,
@@ -79,7 +80,7 @@ const APP_FLOW = [
   {
     icon: LineChart,
     title: "記録",
-    body: "ノートやブックマーク、苦手の履歴を見返して、国試前の復習に戻れます。",
+    body: "解答履歴・ノート・ブックマークがすべて残るので、いつでも見返して復習できます。",
   },
 ] as const;
 
@@ -181,7 +182,7 @@ export function LandingFeatures() {
               だから国試対策は、迷わない仕組みで。
             </h2>
             <p className="max-w-[560px] text-[14px] leading-[1.9] text-[var(--text-3)] md:text-[15px]">
-              忙しい日でも、ホームで確認して、学習で解いて、記録で戻る。
+              忙しい日でも、ホームで今日の課題を確認、学習で過去問を解いて、記録で振り返り。
               ORT ACEは、国試対策の流れをスマホの中にまとめます。
             </p>
           </div>
@@ -226,11 +227,13 @@ export function LandingFeatures() {
             見た目は軽く、中身は国試対策に必要なすべて。
           </p>
         </div>
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ITEMS.map(({ icon: Icon, title, body }) => (
-            <li
+        <HorizontalSnapRow
+          ariaLabel="ORT ACE の主要機能カード"
+          itemClassName="min-w-[78%] basis-[78%] shrink-0 snap-start sm:min-w-[260px] sm:basis-[260px]"
+          items={ITEMS.map(({ icon: Icon, title, body }) => (
+            <article
               key={title}
-              className="landing-lift rounded-[14px] border border-border bg-[var(--bg-card)] p-3.5 shadow-[0_12px_32px_rgba(44,62,93,0.06)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-[var(--primary)]/40 hover:shadow-[0_18px_40px_rgba(44,62,93,0.1)]"
+              className="landing-lift h-full rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-[0_12px_32px_rgba(44,62,93,0.06)]"
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-[11px] bg-[var(--primary-soft)] text-[var(--primary-dark)] dark:bg-[var(--bg-muted)] dark:text-[var(--primary)]">
@@ -243,9 +246,12 @@ export function LandingFeatures() {
               <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-3)]">
                 {body}
               </p>
-            </li>
+            </article>
           ))}
-        </ul>
+        />
+        <p className="text-center text-[11px] text-[var(--text-3)] md:text-left">
+          左右にスワイプして、機能カードを順に見られます
+        </p>
       </section>
 
       <section className="relative overflow-hidden rounded-[16px] border border-[#9ee8e0]/45 bg-[var(--bg-card)] p-5 shadow-[0_18px_48px_rgba(44,62,93,0.08)] md:p-7">

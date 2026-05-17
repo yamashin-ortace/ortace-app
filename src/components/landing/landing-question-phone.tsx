@@ -1,64 +1,151 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Pointer } from "lucide-react";
 
 const SCREENS = [
   {
     src: "/landing/app-screens/home-dashboard.jpg",
-    alt: "ホーム画面の例",
-    className:
-      "absolute -left-8 top-24 hidden h-[420px] w-[224px] -rotate-[9deg] opacity-72 md:block",
+    alt: "ホーム画面：今日のおすすめ20問とAIコーチMiLu先生からの提案",
+    caption: "ホーム",
+  },
+  {
+    src: "/landing/app-screens/study-question.jpg",
+    alt: "学習画面：過去問の演習画面",
+    caption: "学習",
+  },
+  {
+    src: "/landing/app-screens/ai-analysis.jpg",
+    alt: "結果画面：AIコーチMiLu先生による分析と次の演習提案",
+    caption: "AI分析",
   },
   {
     src: "/landing/app-screens/records-list.jpg",
-    alt: "記録画面の例",
-    className:
-      "absolute -right-10 top-32 hidden h-[410px] w-[218px] rotate-[8deg] opacity-72 md:block",
+    alt: "記録画面：解答履歴・分野別の正答率・苦手なテーマ",
+    caption: "記録",
   },
 ] as const;
 
+/**
+ * iPhone 風の正面置きスマホモックアップ。
+ * 画面領域を横スワイプ／矢印キーで切り替えられるカルーセル形式。
+ */
 export function LandingQuestionPhone() {
-  return (
-    <div className="relative mx-auto h-[640px] w-full max-w-[440px]">
-      {SCREENS.map((screen) => (
-        <div
-          key={screen.src}
-          className={`${screen.className} overflow-hidden rounded-[32px] border-[10px] border-[#141a22] bg-[#141a22] shadow-[0_28px_72px_rgba(19,34,50,0.24)]`}
-        >
-          <div className="relative h-full w-full pt-6">
-            <div className="relative h-full w-full">
-              <Image
-                src={screen.src}
-                alt={screen.alt}
-                fill
-                unoptimized
-                sizes="224px"
-                className="rounded-[22px] object-cover object-top"
-              />
-            </div>
-          </div>
-        </div>
-      ))}
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-      <div className="absolute left-1/2 top-4 h-[590px] w-[304px] -translate-x-1/2 rotate-[2deg] overflow-hidden rounded-[42px] border-[12px] border-[#141a22] bg-[#141a22] shadow-[0_42px_96px_rgba(19,34,50,0.32)]">
-        <div className="relative h-full w-full pt-7">
-          <div className="relative h-full w-full">
-            <Image
-              src="/landing/app-screens/ai-analysis.jpg"
-              alt="AIコーチ分析画面の例"
-              fill
-              priority={false}
-              unoptimized
-              sizes="304px"
-              className="rounded-[24px] object-cover object-top"
-            />
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const update = () => {
+      const slides = container.querySelectorAll<HTMLElement>("[data-screen]");
+      if (slides.length === 0) return;
+      const scrollLeft = container.scrollLeft;
+      const slideWidth = container.clientWidth;
+      const index = Math.round(scrollLeft / Math.max(slideWidth, 1));
+      setActiveIndex(Math.max(0, Math.min(slides.length - 1, index)));
+    };
+    update();
+    container.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(container);
+    return () => {
+      container.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, []);
+
+  const goTo = (index: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.scrollTo({
+      left: index * container.clientWidth,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <div className="mx-auto flex w-full max-w-[300px] flex-col items-center gap-4">
+      {/* iPhone フレーム */}
+      <div
+        className="relative w-full"
+        style={{ aspectRatio: "9 / 19.5" }}
+      >
+        {/* 外殻 */}
+        <div className="absolute inset-0 rounded-[44px] bg-linear-to-br from-[#1f2127] via-[#16181d] to-[#0c0d10] shadow-[0_30px_60px_rgba(15,23,42,0.28),0_0_0_2px_rgba(255,255,255,0.06)_inset]" />
+        {/* 側面ボタン（音量） */}
+        <span className="absolute -left-[3px] top-[18%] h-[42px] w-[3px] rounded-full bg-[#1a1c20]" aria-hidden />
+        <span className="absolute -left-[3px] top-[26%] h-[70px] w-[3px] rounded-full bg-[#1a1c20]" aria-hidden />
+        <span className="absolute -left-[3px] top-[36%] h-[70px] w-[3px] rounded-full bg-[#1a1c20]" aria-hidden />
+        {/* 側面ボタン（電源） */}
+        <span className="absolute -right-[3px] top-[24%] h-[96px] w-[3px] rounded-full bg-[#1a1c20]" aria-hidden />
+
+        {/* ベゼル内側＋画面 */}
+        <div className="absolute inset-[10px] overflow-hidden rounded-[36px] bg-black">
+          {/* Dynamic Island */}
+          <div
+            className="absolute left-1/2 top-[10px] z-10 h-[26px] w-[88px] -translate-x-1/2 rounded-full bg-black"
+            aria-hidden
+          />
+          {/* 画面カルーセル */}
+          <div
+            ref={containerRef}
+            role="region"
+            aria-label="アプリ画面ギャラリー"
+            className="flex h-full snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {SCREENS.map((screen) => (
+              <div
+                key={screen.src}
+                data-screen
+                className="relative h-full w-full shrink-0 snap-center"
+              >
+                <Image
+                  src={screen.src}
+                  alt={screen.alt}
+                  fill
+                  unoptimized
+                  sizes="300px"
+                  className="object-cover object-top"
+                  priority={false}
+                />
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* タップ指示（指） */}
         <div
-          className="absolute right-[28px] bottom-[40px] grid size-12 place-items-center rounded-full border border-white/70 bg-white/95 text-[#c97896] shadow-[0_14px_32px_rgba(119,53,78,0.22)]"
+          className="pointer-events-none absolute bottom-[10%] right-[14%] grid size-12 place-items-center rounded-full border border-white/70 bg-white/95 text-[#c97896] shadow-[0_14px_32px_rgba(119,53,78,0.28)]"
           aria-hidden
         >
           <Pointer className="size-6 -rotate-12" strokeWidth={2.4} />
         </div>
+      </div>
+
+      {/* カルーセル下のドット + ラベル */}
+      <div className="flex w-full flex-col items-center gap-2">
+        <div className="flex items-center gap-1.5" role="tablist" aria-label="画面を切り替え">
+          {SCREENS.map((screen, index) => (
+            <button
+              key={screen.src}
+              type="button"
+              onClick={() => goTo(index)}
+              role="tab"
+              aria-selected={activeIndex === index}
+              aria-label={`${screen.caption} 画面を表示`}
+              className={
+                activeIndex === index
+                  ? "h-1.5 w-6 rounded-full bg-[var(--primary)] transition-all"
+                  : "h-1.5 w-1.5 rounded-full bg-[var(--text-3)]/30 transition-all hover:bg-[var(--text-3)]/55"
+              }
+            />
+          ))}
+        </div>
+        <p className="text-[11px] font-bold text-[var(--text-3)]">
+          {SCREENS[activeIndex].caption} ・ 左右にスワイプ
+        </p>
       </div>
     </div>
   );

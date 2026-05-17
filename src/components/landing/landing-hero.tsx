@@ -42,7 +42,10 @@ export function LandingHero() {
 
       <div className="relative min-h-[560px] md:min-h-[610px]">
         <div className="max-w-[900px] pt-6 md:pt-10">
-          <p className="inline-flex items-center gap-2 text-[13px] font-extrabold text-[#16717c]">
+          <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--text-3)]">
+            視能訓練士国家試験対策アプリ
+          </p>
+          <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] font-extrabold text-[#16717c]">
             <Sparkles
               className="size-3.5 shrink-0 text-[#16717c]"
               strokeWidth={2}
