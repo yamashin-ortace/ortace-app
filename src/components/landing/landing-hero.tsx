@@ -58,19 +58,12 @@ export function LandingHero() {
             <br />
             もう迷わない。
           </h1>
-          <p className="landing-hero-readable mt-6 max-w-[620px] space-y-1.5 text-[14px] font-medium leading-[1.9] text-[var(--text-1)] md:text-[16px]">
-            <span className="block text-[15px] font-bold text-[var(--text-1)] md:text-[17px]">
-              ORT ACEは、視能訓練士国家試験のための
-              <span className="whitespace-nowrap">AIコーチ付き</span>
-              過去問演習アプリです。
-            </span>
-            <span className="block">
-              何から手をつけるか、どれだけ進めるか、自分の弱点はどこか。
-            </span>
-            <span className="block">
+          <p className="landing-hero-readable mt-6 max-w-[620px] space-y-1.5 text-[15px] font-medium leading-[1.9] text-[var(--text-1)] md:text-[16px]">
+            <span className="block">何から手をつけるか、</span>
+            <span className="block">どれだけ進めるか、</span>
+            <span className="block">自分の弱点はどこか。</span>
+            <span className="block pt-1.5">
               あなたの学習履歴から苦手・思い込み・復習タイミングを整理し、
-            </span>
-            <span className="block">
               <span className="whitespace-nowrap font-extrabold text-[#16717c]">
                 AIコーチMiLu先生
               </span>
