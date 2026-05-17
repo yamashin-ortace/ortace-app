@@ -51,7 +51,7 @@ export default async function AiThemePage({ params, searchParams }: Props) {
           {cluster.label}
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          AIコーチが選んだテーマを、3問だけ確認します
+          AIコーチMiLu先生が選んだテーマを、3問だけ確認します
         </p>
       </div>
 

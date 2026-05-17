@@ -63,7 +63,7 @@ export function AiCoachResultAnalysis({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-extrabold text-[var(--text-1)]">
-            AIコーチ分析
+            AIコーチMiLu先生の分析
           </p>
           <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--text-3)]">
             今回の{answeredCount}問から、確認しておきたいテーマを見つけます。
@@ -91,7 +91,7 @@ export function AiCoachResultAnalysis({
             className="choice-pressable flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)] disabled:opacity-70"
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.5} />
-            AIコーチに分析してもらう
+            AIコーチMiLu先生に分析してもらう
           </button>
         </div>
       ) : (

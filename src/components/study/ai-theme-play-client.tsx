@@ -54,7 +54,7 @@ export function AiThemePlayClient({
             このテーマの問題が見つかりませんでした
           </p>
           <p className="text-[13px] leading-relaxed text-[var(--text-3)]">
-            AIコーチのおすすめに戻って、別のテーマを確認してください。
+            AIコーチMiLu先生のおすすめに戻って、別のテーマを確認してください。
           </p>
         </div>
         <Link

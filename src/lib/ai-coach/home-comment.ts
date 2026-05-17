@@ -45,7 +45,7 @@ export function buildHomeAiCoachComment(
     return {
       kind: "onboarding",
       message:
-        "問題を解くと、AIコーチが回答履歴・正答率・自信度・解答時間を分析して、今日のおすすめを組み立て始めます。まずは数問から。",
+        "問題を解くと、AIコーチMiLu先生が回答履歴・正答率・自信度・解答時間を分析して、今日のおすすめを組み立て始めます。まずは数問から。",
     };
   }
 
@@ -54,7 +54,7 @@ export function buildHomeAiCoachComment(
     const remaining = DATA_READINESS_THRESHOLD - uniqueAnswered;
     return {
       kind: "collecting",
-      message: `今は学習データを集めている段階です。あと${remaining}問解くと、AIコーチがあなた専用の分析を本格的に動かし始めます。`,
+      message: `今は学習データを集めている段階です。あと${remaining}問解くと、AIコーチMiLu先生があなた専用の分析を本格的に動かし始めます。`,
     };
   }
 
@@ -90,7 +90,7 @@ export function buildHomeAiCoachComment(
     if (top && top.accuracy < 60) {
       return {
         kind: "cluster_focus",
-        message: `今のあなたが伸ばせる余地が大きいテーマは「${top.clusterLabel}」（正答率 ${top.accuracy}% / ${top.judged}問中${top.correct}問正解）。AIコーチが今日のおすすめに、このテーマを優先的に入れています。`,
+        message: `今のあなたが伸ばせる余地が大きいテーマは「${top.clusterLabel}」（正答率 ${top.accuracy}% / ${top.judged}問中${top.correct}問正解）。AIコーチMiLu先生が今日のおすすめに、このテーマを優先的に入れています。`,
       };
     }
   }
@@ -127,14 +127,14 @@ export function buildHomeAiCoachComment(
   if (streak >= 3) {
     return {
       kind: "streak_steady",
-      message: `${streak}日連続で学習中。今日もAIコーチが復習・弱点・思い込み・未回答をバランスよく20問にまとめています。同じペースで続けましょう。`,
+      message: `${streak}日連続で学習中。今日もAIコーチMiLu先生が復習・弱点・思い込み・未回答をバランスよく20問にまとめています。同じペースで続けましょう。`,
     };
   }
 
   return {
     kind: "default",
     message:
-      "今日のおすすめは、復習・弱点・思い込みチェック・未回答をAIコーチがバランスよく20問にまとめています。20問解き終わると、明日のおすすめに今日の結果が反映されます。",
+      "今日のおすすめは、復習・弱点・思い込みチェック・未回答をAIコーチMiLu先生がバランスよく20問にまとめています。20問解き終わると、明日のおすすめに今日の結果が反映されます。",
   };
 }
 

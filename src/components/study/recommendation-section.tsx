@@ -61,7 +61,7 @@ export function RecommendationSection({ totalQuestions }: Props) {
   return (
     <section className="space-y-2">
       <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
-        AIコーチ
+        AIコーチMiLu先生
       </h2>
       <div className="space-y-2">
         <RecommendStudyLink
@@ -105,7 +105,7 @@ export function RecommendationSection({ totalQuestions }: Props) {
                 ? stats.weakStage === "provisional"
                   ? `正答率から暫定分析：${stats.weakLabel}`
                   : `正答率から分析：${stats.weakLabel}`
-                : "正答率の低い分野をAIコーチが集中補強"
+                : "正答率の低い分野をAIコーチMiLu先生が集中補強"
               : "計算中…"
           }
           trailing={<WeakFieldHowItWorksPopover />}

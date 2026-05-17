@@ -71,7 +71,7 @@ export function HomeTodayCta({ totalQuestions, clusters }: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-bold tracking-wider text-[var(--primary-dark)]">
-                AIコーチ
+                AIコーチMiLu先生
               </p>
               <p
                 className="mt-0.5 min-h-[2.4rem] text-[13px] leading-[1.75] font-medium text-[var(--text-1)]"
@@ -115,7 +115,7 @@ export function HomeTodayCta({ totalQuestions, clusters }: Props) {
               className="group flex items-center justify-between gap-2 rounded-[12px] border border-[var(--primary)]/30 bg-[var(--primary-soft)]/40 px-3 py-2.5 text-[var(--primary-dark)] transition-colors hover:bg-[var(--primary-soft)]/70"
             >
               <span className="text-[12px] font-bold">
-                AIコーチのおすすめ → {aiComment.cta.label}
+                AIコーチMiLu先生のおすすめ → {aiComment.cta.label}
               </span>
               <ChevronRight
                 className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"

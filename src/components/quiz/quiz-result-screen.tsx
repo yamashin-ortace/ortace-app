@@ -93,7 +93,7 @@ export function QuizResultScreen({
             ) : (
               <>
                 <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
-                <span>AIコーチが次の提案に反映しました</span>
+                <span>AIコーチMiLu先生が次の提案に反映しました</span>
               </>
             )}
           </span>

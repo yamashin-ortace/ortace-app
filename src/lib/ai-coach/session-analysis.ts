@@ -96,7 +96,7 @@ export function analyzeAiCoachSession(
       clusterId: null,
       clusterLabel: null,
       message:
-        "まだ分析材料を集めている段階です。数問解くと、AIコーチの提案が具体的になります。",
+        "まだ分析材料を集めている段階です。数問解くと、AIコーチMiLu先生の提案が具体的になります。",
       details: [],
       actionHref: "/study/unanswered?count=3",
       actionLabel: "未回答から3問解く",
