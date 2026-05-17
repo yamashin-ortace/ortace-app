@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ORT ACE — 視能訓練士国試対策",
     short_name: "ORT ACE",
     description:
-      "視能訓練士国家試験対策Webアプリ。過去問1,350問・毎日の学習を支えます。",
+      "視能訓練士国家試験対策Webアプリ。過去問1,500問とAIコーチで毎日の学習を支えます。",
     start_url: "/",
     display: "standalone",
     background_color: "#fdf8f6",

@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2200" viewBox="0 0 1600 2200" fill="none">
+<defs>
+  <filter id="logoShadow" x="0" y="0" width="1600" height="360" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+    <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#24384F" flood-opacity="0.16"/>
+    <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#102338" flood-opacity="0.16"/>
+  </filter>
+  <linearGradient id="glassGrad" x1="94" y1="52" x2="370" y2="328" gradientUnits="userSpaceOnUse">
+    <stop stop-color="white"/>
+    <stop offset="0.42" stop-color="white" stop-opacity="0.35"/>
+    <stop offset="1" stop-color="white" stop-opacity="0.08"/>
+  </linearGradient>
+</defs>
+<rect width="1600" height="2200" fill="#FFFDFB"/>
+<g transform="translate(0 44)">
+  <text x="88" y="28" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="34" font-weight="800" fill="#5F6570">Pink / やわらかく親しみやすい</text>
+  <g transform="translate(0 42)" filter="url(#logoShadow)">
+    <rect x="82" y="40" width="300" height="300" rx="72" fill="#fff3f7" stroke="#f1c3d2" stroke-width="4"/>
+    <rect x="94" y="52" width="276" height="276" rx="62" fill="url(#glassGrad)" opacity="0.58"/>
+    <path d="M113 277C156 207 216 160 291 137C319 128 348 124 378 126" stroke="#e79bb6" stroke-width="24" stroke-linecap="round" opacity="0.9"/>
+    <path d="M118 297C170 262 222 240 275 232C314 226 350 231 382 246" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.88"/>
+    <path d="M134 181C166 143 202 124 243 124C284 124 321 143 353 181C321 219 284 238 243 238C202 238 166 219 134 181Z" fill="white" stroke="#102338" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M156 171C178 148 205 136 236 136" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <path d="M270 151C294 157 315 171 332 191" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="243" cy="181" r="34" fill="#f4b3c8"/>
+    <circle cx="243" cy="181" r="23" fill="#5dc9d4"/>
+    <circle cx="243" cy="181" r="12" fill="#102338"/>
+    <circle cx="255" cy="166" r="8" fill="white"/>
+    <path d="M187 219C202 230 221 236 244 237C268 238 289 232 307 220" stroke="#d67d9d" stroke-width="8" stroke-linecap="round"/>
+    <path d="M180 103C201 91 217 72 229 47C232 82 246 105 273 118C242 123 222 140 210 168C207 139 197 117 180 103Z" fill="#fff0c9" stroke="#dbb777" stroke-width="3.5"/>
+    <circle cx="318" cy="111" r="15" fill="white" stroke="#e7d8e2" stroke-width="3"/>
+    <circle cx="344" cy="190" r="19" fill="white" stroke="#e7d8e2" stroke-width="3"/>
+    <circle cx="286" cy="251" r="18" fill="white" stroke="#e7d8e2" stroke-width="3"/>
+    <circle cx="203" cy="286" r="17" fill="white" stroke="#e7d8e2" stroke-width="3"/>
+    <path d="M122 74C141 62 161 55 183 52" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.78"/>
+    <text x="495" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#102338">ORT</text>
+    <text x="820" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#d66f94">ACE</text>
+    <path d="M827 238H1134" stroke="#e79bb6" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+  </g>
+</g>
+<g transform="translate(0 468)">
+  <text x="88" y="28" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="34" font-weight="800" fill="#5F6570">Lavender / 上品で落ち着く</text>
+  <g transform="translate(0 42)" filter="url(#logoShadow)">
+    <rect x="82" y="40" width="300" height="300" rx="72" fill="#f5f0ff" stroke="#d8c8ef" stroke-width="4"/>
+    <rect x="94" y="52" width="276" height="276" rx="62" fill="url(#glassGrad)" opacity="0.58"/>
+    <path d="M113 277C156 207 216 160 291 137C319 128 348 124 378 126" stroke="#b49bd7" stroke-width="24" stroke-linecap="round" opacity="0.9"/>
+    <path d="M118 297C170 262 222 240 275 232C314 226 350 231 382 246" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.88"/>
+    <path d="M134 181C166 143 202 124 243 124C284 124 321 143 353 181C321 219 284 238 243 238C202 238 166 219 134 181Z" fill="white" stroke="#102338" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M156 171C178 148 205 136 236 136" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <path d="M270 151C294 157 315 171 332 191" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="243" cy="181" r="34" fill="#c7b7e4"/>
+    <circle cx="243" cy="181" r="23" fill="#68cbd4"/>
+    <circle cx="243" cy="181" r="12" fill="#102338"/>
+    <circle cx="255" cy="166" r="8" fill="white"/>
+    <path d="M187 219C202 230 221 236 244 237C268 238 289 232 307 220" stroke="#9b7dc4" stroke-width="8" stroke-linecap="round"/>
+    <path d="M180 103C201 91 217 72 229 47C232 82 246 105 273 118C242 123 222 140 210 168C207 139 197 117 180 103Z" fill="#fff4ca" stroke="#d8b873" stroke-width="3.5"/>
+    <circle cx="318" cy="111" r="15" fill="white" stroke="#ddd5ea" stroke-width="3"/>
+    <circle cx="344" cy="190" r="19" fill="white" stroke="#ddd5ea" stroke-width="3"/>
+    <circle cx="286" cy="251" r="18" fill="white" stroke="#ddd5ea" stroke-width="3"/>
+    <circle cx="203" cy="286" r="17" fill="white" stroke="#ddd5ea" stroke-width="3"/>
+    <path d="M122 74C141 62 161 55 183 52" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.78"/>
+    <text x="495" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#102338">ORT</text>
+    <text x="820" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#8f75bd">ACE</text>
+    <path d="M827 238H1134" stroke="#b49bd7" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+  </g>
+</g>
+<g transform="translate(0 892)">
+  <text x="88" y="28" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="34" font-weight="800" fill="#5F6570">Mint / 清潔感と安心感</text>
+  <g transform="translate(0 42)" filter="url(#logoShadow)">
+    <rect x="82" y="40" width="300" height="300" rx="72" fill="#effbf7" stroke="#b9e7d7" stroke-width="4"/>
+    <rect x="94" y="52" width="276" height="276" rx="62" fill="url(#glassGrad)" opacity="0.58"/>
+    <path d="M113 277C156 207 216 160 291 137C319 128 348 124 378 126" stroke="#8bcfb3" stroke-width="24" stroke-linecap="round" opacity="0.9"/>
+    <path d="M118 297C170 262 222 240 275 232C314 226 350 231 382 246" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.88"/>
+    <path d="M134 181C166 143 202 124 243 124C284 124 321 143 353 181C321 219 284 238 243 238C202 238 166 219 134 181Z" fill="white" stroke="#102338" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M156 171C178 148 205 136 236 136" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <path d="M270 151C294 157 315 171 332 191" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="243" cy="181" r="34" fill="#94dcc4"/>
+    <circle cx="243" cy="181" r="23" fill="#54b7ca"/>
+    <circle cx="243" cy="181" r="12" fill="#102338"/>
+    <circle cx="255" cy="166" r="8" fill="white"/>
+    <path d="M187 219C202 230 221 236 244 237C268 238 289 232 307 220" stroke="#5eb496" stroke-width="8" stroke-linecap="round"/>
+    <path d="M180 103C201 91 217 72 229 47C232 82 246 105 273 118C242 123 222 140 210 168C207 139 197 117 180 103Z" fill="#fff0c7" stroke="#d8b46f" stroke-width="3.5"/>
+    <circle cx="318" cy="111" r="15" fill="white" stroke="#c9e6df" stroke-width="3"/>
+    <circle cx="344" cy="190" r="19" fill="white" stroke="#c9e6df" stroke-width="3"/>
+    <circle cx="286" cy="251" r="18" fill="white" stroke="#c9e6df" stroke-width="3"/>
+    <circle cx="203" cy="286" r="17" fill="white" stroke="#c9e6df" stroke-width="3"/>
+    <path d="M122 74C141 62 161 55 183 52" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.78"/>
+    <text x="495" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#102338">ORT</text>
+    <text x="820" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#45a983">ACE</text>
+    <path d="M827 238H1134" stroke="#8bcfb3" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+  </g>
+</g>
+<g transform="translate(0 1316)">
+  <text x="88" y="28" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="34" font-weight="800" fill="#5F6570">Peach / 明るく前向き</text>
+  <g transform="translate(0 42)" filter="url(#logoShadow)">
+    <rect x="82" y="40" width="300" height="300" rx="72" fill="#fff3ec" stroke="#f5c5ad" stroke-width="4"/>
+    <rect x="94" y="52" width="276" height="276" rx="62" fill="url(#glassGrad)" opacity="0.58"/>
+    <path d="M113 277C156 207 216 160 291 137C319 128 348 124 378 126" stroke="#f2b196" stroke-width="24" stroke-linecap="round" opacity="0.9"/>
+    <path d="M118 297C170 262 222 240 275 232C314 226 350 231 382 246" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.88"/>
+    <path d="M134 181C166 143 202 124 243 124C284 124 321 143 353 181C321 219 284 238 243 238C202 238 166 219 134 181Z" fill="white" stroke="#102338" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M156 171C178 148 205 136 236 136" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <path d="M270 151C294 157 315 171 332 191" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="243" cy="181" r="34" fill="#f5b99f"/>
+    <circle cx="243" cy="181" r="23" fill="#62c3d2"/>
+    <circle cx="243" cy="181" r="12" fill="#102338"/>
+    <circle cx="255" cy="166" r="8" fill="white"/>
+    <path d="M187 219C202 230 221 236 244 237C268 238 289 232 307 220" stroke="#dc8c70" stroke-width="8" stroke-linecap="round"/>
+    <path d="M180 103C201 91 217 72 229 47C232 82 246 105 273 118C242 123 222 140 210 168C207 139 197 117 180 103Z" fill="#fff1bf" stroke="#d7ac63" stroke-width="3.5"/>
+    <circle cx="318" cy="111" r="15" fill="white" stroke="#ecd7cb" stroke-width="3"/>
+    <circle cx="344" cy="190" r="19" fill="white" stroke="#ecd7cb" stroke-width="3"/>
+    <circle cx="286" cy="251" r="18" fill="white" stroke="#ecd7cb" stroke-width="3"/>
+    <circle cx="203" cy="286" r="17" fill="white" stroke="#ecd7cb" stroke-width="3"/>
+    <path d="M122 74C141 62 161 55 183 52" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.78"/>
+    <text x="495" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#102338">ORT</text>
+    <text x="820" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#df8769">ACE</text>
+    <path d="M827 238H1134" stroke="#f2b196" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+  </g>
+</g>
+<g transform="translate(0 1740)">
+  <text x="88" y="28" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="34" font-weight="800" fill="#5F6570">Sky / 知的でさわやか</text>
+  <g transform="translate(0 42)" filter="url(#logoShadow)">
+    <rect x="82" y="40" width="300" height="300" rx="72" fill="#eef7ff" stroke="#c2ddf1" stroke-width="4"/>
+    <rect x="94" y="52" width="276" height="276" rx="62" fill="url(#glassGrad)" opacity="0.58"/>
+    <path d="M113 277C156 207 216 160 291 137C319 128 348 124 378 126" stroke="#98c6e2" stroke-width="24" stroke-linecap="round" opacity="0.9"/>
+    <path d="M118 297C170 262 222 240 275 232C314 226 350 231 382 246" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.88"/>
+    <path d="M134 181C166 143 202 124 243 124C284 124 321 143 353 181C321 219 284 238 243 238C202 238 166 219 134 181Z" fill="white" stroke="#102338" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M156 171C178 148 205 136 236 136" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <path d="M270 151C294 157 315 171 332 191" stroke="#102338" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="243" cy="181" r="34" fill="#a9d2eb"/>
+    <circle cx="243" cy="181" r="23" fill="#4fa4c9"/>
+    <circle cx="243" cy="181" r="12" fill="#102338"/>
+    <circle cx="255" cy="166" r="8" fill="white"/>
+    <path d="M187 219C202 230 221 236 244 237C268 238 289 232 307 220" stroke="#639fc0" stroke-width="8" stroke-linecap="round"/>
+    <path d="M180 103C201 91 217 72 229 47C232 82 246 105 273 118C242 123 222 140 210 168C207 139 197 117 180 103Z" fill="#fff1c4" stroke="#d6b06d" stroke-width="3.5"/>
+    <circle cx="318" cy="111" r="15" fill="white" stroke="#d7e2eb" stroke-width="3"/>
+    <circle cx="344" cy="190" r="19" fill="white" stroke="#d7e2eb" stroke-width="3"/>
+    <circle cx="286" cy="251" r="18" fill="white" stroke="#d7e2eb" stroke-width="3"/>
+    <circle cx="203" cy="286" r="17" fill="white" stroke="#d7e2eb" stroke-width="3"/>
+    <path d="M122 74C141 62 161 55 183 52" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.78"/>
+    <text x="495" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#102338">ORT</text>
+    <text x="820" y="234" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="136" font-weight="900" letter-spacing="-4" fill="#4fa6cc">ACE</text>
+    <path d="M827 238H1134" stroke="#98c6e2" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+  </g>
+</g>
+</svg>

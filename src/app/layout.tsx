@@ -25,7 +25,7 @@ const notoSansJp = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: "ORT ACE — 視能訓練士国家試験対策",
   description:
-    "視能訓練士国家試験対策Webアプリ。過去問1,350問・オリジナル問題で毎日コツコツ合格へ。",
+    "視能訓練士国家試験対策Webアプリ。過去問1,500問とAIコーチで毎日コツコツ合格へ。",
   manifest: "/manifest.webmanifest",
   applicationName: "ORT ACE",
   appleWebApp: {

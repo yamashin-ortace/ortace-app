@@ -210,6 +210,37 @@ html:not([data-theme]),
   box-shadow: 0 2px 0 var(--primary-shadow), 0 4px 8px var(--primary-shadow-soft);
 }
 
+/* LP visual depth: light, non-essential motion with reduce-motion fallback. */
+@keyframes landing-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -8px, 0); }
+}
+
+@keyframes landing-float-slow {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, 10px, 0); }
+}
+
+.landing-float {
+  animation: landing-float 5.8s ease-in-out infinite;
+}
+
+.landing-float-slow {
+  animation: landing-float-slow 7.2s ease-in-out infinite;
+}
+
+.landing-hero-readable {
+  text-shadow: 0 1px 18px rgba(255, 255, 255, 0.92),
+               0 1px 4px rgba(255, 255, 255, 0.82);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-float,
+  .landing-float-slow {
+    animation: none;
+  }
+}
+
 /* 選択肢カード用：btn-pressable よりも穏やかな押下感（バウンス無し・遅め） */
 .choice-pressable {
   transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 
 /**
  * 未ログイン時のヘッダー（LP・ログイン）。設定へのショートカットは付けず /login へ誘導する。
@@ -6,10 +7,8 @@ import Link from "next/link";
 export function MarketingHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-[var(--bg-base)]/90 px-5 backdrop-blur">
-      <Link href="/" className="flex items-baseline">
-        <span className="text-[20px] font-extrabold tracking-tight text-[var(--primary)]">
-          ORT ACE
-        </span>
+      <Link href="/" className="flex items-center">
+        <OrtAceLogo size="sm" />
       </Link>
       <Link
         href="/login"

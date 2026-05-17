@@ -78,6 +78,6 @@ export const config = {
      * Next.js 内部・静的アセット・PWA manifest などを除外。
      * /api ルートは現状なしだが将来のため除外。
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|robots.txt|sitemap.xml|api/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|robots.txt|sitemap.xml|api/|landing/).*)",
   ],
 };
