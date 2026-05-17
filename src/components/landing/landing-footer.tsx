@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 
 export function LandingFooter() {
   return (
@@ -7,9 +8,22 @@ export function LandingFooter() {
       aria-label="サイトフッター"
     >
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-1">
-          <p className="text-[15px] font-bold text-[var(--primary)]">ORT ACE</p>
-          <p className="text-[var(--text-4)]">https://ortace.jp</p>
+        <div className="space-y-2">
+          <Link
+            href="/"
+            aria-label="ORT ACE トップへ"
+            className="inline-block"
+          >
+            <OrtAceLogo size="md" />
+          </Link>
+          <p>
+            <a
+              href="https://ortace.jp"
+              className="text-[var(--text-3)] underline underline-offset-2 hover:text-[var(--text-1)]"
+            >
+              https://ortace.jp
+            </a>
+          </p>
           <p className="max-w-md pt-2 leading-relaxed text-[var(--text-3)]">
             視能訓練士国家試験対策のためのWebアプリ。温かく、でも芯のある学習体験を目指しています。
           </p>
