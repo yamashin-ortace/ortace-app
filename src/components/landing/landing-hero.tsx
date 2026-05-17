@@ -34,11 +34,11 @@ export function LandingHero() {
         priority
         unoptimized
         sizes="(min-width: 960px) 960px, 100vw"
-        className="object-cover object-[74%_center] opacity-90 dark:opacity-35"
+        className="object-cover object-[68%_center] opacity-100 dark:opacity-50"
       />
-      <div className="absolute inset-0 bg-linear-to-r from-[var(--bg-base)] from-[0%] via-[var(--bg-base)]/95 via-[53%] to-[var(--bg-base)]/18 to-[82%] dark:from-[var(--bg-base)] dark:via-[var(--bg-base)]/82 dark:to-[var(--bg-base)]/28" />
-      <div className="absolute inset-y-0 left-0 w-full bg-[radial-gradient(ellipse_at_24%_36%,rgba(255,253,251,0.92)_0%,rgba(255,253,251,0.76)_38%,rgba(255,253,251,0.3)_62%,rgba(255,253,251,0)_82%)] dark:hidden" />
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[var(--bg-base)] to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-r from-[var(--bg-base)] from-[0%] via-[var(--bg-base)]/88 via-[42%] to-[var(--bg-base)]/0 to-[68%] dark:from-[var(--bg-base)] dark:via-[var(--bg-base)]/78 dark:to-[var(--bg-base)]/12" />
+      <div className="absolute inset-y-0 left-0 w-[78%] bg-[radial-gradient(ellipse_at_22%_38%,rgba(255,253,251,0.94)_0%,rgba(255,253,251,0.72)_36%,rgba(255,253,251,0.24)_60%,rgba(255,253,251,0)_78%)] dark:hidden" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-[var(--bg-base)] to-transparent" />
 
       <div className="relative min-h-[560px] md:min-h-[610px]">
         <div className="max-w-[900px] pt-6 md:pt-10">
