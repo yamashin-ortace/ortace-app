@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Settings } from "lucide-react";
 import { HeaderUserMenu } from "@/components/header-user-menu";
+import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 import { getSessionContext } from "@/lib/auth/profile";
 import { getEffectivePlan, PLAN_DEFINITIONS } from "@/lib/billing/plans";
 
@@ -19,10 +20,8 @@ export async function AppHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-[var(--bg-base)]/90 px-5 backdrop-blur">
       <div className="flex min-w-0 items-center gap-2">
-        <Link href="/" className="flex items-baseline">
-          <span className="text-[20px] font-extrabold tracking-tight text-[var(--primary)]">
-            ORT ACE
-          </span>
+        <Link href="/" aria-label="ORT ACE トップへ" className="flex items-center">
+          <OrtAceLogo size="sm" />
         </Link>
         <Link
           href="/plans"

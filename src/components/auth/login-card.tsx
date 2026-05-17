@@ -14,6 +14,7 @@ import {
   signUpWithPasswordAction,
 } from "@/lib/auth/actions";
 import { GoogleIcon } from "@/components/auth/google-icon";
+import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 import { ChevronDown, ChevronUp, Mail } from "lucide-react";
 
 type EmailMode = "login" | "signup" | "magic";
@@ -107,11 +108,14 @@ export function LoginCard({ initialError, initialSent }: LoginCardProps) {
   return (
     <Card className="w-full">
       <CardHeader className="text-center">
+        <div className="mx-auto flex justify-center pb-1">
+          <OrtAceLogo size="md" />
+        </div>
         <CardTitle className="text-[20px] font-bold">
           ログイン / 新規登録
         </CardTitle>
         <p className="text-[12px] text-[var(--text-2)]">
-          視能訓練士国試対策アプリ ORT ACE
+          視能訓練士国試対策アプリ
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
