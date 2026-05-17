@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_JP } from "next/font/google";
+import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
@@ -22,16 +25,62 @@ const notoSansJp = Noto_Sans_JP({
   display: "swap",
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://ortace.jp";
+
 export const metadata: Metadata = {
-  title: "ORT ACE — 視能訓練士国家試験対策",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "ORT ACE — 視能訓練士国家試験対策アプリ",
+    template: "%s｜ORT ACE",
+  },
   description:
-    "視能訓練士国家試験対策Webアプリ。過去問1,500問とAIコーチで毎日コツコツ合格へ。",
+    "視能訓練士国家試験対策アプリ。第47〜56回・10年分・1,500問の過去問と、AIコーチMiLu先生があなたの学習履歴から次の一歩を提案。",
+  keywords: [
+    "視能訓練士",
+    "国家試験",
+    "ORT",
+    "過去問",
+    "AIコーチ",
+    "国試対策",
+    "視能訓練士国試",
+    "ORT ACE",
+  ],
   manifest: "/manifest.webmanifest",
   applicationName: "ORT ACE",
   appleWebApp: {
     capable: true,
     title: "ORT ACE",
     statusBarStyle: "default",
+  },
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    url: SITE_URL,
+    siteName: "ORT ACE",
+    title: "ORT ACE — 視能訓練士国家試験対策アプリ",
+    description:
+      "視能訓練士国家試験対策アプリ。第47〜56回・10年分・1,500問の過去問と、AIコーチMiLu先生があなたの学習履歴から次の一歩を提案。",
+    // OG画像は opengraph-image.tsx で動的生成（/opengraph-image）
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ORT ACE — 視能訓練士国家試験対策アプリ",
+    description:
+      "視能訓練士国家試験対策アプリ。第47〜56回・10年分・1,500問とAIコーチMiLu先生で合格まで伴走。",
+    images: [`${SITE_URL}/opengraph-image`],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+    },
+  },
+  alternates: {
+    canonical: SITE_URL,
   },
 };
 
@@ -54,6 +103,7 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await getSessionContext();
   const showAppChrome = Boolean(session);
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   return (
     <html
@@ -82,6 +132,22 @@ export default async function RootLayout({
             {showAppChrome ? <BottomNav /> : null}
           </div>
         </ThemeProvider>
+        {gaId ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">{`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${gaId}', { anonymize_ip: true });
+            `}</Script>
+          </>
+        ) : null}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
