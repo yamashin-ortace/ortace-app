@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import withSerwistInit from "@serwist/next";
+import withBundleAnalyzerInit from "@next/bundle-analyzer";
 
 /**
  * セキュリティ・プライバシー系の共通レスポンスヘッダー。
@@ -64,7 +65,15 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV !== "production",
 });
 
-const nextConfig = withSerwist(baseNextConfig);
+/**
+ * Bundle Analyzer は ANALYZE=true のときだけ有効化。
+ * `npm run analyze` で出力した HTML レポートが .next/analyze/ に出る。
+ */
+const withBundleAnalyzer = withBundleAnalyzerInit({
+  enabled: process.env.ANALYZE === "true",
+});
+
+const nextConfig = withBundleAnalyzer(withSerwist(baseNextConfig));
 
 /**
  * Sentry のラッパー。DSN・AuthToken が未設定でも build は通る設計。
