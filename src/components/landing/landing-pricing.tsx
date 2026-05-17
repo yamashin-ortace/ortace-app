@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpenCheck, Check, FileText, Smartphone } from "lucide-react";
+import { Check, Library, RotateCcw, Smartphone } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -54,25 +54,25 @@ const PLANS = [
     ],
     ctaLabel: "無料ではじめる",
     footnote:
-      "試験翌月まで何度でも・何問でも演習可能。早く始めるほど、1日あたりの負担は軽くなります。試験翌月に自動解約され、延長課金はありません。",
+      "1回限りのお支払い（買い切り）。受験年度の試験翌月までご利用いただけます。早く始めるほど、1日あたりの負担は軽くなります。サブスクリプションではないので、解約手続きや延長課金はありません。",
   },
 ] as const;
 
 const VALUE_CARDS = [
   {
-    icon: BookOpenCheck,
-    title: "書籍を何冊も",
-    body: "持ち歩かなくていい",
+    icon: Library,
+    headline: "書籍を何冊も、持ち歩かなくていい",
+    sub: "第47〜56回・1,500問がスマホに",
   },
   {
-    icon: FileText,
-    title: "模試前の確認も",
-    body: "弱点から戻れる",
+    icon: RotateCcw,
+    headline: "模試前の確認も、弱点から戻れる",
+    sub: "ノート・ブックマーク・苦手から再演習",
   },
   {
     icon: Smartphone,
-    title: "スマホ1台で",
-    body: "演習と記録まで",
+    headline: "演習も、記録も、復習も、スマホ1台で",
+    sub: "通学・実習の合間でも続けられる",
   },
 ] as const;
 
@@ -105,25 +105,23 @@ export function LandingPricing() {
             </h3>
             <p className="text-[13px] leading-[1.9] text-[var(--text-3)] md:text-[14px]">
               過去問書籍を複数年分そろえたり、模試を受けたりすると、対策費は数万円になることも（※当社調べ）。
-              ORT ACEなら、最新の第56回を含む第47〜56回の過去問1,500問を、演習・記録・復習までひとつにまとめられます。
+              ORT ACEなら、第47〜56回・10年分の過去問1,500問を、演習・記録・復習までひとつにまとめられます。
             </p>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {VALUE_CARDS.map(({ icon: Icon, title, body }) => (
+          <div className="grid gap-2.5 sm:grid-cols-3">
+            {VALUE_CARDS.map(({ icon: Icon, headline, sub }) => (
               <div
-                key={title}
-                className="rounded-[14px] border border-border bg-[var(--bg-base)] p-3.5 shadow-[0_10px_24px_rgba(44,62,93,0.06)]"
+                key={headline}
+                className="flex flex-col gap-2 rounded-[14px] border border-border bg-[var(--bg-base)] p-4 shadow-[0_10px_24px_rgba(44,62,93,0.06)]"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-[11px] bg-[#e8f7f5] text-[#16717c]">
-                    <Icon className="size-4.5" strokeWidth={2.4} aria-hidden />
-                  </span>
-                  <p className="text-[13px] font-extrabold text-[var(--text-1)]">
-                    {title}
-                  </p>
-                </div>
-                <p className="mt-1 text-[11px] font-bold leading-relaxed text-[var(--text-3)]">
-                  {body}
+                <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-[#e8f7f5] text-[#16717c]">
+                  <Icon className="size-5" strokeWidth={2.4} aria-hidden />
+                </span>
+                <p className="text-[13.5px] font-extrabold leading-[1.5] text-[var(--text-1)]">
+                  {headline}
+                </p>
+                <p className="text-[11px] leading-relaxed text-[var(--text-3)]">
+                  {sub}
                 </p>
               </div>
             ))}

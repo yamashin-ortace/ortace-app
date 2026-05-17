@@ -1,4 +1,4 @@
-import { ShieldCheck, Calendar, Repeat2 } from "lucide-react";
+import { ShieldCheck, PackageCheck, Repeat2 } from "lucide-react";
 
 /**
  * 合格サポート保証 + 7日返金保証 + 受験生プラン自動解約の安心訴求。
@@ -20,11 +20,11 @@ const GUARANTEE_CARDS = [
     fineprint: "お申し込みは info@ortace.jp までご連絡ください。",
   },
   {
-    icon: Calendar,
-    eyebrow: "受験生プランの自動解約",
-    title: "試験が終わったら、課金も止まる。",
-    body: "国試対策パックは、受験年度の国家試験翌月に自動で解約されます。延長課金はありません。試験約2週間前にもお知らせが届きます。",
-    fineprint: null as string | null,
+    icon: PackageCheck,
+    eyebrow: "買い切り型・延長課金なし",
+    title: "1回の購入で、受験本番まで。",
+    body: "国試対策パックは1回限りのお支払い（買い切り）。サブスクリプションではないので、解約手続きや延長課金の心配はありません。受験年度の試験翌月までご利用いただけます。",
+    fineprint: "クレジットカードの分割払いには対応しています。",
   },
 ] as const;
 

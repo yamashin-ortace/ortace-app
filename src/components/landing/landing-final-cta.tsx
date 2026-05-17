@@ -51,7 +51,7 @@ export function LandingFinalCta() {
           </Link>
         </div>
         <p className="text-[11px] text-[var(--text-3)]">
-          7日返金保証つき・合格サポート保証つき・受験生プランは試験翌月に自動解約
+          7日返金保証つき・合格サポート保証つき・国試対策パックは買い切り型
         </p>
       </div>
     </section>

@@ -1,15 +1,16 @@
 import Image from "next/image";
 import { LandingQuestionPhone } from "@/components/landing/landing-question-phone";
 import {
-  BarChart3,
   Bookmark,
+  BookOpen,
   BookOpenCheck,
   Brain,
   Flame,
   Home,
-  NotebookPen,
+  LineChart,
+  NotebookText,
   RotateCcw,
-  StickyNote,
+  Sparkles,
   Target,
 } from "lucide-react";
 
@@ -35,10 +36,10 @@ const ITEMS = [
   {
     icon: BookOpenCheck,
     title: "最新第56回までの過去問1,500問",
-    body: "第47〜56回の10回分を収録。最新の第56回も含めて、正誤と解説を振り返れます。",
+    body: "第47〜56回の10年分。最新の第56回も含めて、正誤と解説を振り返れます。",
   },
   {
-    icon: StickyNote,
+    icon: Sparkles,
     title: "解答後AI分析",
     body: "解いたあとに、次へつながる確認テーマをAIコーチMiLu先生が整理します。",
   },
@@ -48,7 +49,7 @@ const ITEMS = [
     body: "直前に見返したい問題を保管。苦手だけを拾い直す準備ができます。",
   },
   {
-    icon: NotebookPen,
+    icon: NotebookText,
     title: "ノート",
     body: "解説だけで終わらせず、自分の言葉で残して復習の足がかりに。",
   },
@@ -58,7 +59,7 @@ const ITEMS = [
     body: "毎日の積み上げを軽く見える化。国試までの習慣づくりを支えます。",
   },
   {
-    icon: BarChart3,
+    icon: LineChart,
     title: "分野別の統計",
     body: "得意と苦手を俯瞰し、次の演習に活かせる形で確認できます。",
   },
@@ -71,12 +72,12 @@ const APP_FLOW = [
     body: "今日やること、続きから解く問題、AIコーチMiLu先生からの提案を最初に確認。",
   },
   {
-    icon: BookOpenCheck,
+    icon: BookOpen,
     title: "学習",
-    body: "第47〜56回の過去問をスマホで演習。最新回まで解くほど、弱点と復習材料がたまります。",
+    body: "第47〜56回・10年分の過去問をスマホで演習。最新第56回まで解くほど、弱点と復習材料がたまります。",
   },
   {
-    icon: BarChart3,
+    icon: LineChart,
     title: "記録",
     body: "ノートやブックマーク、苦手の履歴を見返して、国試前の復習に戻れます。",
   },
@@ -266,7 +267,7 @@ export function LandingFeatures() {
             <div className="grid gap-2 pt-2">
               {[
                 ["1", "解答履歴を蓄積", "正誤・自信度・解答時間を記録"],
-                ["2", "AIが優先度を整理", "復習・弱点・思い込みを判定"],
+                ["2", "AIコーチMiLu先生が優先度を整理", "復習・弱点・思い込みを判定"],
                 ["3", "次の演習へつなげる", "今のあなたに必要な問題を提案"],
               ].map(([step, title, body]) => (
                 <div
