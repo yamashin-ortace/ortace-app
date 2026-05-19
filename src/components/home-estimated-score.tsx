@@ -76,27 +76,34 @@ export function HomeEstimatedScore({ questions }: Props) {
               {estimated.score >= estimated.passLineScore ? (
                 <span className="inline-flex items-center gap-1 font-bold text-[var(--primary-dark)]">
                   <TrendingUp className="h-3 w-3" strokeWidth={2.5} />
-                  合格基準{passLineRate}%をクリア中
+                  合格基準をクリア中
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-2)]">
-                  合格基準{passLineRate}%まで残り{" "}
+                  合格基準まで残り{" "}
                   <span className="font-bold text-[var(--text-1)]">
                     {Math.max(0, estimated.passLineScore - estimated.score)}点
                   </span>
                 </span>
               )}
-              <span className="font-semibold text-[var(--text-2)]">
-                推定正答率 {estimatedRate}%
-              </span>
-              <span className="text-[var(--text-3)]">
-                カバー率 {estimated.coverage}%
-              </span>
               {estimated.insufficientFields.length > 0 ? (
                 <span className="text-[var(--text-3)]">
                   データ不足の分野 {estimated.insufficientFields.length}
                 </span>
               ) : null}
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[var(--text-3)]">
+              <ScoreMetric
+                markerClassName="bg-[var(--primary-dark)]"
+                label="推定正答率"
+                value={`${estimatedRate}%`}
+              />
+              <ScoreMetric
+                markerClassName="w-0.5 rounded-full bg-[var(--primary-dark)]"
+                label="合格基準"
+                value={`${passLineRate}%`}
+              />
+              <ScoreMetric label="カバー率" value={`${estimated.coverage}%`} />
             </div>
           </>
         ) : null}
@@ -121,19 +128,11 @@ function ScoreGauge({
   const passPercent = Math.round(passRatio * 100);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div
-        className="relative pt-7"
+        className="relative py-2"
         aria-label={`推定正答率 ${scorePercent}%、合格基準 ${passPercent}%`}
       >
-        <div
-          className="absolute top-0 z-10 -translate-x-1/2 rounded-full border border-[var(--primary)]/25 bg-[var(--bg-card)] px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap text-[var(--primary-dark)] shadow-sm"
-          style={{
-            left: `${Math.min(88, Math.max(12, passRatio * 100))}%`,
-          }}
-        >
-          合格基準 {passPercent}%
-        </div>
         <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
           <div
             className="absolute top-0 right-0 h-full bg-[var(--primary-soft)]"
@@ -147,18 +146,49 @@ function ScoreGauge({
             style={{ width: `${ratio * 100}%` }}
           />
           <div
-            className="absolute top-0 h-full w-0.5 bg-[var(--primary-dark)]"
+            className="absolute top-1/2 h-7 w-0.5 -translate-y-1/2 rounded-full bg-[var(--primary-dark)] shadow-[0_0_0_2px_var(--bg-card)]"
             style={{ left: `${passRatio * 100}%` }}
+          />
+          <div
+            className={cn(
+              "absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-card)] shadow-sm",
+              isAtPass ? "bg-[var(--primary-dark)]" : "bg-[var(--primary)]",
+            )}
+            style={{ left: `${ratio * 100}%` }}
           />
         </div>
       </div>
-      <div className="grid grid-cols-3 items-center text-[10px] font-semibold text-[var(--text-3)]">
+      <div className="flex justify-between text-[10px] font-semibold text-[var(--text-3)]">
         <span>0%</span>
-        <span className="text-center text-[var(--primary-dark)]">
-          現在 {scorePercent}%
-        </span>
-        <span className="text-right">100%</span>
+        <span>100%</span>
       </div>
+    </div>
+  );
+}
+
+function ScoreMetric({
+  label,
+  value,
+  markerClassName,
+}: {
+  label: string;
+  value: string;
+  markerClassName?: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-[10px] bg-[var(--bg-muted)]/45 px-2 py-1.5">
+      <div className="flex items-center gap-1.5">
+        {markerClassName ? (
+          <span
+            aria-hidden
+            className={cn("h-2.5 w-2.5 shrink-0 rounded-full", markerClassName)}
+          />
+        ) : null}
+        <span className="truncate font-semibold">{label}</span>
+      </div>
+      <p className="mt-0.5 text-[13px] font-extrabold leading-none tabular-nums text-[var(--text-1)]">
+        {value}
+      </p>
     </div>
   );
 }

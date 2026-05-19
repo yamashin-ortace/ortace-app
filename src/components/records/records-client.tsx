@@ -31,7 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getTokyoDateString } from "@/lib/daily-limit";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
@@ -91,6 +91,8 @@ export function RecordsClient({ questions }: Props) {
   const [visibleHistoryCount, setVisibleHistoryCount] =
     useState(HISTORY_PAGE_SIZE);
   const [searchQuery, setSearchQuery] = useState("");
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
   const swipeStartRef = useRef<{
     x: number;
     y: number;
@@ -197,12 +199,16 @@ export function RecordsClient({ questions }: Props) {
 
   const handleTabChange = (value: string) => {
     const nextTab = parseRecordsTab(value);
+    setSwipeOffset(0);
+    setIsSwiping(false);
     setActiveTab(nextTab);
     updateRecordsUrl(nextTab, categoryFilter, historyScope);
   };
 
   const moveToTab = useCallback(
     (nextTab: RecordsTab) => {
+      setSwipeOffset(0);
+      setIsSwiping(false);
       setActiveTab(nextTab);
       updateRecordsUrl(nextTab, categoryFilter, historyScope);
     },
@@ -225,6 +231,24 @@ export function RecordsClient({ questions }: Props) {
       y: touch.clientY,
       tab: activeTab,
     };
+    setSwipeOffset(0);
+    setIsSwiping(false);
+  };
+
+  const handleSwipeMove = (event: TouchEvent<HTMLDivElement>) => {
+    const start = swipeStartRef.current;
+    if (!start || event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+
+    const currentIndex = RECORDS_TABS.indexOf(start.tab);
+    const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
+    const hasAdjacent = Boolean(RECORDS_TABS[nextIndex]);
+    setIsSwiping(true);
+    setSwipeOffset(hasAdjacent ? dx : dx * 0.18);
   };
 
   const handleSwipeEnd = (event: TouchEvent<HTMLDivElement>) => {
@@ -236,14 +260,26 @@ export function RecordsClient({ questions }: Props) {
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
     if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) < Math.abs(dy) * 1.3) {
+      setSwipeOffset(0);
+      setIsSwiping(false);
       return;
     }
 
     const currentIndex = RECORDS_TABS.indexOf(start.tab);
     const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
     const nextTab = RECORDS_TABS[nextIndex];
-    if (!nextTab) return;
+    if (!nextTab) {
+      setSwipeOffset(0);
+      setIsSwiping(false);
+      return;
+    }
     moveToTab(nextTab);
+  };
+
+  const handleSwipeCancel = () => {
+    swipeStartRef.current = null;
+    setSwipeOffset(0);
+    setIsSwiping(false);
   };
 
   const handleCategoryFilterChange = (nextCategory: BookmarkCategory | "all") => {
@@ -261,39 +297,22 @@ export function RecordsClient({ questions }: Props) {
     window.sessionStorage.setItem(RECORDS_SCROLL_KEY, String(window.scrollY));
   };
 
-  return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-      <RecordsSearchInput value={searchQuery} onChange={setSearchQuery} />
-      <TabsList className="grid h-11 w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1">
-        <TabsTrigger
-          value="bookmarks"
-          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
-        >
-          <Bookmark className="h-4 w-4" strokeWidth={2.5} />
-          ブックマーク
-        </TabsTrigger>
-        <TabsTrigger
-          value="notes"
-          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
-        >
-          <FileText className="h-4 w-4" strokeWidth={2.5} />
-          ノート
-        </TabsTrigger>
-        <TabsTrigger
-          value="history"
-          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
-        >
-          <History className="h-4 w-4" strokeWidth={2.5} />
-          履歴
-        </TabsTrigger>
-      </TabsList>
+  const activeIndex = RECORDS_TABS.indexOf(activeTab);
+  const adjacentTab =
+    swipeOffset < 0
+      ? RECORDS_TABS[activeIndex + 1]
+      : swipeOffset > 0
+        ? RECORDS_TABS[activeIndex - 1]
+        : undefined;
+  const adjacentSideClassName = swipeOffset < 0 ? "left-full" : "-left-full";
+  const panelStyle = {
+    transform: `translate3d(${swipeOffset}px, 0, 0)`,
+  };
 
-      <div
-        className="touch-pan-y"
-        onTouchStart={handleSwipeStart}
-        onTouchEnd={handleSwipeEnd}
-      >
-        <TabsContent value="bookmarks" className="space-y-3">
+  const renderRecordsPanel = (tab: RecordsTab) => {
+    if (tab === "bookmarks") {
+      return (
+        <>
           <div
             className="flex gap-2 overflow-x-auto pb-1"
             data-records-swipe-ignore
@@ -345,114 +364,166 @@ export function RecordsClient({ questions }: Props) {
               );
             })
           )}
-        </TabsContent>
+        </>
+      );
+    }
 
-        <TabsContent value="notes" className="space-y-3">
-          {notes.length === 0 ? (
-            <EmptyState
-              title="ノートはまだありません"
-              description="覚えておきたいことを書くと、ここから見返せます。"
+    if (tab === "notes") {
+      return notes.length === 0 ? (
+        <EmptyState
+          title="ノートはまだありません"
+          description="覚えておきたいことを書くと、ここから見返せます。"
+        />
+      ) : filteredNotes.length === 0 ? (
+        <EmptyState
+          title="一致するノートはありません"
+          description="検索条件を変えてみてください。"
+        />
+      ) : (
+        filteredNotes.map((item) => {
+          const question = questionMap.get(item.id);
+          if (!question) return null;
+          return (
+            <SavedQuestionCard
+              key={item.id}
+              mode="note"
+              question={question}
+              date={item.updatedAt}
+              noteBody={item.text}
+              actionLabel="ノート削除"
+              onRemove={() => removeNote(item.id)}
+              onOpenDetail={saveRecordsScroll}
+              source="note"
             />
-          ) : filteredNotes.length === 0 ? (
-            <EmptyState
-              title="一致するノートはありません"
-              description="検索条件を変えてみてください。"
-            />
-          ) : (
-            filteredNotes.map((item) => {
-              const question = questionMap.get(item.id);
+          );
+        })
+      );
+    }
+
+    return answerHistory.length === 0 ? (
+      <EmptyState
+        title="解答履歴はまだありません"
+        description="問題に解答すると、ここから見返せます。"
+      />
+    ) : (
+      <>
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          data-records-swipe-ignore
+        >
+          {(Object.keys(HISTORY_SCOPE_LABELS) as HistoryScope[]).map((scope) => (
+            <FilterChip
+              key={scope}
+              selected={historyScope === scope}
+              onClick={() => handleHistoryScopeChange(scope)}
+            >
+              {HISTORY_SCOPE_LABELS[scope]}
+            </FilterChip>
+          ))}
+        </div>
+
+        {displayedHistory.length === 0 ? (
+          <EmptyState
+            title={
+              searchQuery.trim()
+                ? "一致する履歴はありません"
+                : "今日の解答はまだありません"
+            }
+            description={
+              searchQuery.trim()
+                ? "検索条件を変えてみてください。"
+                : "問題を解くと、今日の履歴がここに並びます。"
+            }
+          />
+        ) : (
+          <>
+            <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
+            {visibleHistory.map((entry) => {
+              const question = questionMap.get(entry.id);
               if (!question) return null;
               return (
-                <SavedQuestionCard
-                  key={item.id}
-                  mode="note"
+                <AnswerHistoryCard
+                  key={`${entry.id}-${entry.answeredAt}`}
+                  entry={entry}
                   question={question}
-                  date={item.updatedAt}
-                  noteBody={item.text}
-                  actionLabel="ノート削除"
-                  onRemove={() => removeNote(item.id)}
                   onOpenDetail={saveRecordsScroll}
-                  source="note"
+                  historyScope={historyScope}
                 />
               );
-            })
-          )}
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-3">
-          {answerHistory.length === 0 ? (
-            <EmptyState
-              title="解答履歴はまだありません"
-              description="問題に解答すると、ここから見返せます。"
-            />
-          ) : (
-            <>
-              <div
-                className="flex gap-2 overflow-x-auto pb-1"
-                data-records-swipe-ignore
+            })}
+            {hasMoreHistory ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleHistoryCount((count) => count + HISTORY_PAGE_SIZE)
+                }
+                className="w-full rounded-[12px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[13px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
               >
-                {(Object.keys(HISTORY_SCOPE_LABELS) as HistoryScope[]).map(
-                  (scope) => (
-                    <FilterChip
-                      key={scope}
-                      selected={historyScope === scope}
-                      onClick={() => handleHistoryScopeChange(scope)}
-                    >
-                      {HISTORY_SCOPE_LABELS[scope]}
-                    </FilterChip>
-                  ),
-                )}
-              </div>
+                もっと見る（あと
+                {displayedHistory.length - visibleHistory.length}件）
+              </button>
+            ) : null}
+          </>
+        )}
+      </>
+    );
+  };
 
-              {displayedHistory.length === 0 ? (
-                <EmptyState
-                  title={
-                    searchQuery.trim()
-                      ? "一致する履歴はありません"
-                      : "今日の解答はまだありません"
-                  }
-                  description={
-                    searchQuery.trim()
-                      ? "検索条件を変えてみてください。"
-                      : "問題を解くと、今日の履歴がここに並びます。"
-                  }
-                />
-              ) : (
-                <>
-                  <FieldSummaryList
-                    summaries={fieldSummaries}
-                    scope={historyScope}
-                  />
-                  {visibleHistory.map((entry) => {
-                    const question = questionMap.get(entry.id);
-                    if (!question) return null;
-                    return (
-                      <AnswerHistoryCard
-                        key={`${entry.id}-${entry.answeredAt}`}
-                        entry={entry}
-                        question={question}
-                        onOpenDetail={saveRecordsScroll}
-                        historyScope={historyScope}
-                      />
-                    );
-                  })}
-                  {hasMoreHistory ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVisibleHistoryCount((count) => count + HISTORY_PAGE_SIZE)
-                      }
-                      className="w-full rounded-[12px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[13px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
-                    >
-                      もっと見る（あと
-                      {displayedHistory.length - visibleHistory.length}件）
-                    </button>
-                  ) : null}
-                </>
-              )}
-            </>
+  return (
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <RecordsSearchInput value={searchQuery} onChange={setSearchQuery} />
+      <TabsList className="grid h-11 w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1">
+        <TabsTrigger
+          value="bookmarks"
+          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+        >
+          <Bookmark className="h-4 w-4" strokeWidth={2.5} />
+          ブックマーク
+        </TabsTrigger>
+        <TabsTrigger
+          value="notes"
+          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+        >
+          <FileText className="h-4 w-4" strokeWidth={2.5} />
+          ノート
+        </TabsTrigger>
+        <TabsTrigger
+          value="history"
+          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+        >
+          <History className="h-4 w-4" strokeWidth={2.5} />
+          履歴
+        </TabsTrigger>
+      </TabsList>
+
+      <div
+        className="relative touch-pan-y overflow-hidden"
+        onTouchStart={handleSwipeStart}
+        onTouchMove={handleSwipeMove}
+        onTouchEnd={handleSwipeEnd}
+        onTouchCancel={handleSwipeCancel}
+      >
+        <div
+          className={cn(
+            "space-y-3 will-change-transform",
+            !isSwiping && "transition-transform duration-200 ease-out",
           )}
-        </TabsContent>
+          style={panelStyle}
+        >
+          {renderRecordsPanel(activeTab)}
+        </div>
+        {adjacentTab && swipeOffset !== 0 ? (
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute top-0 w-full space-y-3 will-change-transform",
+              adjacentSideClassName,
+            )}
+            style={panelStyle}
+          >
+            {renderRecordsPanel(adjacentTab)}
+          </div>
+        ) : null}
       </div>
     </Tabs>
   );
