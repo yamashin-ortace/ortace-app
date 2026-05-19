@@ -9,7 +9,7 @@ import {
 describe("AI theme cluster", () => {
   it("AIコーチ用クラスタは50前後に収める", () => {
     expect(AI_THEME_CLUSTERS.length).toBeGreaterThanOrEqual(45);
-    expect(AI_THEME_CLUSTERS.length).toBeLessThanOrEqual(55);
+    expect(AI_THEME_CLUSTERS.length).toBeLessThanOrEqual(60);
   });
 
   it("緑内障の視野系テーマは視野変化クラスタに寄せる", () => {
@@ -109,6 +109,57 @@ describe("AI theme cluster", () => {
         }),
       ),
     ).toBe("眼内レンズ度数計算");
+  });
+
+  it("眼の発生と正常値は本文テーマに応じて分ける", () => {
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "基礎医学・解剖学",
+          minorCategory: "眼の発生・生理的計測値",
+          theme: "網膜の発生起源",
+        }),
+      ),
+    ).toBe("眼の発生");
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "基礎医学・解剖学",
+          minorCategory: "眼の発生・生理的計測値",
+          theme: "涙液の特性",
+        }),
+      ),
+    ).toBe("涙液・涙膜");
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "基礎医学・解剖学",
+          minorCategory: "眼の発生・生理的計測値",
+          theme: "角膜厚の正常値",
+        }),
+      ),
+    ).toBe("角膜の特性・計測");
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "基礎医学・解剖学",
+          minorCategory: "眼の発生・生理的計測値",
+          theme: "眼球計測値",
+        }),
+      ),
+    ).toBe("眼球計測・正常値");
+  });
+
+  it("QOVは眼振ではなく視覚の質として扱う", () => {
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "両眼視・斜視",
+          minorCategory: "眼振",
+          theme: "QOV",
+        }),
+      ),
+    ).toBe("コントラスト感度・視覚の質");
   });
 
   it("似たぶどう膜炎テーマは同じクラスタへ寄せる", () => {

@@ -8,7 +8,10 @@ export type AiThemeCluster = {
 export const AI_THEME_CLUSTERS = [
   cluster("visual-physiology", "視覚生理と神経伝導"),
   cluster("ocular-anatomy-orbit", "眼球・眼窩の解剖"),
-  cluster("ocular-development-measurement", "眼の発生と正常値"),
+  cluster("ocular-development", "眼の発生"),
+  cluster("tear-film", "涙液・涙膜"),
+  cluster("cornea-properties", "角膜の特性・計測"),
+  cluster("ocular-development-measurement", "眼球計測・正常値"),
   cluster("lens-prism-optics", "レンズ・プリズム光学"),
   cluster("refraction-accommodation-calculation", "屈折・調節計算"),
   cluster("acuity-angle-calculation", "視力・視角・調節力計算"),
@@ -24,6 +27,7 @@ export const AI_THEME_CLUSTERS = [
   cluster("electrophysiology", "電気生理検査"),
   cluster("color-vision-testing", "色覚検査"),
   cluster("dark-adaptation-light-sense", "暗順応・光覚検査"),
+  cluster("contrast-visual-quality", "コントラスト感度・視覚の質"),
   cluster("binocular-basis", "両眼視の基礎"),
   cluster("convergence-accommodation", "輻湊・調節"),
   cluster("binocular-optics-calculation", "AC/A比・両眼視計算"),
@@ -135,6 +139,7 @@ export function getAiThemeCluster(question: Question): AiThemeCluster {
   const text = normalizeText(
     `${question.majorCategory} ${question.minorCategory} ${question.theme}`,
   );
+  const themeText = normalizeText(question.theme);
   const minor = question.minorCategory.trim();
 
   if (hasAny(text, ["緑内障"]) && hasAny(text, ["視野", "視野欠損", "視野変化"])) {
@@ -148,6 +153,38 @@ export function getAiThemeCluster(question: Question): AiThemeCluster {
   }
   if (hasAny(text, ["糖尿病網膜症", "網膜剥離", "黄斑", "網膜静脈", "網膜動脈"])) {
     return requireCluster("retina-fundus-disease");
+  }
+  if (hasAny(text, ["QOV", "QualityofVision", "視覚の質", "コントラスト感度", "グレア"])) {
+    return requireCluster("contrast-visual-quality");
+  }
+  if (minor === "眼の発生・生理的計測値") {
+    if (
+      hasAny(themeText, [
+        "網膜の発生起源",
+        "眼の発生",
+        "外眼筋の起源",
+        "神経外胚葉",
+        "発生起源",
+      ])
+    ) {
+      return requireCluster("ocular-development");
+    }
+    if (hasAny(themeText, ["涙液", "涙膜", "涙腺", "Meibom", "マイボーム", "ムチン"])) {
+      return requireCluster("tear-film");
+    }
+    if (
+      hasAny(themeText, [
+        "角膜屈折率",
+        "角膜屈折力",
+        "角膜の特性",
+        "中心角膜厚",
+        "角膜厚",
+        "角膜上皮",
+        "角膜内皮",
+      ])
+    ) {
+      return requireCluster("cornea-properties");
+    }
   }
   if (
     hasAny(text, [
