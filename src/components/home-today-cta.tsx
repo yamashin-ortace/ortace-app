@@ -141,7 +141,7 @@ export function HomeTodayCta({ totalQuestions, clusters }: Props) {
                 今日の復習 {summary.reviewCount}問
               </span>
               <span className="mt-0.5 text-[12px] text-[var(--text-2)]">
-                間隔反復で復習日が到来した問題を解きます
+                間違い・迷い・勘かもを少し時間を空けて確認します
               </span>
             </div>
             <ChevronRight

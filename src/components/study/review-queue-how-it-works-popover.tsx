@@ -20,7 +20,7 @@ export function ReviewQueueHowItWorksPopover({ className }: Props) {
           "hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
         )}
-        aria-label="未復習の問題の選び方"
+        aria-label="復習対象の選び方"
       >
         <Info className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
       </Popover.Trigger>

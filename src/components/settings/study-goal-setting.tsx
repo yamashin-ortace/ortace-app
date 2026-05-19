@@ -105,7 +105,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
 
   return (
     <div id="study-goal" className="scroll-mt-24 space-y-3">
-      <div className="rounded-[12px] border border-border bg-[var(--bg-muted)]/45 px-3 py-3">
+      <div className="rounded-[12px] bg-[var(--bg-muted)]/45 px-3 py-3">
         <p className="text-[12px] font-semibold text-[var(--text-3)]">
           学習プリセット（任意）
         </p>
@@ -117,10 +117,10 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
 
       <div
         className={cn(
-          "flex items-center justify-between gap-3 rounded-[14px] border px-4 py-3",
+          "flex items-center justify-between gap-3 rounded-[14px] px-4 py-3",
           draft.enabled
-            ? "border-[var(--primary)] bg-[var(--primary-soft)]"
-            : "border-border bg-[var(--bg-card)]",
+            ? "bg-[var(--primary-soft)]"
+            : "bg-[var(--bg-muted)]/35",
         )}
       >
         <div className="min-w-0">
@@ -199,7 +199,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
             onChange={handleDeadlineChange}
           />
           {draft.deadline === "custom" ? (
-            <div className="space-y-1.5 rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-2.5">
+            <div className="space-y-1.5 rounded-[12px] bg-[var(--bg-muted)]/35 px-3 py-2.5">
               <label
                 htmlFor="study-goal-custom-deadline"
                 className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-3)]"
@@ -236,7 +236,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
       </fieldset>
 
       {draft.enabled ? (
-        <div className="rounded-[14px] border border-border bg-[var(--bg-muted)]/40 px-4 py-3">
+        <div className="rounded-[14px] bg-[var(--bg-muted)]/45 px-4 py-3">
           <p className="text-[11px] font-semibold text-[var(--text-3)]">
             このプリセットだと
           </p>
@@ -255,7 +255,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-2 rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 border-t border-border/70 pt-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="min-h-[18px] text-[11px] font-medium text-[var(--text-2)]">
           {hasChanges
             ? "保存すると他の端末にも反映されます。"

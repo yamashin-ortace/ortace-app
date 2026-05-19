@@ -101,12 +101,12 @@ export function SyncTroubleshooting() {
       </Button>
 
       {message ? (
-        <p className="rounded-[10px] bg-[var(--bg-muted)] px-3 py-2 text-[12px] leading-relaxed text-[var(--text-2)]">
+        <p className="rounded-[10px] bg-[var(--bg-muted)]/55 px-3 py-2 text-[12px] leading-relaxed text-[var(--text-2)]">
           {message}
         </p>
       ) : null}
 
-      <div className="space-y-1 rounded-[12px] border border-border bg-[var(--bg-muted)] px-3 py-3 text-[12px] leading-relaxed text-[var(--text-3)]">
+      <div className="space-y-1 border-t border-border/70 pt-3 text-[12px] leading-relaxed text-[var(--text-3)]">
         <p className="font-bold text-[var(--text-2)]">それでも直らないとき</p>
         <p>1. ページを再読み込みする</p>
         <p>2. 一度ログアウトして、同じGoogleアカウントでログインし直す</p>

@@ -39,7 +39,7 @@ export function getQuestionStatus(
 /**
  * 「今日復習すべき問題」の問題IDを返す。
  *
- * 間隔反復スケジュール（`nextReviewAt`）が設定されている問題はその日付以前のみ、
+ * 復習スケジュール（`nextReviewAt`）が設定されている問題はその日付以前のみ、
  * スケジュール未設定の旧データはこれまで通り直近不正解/未確定を対象にする。
  */
 export function getReviewTargetIds(

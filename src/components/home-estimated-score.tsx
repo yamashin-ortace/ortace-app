@@ -29,6 +29,14 @@ export function HomeEstimatedScore({ questions }: Props) {
     const stats = getFieldStats(questions, entries);
     return calculateEstimatedScore(stats);
   }, [hydrated, questions, entries]);
+  const estimatedRate =
+    hydrated && estimated
+      ? Math.round((estimated.score / estimated.maxScore) * 100)
+      : null;
+  const passLineRate =
+    hydrated && estimated
+      ? Math.round((estimated.passLineScore / estimated.maxScore) * 100)
+      : null;
 
   return (
     <section>
@@ -68,16 +76,19 @@ export function HomeEstimatedScore({ questions }: Props) {
               {estimated.score >= estimated.passLineScore ? (
                 <span className="inline-flex items-center gap-1 font-bold text-[var(--primary-dark)]">
                   <TrendingUp className="h-3 w-3" strokeWidth={2.5} />
-                  合格圏に到達中
+                  合格基準{passLineRate}%をクリア中
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-2)]">
-                  合格圏まで残り{" "}
+                  合格基準{passLineRate}%まで残り{" "}
                   <span className="font-bold text-[var(--text-1)]">
                     {Math.max(0, estimated.passLineScore - estimated.score)}点
                   </span>
                 </span>
               )}
+              <span className="font-semibold text-[var(--text-2)]">
+                推定正答率 {estimatedRate}%
+              </span>
               <span className="text-[var(--text-3)]">
                 カバー率 {estimated.coverage}%
               </span>
@@ -106,23 +117,48 @@ function ScoreGauge({
   const ratio = Math.max(0, Math.min(1, score / max));
   const passRatio = Math.max(0, Math.min(1, passLine / max));
   const isAtPass = score >= passLine;
+  const scorePercent = Math.round(ratio * 100);
+  const passPercent = Math.round(passRatio * 100);
 
   return (
-    <div
-      className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]"
-      aria-hidden
-    >
+    <div className="space-y-2">
       <div
-        className={cn(
-          "h-full rounded-full transition-[width]",
-          isAtPass ? "bg-[var(--primary-dark)]" : "bg-[var(--primary)]",
-        )}
-        style={{ width: `${ratio * 100}%` }}
-      />
-      <div
-        className="absolute top-0 h-full w-px bg-[var(--text-3)]/70"
-        style={{ left: `${passRatio * 100}%` }}
-      />
+        className="relative pt-7"
+        aria-label={`推定正答率 ${scorePercent}%、合格基準 ${passPercent}%`}
+      >
+        <div
+          className="absolute top-0 z-10 -translate-x-1/2 rounded-full border border-[var(--primary)]/25 bg-[var(--bg-card)] px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap text-[var(--primary-dark)] shadow-sm"
+          style={{
+            left: `${Math.min(88, Math.max(12, passRatio * 100))}%`,
+          }}
+        >
+          合格基準 {passPercent}%
+        </div>
+        <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
+          <div
+            className="absolute top-0 right-0 h-full bg-[var(--primary-soft)]"
+            style={{ left: `${passRatio * 100}%` }}
+          />
+          <div
+            className={cn(
+              "relative h-full rounded-full transition-[width]",
+              isAtPass ? "bg-[var(--primary-dark)]" : "bg-[var(--primary)]",
+            )}
+            style={{ width: `${ratio * 100}%` }}
+          />
+          <div
+            className="absolute top-0 h-full w-0.5 bg-[var(--primary-dark)]"
+            style={{ left: `${passRatio * 100}%` }}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 items-center text-[10px] font-semibold text-[var(--text-3)]">
+        <span>0%</span>
+        <span className="text-center text-[var(--primary-dark)]">
+          現在 {scorePercent}%
+        </span>
+        <span className="text-right">100%</span>
+      </div>
     </div>
   );
 }
@@ -169,9 +205,11 @@ function EstimatedScoreInfo() {
                 の分野は除外）。
               </p>
               <p>
-                表示は「今の実力の目安」です。バーの線は合格圏ライン（仮{" "}
-                <strong className="font-bold text-[var(--text-1)]">95点</strong>
-                ）。試験の分野別出題数は過去問からの推定値です。
+                表示は「今の実力の目安」です。バーの線は厚生労働省の合格発表に基づく
+                <strong className="font-bold text-[var(--text-1)]">
+                  正答率約60%
+                </strong>
+                の基準です。試験の分野別出題数は過去問からの推定値です。
               </p>
             </div>
           </Popover.Popup>

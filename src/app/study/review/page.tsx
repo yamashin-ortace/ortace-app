@@ -24,7 +24,7 @@ export default async function ReviewPage() {
           復習する
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          間隔反復で復習日が来た問題から出題します
+          間違えた問題や、迷った・勘かもで正解した問題を後日確認します
         </p>
       </div>
 
@@ -36,7 +36,7 @@ export default async function ReviewPage() {
         limit={20}
         resumeLabel="復習"
         emptyTitle="復習対象がありません"
-        emptyMessage="まずは問題を解いてみましょう。間違えた問題はここに溜まります。"
+        emptyMessage="まずは問題を解いてみましょう。間違えた問題や、迷いが残った問題が必要に応じてここに入ります。"
         plan={plan}
       />
     </div>

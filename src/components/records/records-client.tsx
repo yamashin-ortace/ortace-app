@@ -4,8 +4,10 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
+  type TouchEvent,
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -58,6 +60,8 @@ const RECORDS_SCROLL_KEY = "ortace.records.scrollY";
 const HISTORY_PAGE_SIZE = 50;
 type RecordsTab = "bookmarks" | "notes" | "history";
 type HistoryScope = "all" | "today" | "week" | "month";
+const RECORDS_TABS: RecordsTab[] = ["bookmarks", "notes", "history"];
+const SWIPE_THRESHOLD_PX = 56;
 
 const HISTORY_SCOPE_LABELS: Record<HistoryScope, string> = {
   all: "すべて",
@@ -87,6 +91,11 @@ export function RecordsClient({ questions }: Props) {
   const [visibleHistoryCount, setVisibleHistoryCount] =
     useState(HISTORY_PAGE_SIZE);
   const [searchQuery, setSearchQuery] = useState("");
+  const swipeStartRef = useRef<{
+    x: number;
+    y: number;
+    tab: RecordsTab;
+  } | null>(null);
   const questionMap = useMemo(
     () => new Map(questions.map((q) => [q.id, q])),
     [questions],
@@ -192,6 +201,51 @@ export function RecordsClient({ questions }: Props) {
     updateRecordsUrl(nextTab, categoryFilter, historyScope);
   };
 
+  const moveToTab = useCallback(
+    (nextTab: RecordsTab) => {
+      setActiveTab(nextTab);
+      updateRecordsUrl(nextTab, categoryFilter, historyScope);
+    },
+    [categoryFilter, historyScope, updateRecordsUrl],
+  );
+
+  const handleSwipeStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1) return;
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest("button,input,textarea,select,[data-records-swipe-ignore]")
+    ) {
+      swipeStartRef.current = null;
+      return;
+    }
+    const touch = event.touches[0];
+    swipeStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      tab: activeTab,
+    };
+  };
+
+  const handleSwipeEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start || event.changedTouches.length !== 1) return;
+
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) < Math.abs(dy) * 1.3) {
+      return;
+    }
+
+    const currentIndex = RECORDS_TABS.indexOf(start.tab);
+    const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
+    const nextTab = RECORDS_TABS[nextIndex];
+    if (!nextTab) return;
+    moveToTab(nextTab);
+  };
+
   const handleCategoryFilterChange = (nextCategory: BookmarkCategory | "all") => {
     setCategoryFilter(nextCategory);
     updateRecordsUrl(activeTab, nextCategory, historyScope);
@@ -234,157 +288,172 @@ export function RecordsClient({ questions }: Props) {
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="bookmarks" className="space-y-3">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <FilterChip
-            selected={categoryFilter === "all"}
-            onClick={() => handleCategoryFilterChange("all")}
+      <div
+        className="touch-pan-y"
+        onTouchStart={handleSwipeStart}
+        onTouchEnd={handleSwipeEnd}
+      >
+        <TabsContent value="bookmarks" className="space-y-3">
+          <div
+            className="flex gap-2 overflow-x-auto pb-1"
+            data-records-swipe-ignore
           >
-            すべて
-          </FilterChip>
-          {BOOKMARK_CATEGORIES.map((category) => (
             <FilterChip
-              key={category.id}
-              selected={categoryFilter === category.id}
-              onClick={() => handleCategoryFilterChange(category.id)}
+              selected={categoryFilter === "all"}
+              onClick={() => handleCategoryFilterChange("all")}
             >
-              {category.label}
+              すべて
             </FilterChip>
-          ))}
-        </div>
+            {BOOKMARK_CATEGORIES.map((category) => (
+              <FilterChip
+                key={category.id}
+                selected={categoryFilter === category.id}
+                onClick={() => handleCategoryFilterChange(category.id)}
+              >
+                {category.label}
+              </FilterChip>
+            ))}
+          </div>
 
-        {bookmarks.length === 0 ? (
-          <EmptyState
-            title="ブックマークはまだありません"
-            description="演習中に保存した問題がここに並びます。"
-          />
-        ) : filteredBookmarks.length === 0 ? (
-          <EmptyState
-            title="一致するブックマークはありません"
-            description="検索条件・フィルターを変えてみてください。"
-          />
-        ) : (
-          filteredBookmarks.map((item) => {
-            const question = questionMap.get(item.id);
-            if (!question) return null;
-            return (
-              <SavedQuestionCard
-                key={item.id}
-                mode="bookmark"
-                question={question}
-                date={item.addedAt}
-                categories={item.categories}
-                actionLabel="ブックマーク解除"
-                onRemove={() => removeBookmark(item.id)}
-                onOpenDetail={saveRecordsScroll}
-                source="bookmark"
-                sourceCategory={categoryFilter}
-              />
-            );
-          })
-        )}
-      </TabsContent>
+          {bookmarks.length === 0 ? (
+            <EmptyState
+              title="ブックマークはまだありません"
+              description="演習中に保存した問題がここに並びます。"
+            />
+          ) : filteredBookmarks.length === 0 ? (
+            <EmptyState
+              title="一致するブックマークはありません"
+              description="検索条件・フィルターを変えてみてください。"
+            />
+          ) : (
+            filteredBookmarks.map((item) => {
+              const question = questionMap.get(item.id);
+              if (!question) return null;
+              return (
+                <SavedQuestionCard
+                  key={item.id}
+                  mode="bookmark"
+                  question={question}
+                  date={item.addedAt}
+                  categories={item.categories}
+                  actionLabel="ブックマーク解除"
+                  onRemove={() => removeBookmark(item.id)}
+                  onOpenDetail={saveRecordsScroll}
+                  source="bookmark"
+                  sourceCategory={categoryFilter}
+                />
+              );
+            })
+          )}
+        </TabsContent>
 
-      <TabsContent value="notes" className="space-y-3">
-        {notes.length === 0 ? (
-          <EmptyState
-            title="ノートはまだありません"
-            description="覚えておきたいことを書くと、ここから見返せます。"
-          />
-        ) : filteredNotes.length === 0 ? (
-          <EmptyState
-            title="一致するノートはありません"
-            description="検索条件を変えてみてください。"
-          />
-        ) : (
-          filteredNotes.map((item) => {
-            const question = questionMap.get(item.id);
-            if (!question) return null;
-            return (
-              <SavedQuestionCard
-                key={item.id}
-                mode="note"
-                question={question}
-                date={item.updatedAt}
-                noteBody={item.text}
-                actionLabel="ノート削除"
-                onRemove={() => removeNote(item.id)}
-                onOpenDetail={saveRecordsScroll}
-                source="note"
-              />
-            );
-          })
-        )}
-      </TabsContent>
+        <TabsContent value="notes" className="space-y-3">
+          {notes.length === 0 ? (
+            <EmptyState
+              title="ノートはまだありません"
+              description="覚えておきたいことを書くと、ここから見返せます。"
+            />
+          ) : filteredNotes.length === 0 ? (
+            <EmptyState
+              title="一致するノートはありません"
+              description="検索条件を変えてみてください。"
+            />
+          ) : (
+            filteredNotes.map((item) => {
+              const question = questionMap.get(item.id);
+              if (!question) return null;
+              return (
+                <SavedQuestionCard
+                  key={item.id}
+                  mode="note"
+                  question={question}
+                  date={item.updatedAt}
+                  noteBody={item.text}
+                  actionLabel="ノート削除"
+                  onRemove={() => removeNote(item.id)}
+                  onOpenDetail={saveRecordsScroll}
+                  source="note"
+                />
+              );
+            })
+          )}
+        </TabsContent>
 
-      <TabsContent value="history" className="space-y-3">
-        {answerHistory.length === 0 ? (
-          <EmptyState
-            title="解答履歴はまだありません"
-            description="問題に解答すると、ここから見返せます。"
-          />
-        ) : (
-          <>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {(Object.keys(HISTORY_SCOPE_LABELS) as HistoryScope[]).map(
-                (scope) => (
-                  <FilterChip
-                    key={scope}
-                    selected={historyScope === scope}
-                    onClick={() => handleHistoryScopeChange(scope)}
-                  >
-                    {HISTORY_SCOPE_LABELS[scope]}
-                  </FilterChip>
-                ),
+        <TabsContent value="history" className="space-y-3">
+          {answerHistory.length === 0 ? (
+            <EmptyState
+              title="解答履歴はまだありません"
+              description="問題に解答すると、ここから見返せます。"
+            />
+          ) : (
+            <>
+              <div
+                className="flex gap-2 overflow-x-auto pb-1"
+                data-records-swipe-ignore
+              >
+                {(Object.keys(HISTORY_SCOPE_LABELS) as HistoryScope[]).map(
+                  (scope) => (
+                    <FilterChip
+                      key={scope}
+                      selected={historyScope === scope}
+                      onClick={() => handleHistoryScopeChange(scope)}
+                    >
+                      {HISTORY_SCOPE_LABELS[scope]}
+                    </FilterChip>
+                  ),
+                )}
+              </div>
+
+              {displayedHistory.length === 0 ? (
+                <EmptyState
+                  title={
+                    searchQuery.trim()
+                      ? "一致する履歴はありません"
+                      : "今日の解答はまだありません"
+                  }
+                  description={
+                    searchQuery.trim()
+                      ? "検索条件を変えてみてください。"
+                      : "問題を解くと、今日の履歴がここに並びます。"
+                  }
+                />
+              ) : (
+                <>
+                  <FieldSummaryList
+                    summaries={fieldSummaries}
+                    scope={historyScope}
+                  />
+                  {visibleHistory.map((entry) => {
+                    const question = questionMap.get(entry.id);
+                    if (!question) return null;
+                    return (
+                      <AnswerHistoryCard
+                        key={`${entry.id}-${entry.answeredAt}`}
+                        entry={entry}
+                        question={question}
+                        onOpenDetail={saveRecordsScroll}
+                        historyScope={historyScope}
+                      />
+                    );
+                  })}
+                  {hasMoreHistory ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVisibleHistoryCount((count) => count + HISTORY_PAGE_SIZE)
+                      }
+                      className="w-full rounded-[12px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[13px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
+                    >
+                      もっと見る（あと
+                      {displayedHistory.length - visibleHistory.length}件）
+                    </button>
+                  ) : null}
+                </>
               )}
-            </div>
-
-            {displayedHistory.length === 0 ? (
-              <EmptyState
-                title={
-                  searchQuery.trim()
-                    ? "一致する履歴はありません"
-                    : "今日の解答はまだありません"
-                }
-                description={
-                  searchQuery.trim()
-                    ? "検索条件を変えてみてください。"
-                    : "問題を解くと、今日の履歴がここに並びます。"
-                }
-              />
-            ) : (
-              <>
-                <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
-                {visibleHistory.map((entry) => {
-                  const question = questionMap.get(entry.id);
-                  if (!question) return null;
-                  return (
-                    <AnswerHistoryCard
-                      key={`${entry.id}-${entry.answeredAt}`}
-                      entry={entry}
-                      question={question}
-                      onOpenDetail={saveRecordsScroll}
-                      historyScope={historyScope}
-                    />
-                  );
-                })}
-                {hasMoreHistory ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setVisibleHistoryCount((count) => count + HISTORY_PAGE_SIZE)
-                    }
-                    className="w-full rounded-[12px] border border-border bg-[var(--bg-card)] px-4 py-3 text-[13px] font-bold text-[var(--text-2)] shadow-sm transition-colors hover:bg-[var(--bg-muted)]"
-                  >
-                    もっと見る（あと
-                    {displayedHistory.length - visibleHistory.length}件）
-                  </button>
-                ) : null}
-              </>
-            )}
-          </>
-        )}
-      </TabsContent>
+            </>
+          )}
+        </TabsContent>
+      </div>
     </Tabs>
   );
 }

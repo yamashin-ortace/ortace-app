@@ -29,7 +29,8 @@ export const EXAM_FIELD_DISTRIBUTION_TOTAL = FIELDS.reduce(
 );
 
 /**
- * 合格圏ライン（仮）。最終値はリリース前に確定する。
- * 150点中 95 点 ≒ 63% を合格圏とする。
+ * 合格基準ライン。
+ * 厚生労働省の合格発表では、おおむね総得点の60%以上が基準になる。
+ * アプリ内の推定スコアは150点満点換算なので、60%相当の90点を目安にする。
  */
-export const DEFAULT_PASS_LINE_SCORE = 95;
+export const DEFAULT_PASS_LINE_SCORE = Math.round(MAX_EXAM_SCORE * 0.6);
