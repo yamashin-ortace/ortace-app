@@ -2,28 +2,42 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Pointer } from "lucide-react";
 
 const SCREENS = [
   {
-    src: "/landing/app-screens/home-dashboard.jpg",
-    alt: "ホーム画面：今日のおすすめ20問とAIコーチMiLu先生からの提案",
+    src: "/landing/app-screens/v2/home-overview.jpg",
+    alt: "ホーム画面：今日のおすすめ、復習、ダッシュボードが表示されている画面",
     caption: "ホーム",
   },
   {
-    src: "/landing/app-screens/study-question.jpg",
-    alt: "学習画面：過去問の演習画面",
-    caption: "学習",
+    src: "/landing/app-screens/v2/study-menu.jpg",
+    alt: "学習画面：今日のおすすめ、復習、未着手、弱点リペア、思い込みチェックが並ぶ画面",
+    caption: "学習メニュー",
   },
   {
-    src: "/landing/app-screens/ai-analysis.jpg",
-    alt: "結果画面：AIコーチMiLu先生による分析と次の演習提案",
+    src: "/landing/app-screens/v2/ai-question-before.jpg",
+    alt: "AIコーチMiLu先生 今日のおすすめで過去問を解く画面",
+    caption: "問題演習",
+  },
+  {
+    src: "/landing/app-screens/v2/ai-question-correct.jpg",
+    alt: "正解後に解説と選択肢が表示される画面",
+    caption: "正解と解説",
+  },
+  {
+    src: "/landing/app-screens/v2/ai-question-incorrect.jpg",
+    alt: "不正解後に正答と解説が表示される画面",
+    caption: "間違い直し",
+  },
+  {
+    src: "/landing/app-screens/v2/ai-result-analysis.jpg",
+    alt: "AIコーチMiLu先生が解答結果を分析して次の確認テーマを提案する画面",
     caption: "AI分析",
   },
   {
-    src: "/landing/app-screens/records-list.jpg",
-    alt: "記録画面：解答履歴・分野別の正答率・苦手なテーマ",
-    caption: "記録",
+    src: "/landing/app-screens/v2/records-notes.jpg",
+    alt: "記録画面：ノートに残した問題を見返す画面",
+    caption: "記録ノート",
   },
 ] as const;
 
@@ -66,7 +80,7 @@ export function LandingQuestionPhone() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[300px] flex-col items-center gap-4">
+    <div className="mx-auto flex w-full max-w-[330px] flex-col items-center gap-4">
       {/* iPhone フレーム */}
       <div
         className="relative w-full"
@@ -82,12 +96,7 @@ export function LandingQuestionPhone() {
         <span className="absolute -right-[3px] top-[24%] h-[96px] w-[3px] rounded-full bg-[#1a1c20]" aria-hidden />
 
         {/* ベゼル内側＋画面 */}
-        <div className="absolute inset-[10px] overflow-hidden rounded-[36px] bg-black">
-          {/* Dynamic Island */}
-          <div
-            className="absolute left-1/2 top-[10px] z-10 h-[26px] w-[88px] -translate-x-1/2 rounded-full bg-black"
-            aria-hidden
-          />
+        <div className="absolute inset-[9px] overflow-hidden rounded-[35px] bg-[#fbf6f4]">
           {/* 画面カルーセル */}
           <div
             ref={containerRef}
@@ -106,22 +115,15 @@ export function LandingQuestionPhone() {
                   alt={screen.alt}
                   fill
                   unoptimized
-                  sizes="300px"
+                  sizes="330px"
                   className="object-cover object-top"
-                  priority={false}
+                  priority={screen.src.includes("home-overview")}
                 />
               </div>
             ))}
           </div>
         </div>
 
-        {/* タップ指示（指） */}
-        <div
-          className="pointer-events-none absolute bottom-[10%] right-[14%] grid size-12 place-items-center rounded-full border border-white/70 bg-white/95 text-[#c97896] shadow-[0_14px_32px_rgba(119,53,78,0.28)]"
-          aria-hidden
-        >
-          <Pointer className="size-6 -rotate-12" strokeWidth={2.4} />
-        </div>
       </div>
 
       {/* カルーセル下のドット + ラベル */}
@@ -144,7 +146,7 @@ export function LandingQuestionPhone() {
           ))}
         </div>
         <p className="text-[11px] font-bold text-[var(--text-3)]">
-          {SCREENS[activeIndex].caption} ・ 左右にスワイプ
+          {SCREENS[activeIndex].caption}
         </p>
       </div>
     </div>

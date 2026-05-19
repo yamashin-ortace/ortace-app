@@ -4,6 +4,7 @@ import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { AttemptBadgeSetting } from "@/components/settings/attempt-badge-setting";
 import { ExamDateSetting } from "@/components/settings/exam-date-setting";
 import { StudyGoalSetting } from "@/components/settings/study-goal-setting";
+import { SyncTroubleshooting } from "@/components/settings/sync-troubleshooting";
 import { loadAllQuestions } from "@/lib/questions/loader";
 
 export default async function SettingsPage() {
@@ -39,6 +40,15 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <AttemptBadgeSetting />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-[16px]">同期・表示トラブル</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SyncTroubleshooting />
         </CardContent>
       </Card>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, BookOpen, Clock3, HelpCircle, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Clock3, HelpCircle } from "lucide-react";
 import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 
 const HERO_PAIN_CARDS = [
@@ -34,24 +34,17 @@ export function LandingHero() {
         priority
         unoptimized
         sizes="(min-width: 960px) 960px, 100vw"
-        className="object-cover object-[68%_center] opacity-100 dark:opacity-50"
+        className="object-cover object-[68%_center] opacity-[0.84] md:opacity-[0.94] dark:opacity-[0.45]"
       />
-      <div className="absolute inset-0 bg-linear-to-r from-[var(--bg-base)] from-[0%] via-[var(--bg-base)]/88 via-[42%] to-[var(--bg-base)]/0 to-[68%] dark:from-[var(--bg-base)] dark:via-[var(--bg-base)]/78 dark:to-[var(--bg-base)]/12" />
-      <div className="absolute inset-y-0 left-0 w-[78%] bg-[radial-gradient(ellipse_at_22%_38%,rgba(255,253,251,0.94)_0%,rgba(255,253,251,0.72)_36%,rgba(255,253,251,0.24)_60%,rgba(255,253,251,0)_78%)] dark:hidden" />
-      <div className="absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-[var(--bg-base)] to-transparent" />
+      <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(253,248,246,0.98)_0%,rgba(253,248,246,0.92)_32%,rgba(253,248,246,0.68)_56%,rgba(253,248,246,0.34)_78%,rgba(253,248,246,0.14)_100%)] md:hidden" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_18%_40%,rgba(253,248,246,0.92)_0%,rgba(253,248,246,0.72)_42%,rgba(253,248,246,0.32)_70%,rgba(253,248,246,0)_100%)] md:hidden" />
+      <div className="absolute inset-0 hidden bg-[linear-gradient(104deg,rgba(253,248,246,0.98)_0%,rgba(253,248,246,0.90)_34%,rgba(253,248,246,0.58)_58%,rgba(253,248,246,0.18)_80%,rgba(253,248,246,0)_100%)] dark:bg-[linear-gradient(104deg,rgba(17,24,39,0.96)_0%,rgba(17,24,39,0.78)_42%,rgba(17,24,39,0.22)_78%,rgba(17,24,39,0.10)_100%)] md:block" />
+      <div className="absolute inset-x-0 bottom-0 h-36 bg-linear-to-t from-[var(--bg-base)] via-[var(--bg-base)]/70 to-transparent" />
 
       <div className="relative min-h-[560px] md:min-h-[610px]">
         <div className="max-w-[900px] pt-6 md:pt-10">
           <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--text-3)]">
             視能訓練士国家試験対策アプリ
-          </p>
-          <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] font-extrabold text-[#16717c]">
-            <Sparkles
-              className="size-3.5 shrink-0 text-[#16717c]"
-              strokeWidth={2}
-              aria-hidden
-            />
-            学習履歴から、必要な復習が見えてくる
           </p>
           <h1
             id="landing-hero-heading"

@@ -5,9 +5,6 @@ import { getAppUrl, getStripe } from "@/lib/stripe/server";
 import { createSupabaseAdminClient } from "@/lib/billing/supabase-admin";
 import { getStripePriceId, isPaidPlan } from "@/lib/billing/plans";
 
-// stripe-node 22.1.1 の型定義にはまだPayPayがないため、公式docsの文字列を通す。
-const PAYPAY_PAYMENT_METHOD_TYPE = "paypay" as unknown as "card";
-
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -65,11 +62,8 @@ export async function POST(request: Request) {
     mode: "payment",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    payment_method_types: [
-      "card",
-      PAYPAY_PAYMENT_METHOD_TYPE,
-      "konbini",
-    ],
+    // payment_method_types を固定するとStripe Dashboard側の自動出し分けが効きにくい。
+    // Google Pay / Apple Pay は card に含まれるウォレットなので、ここでは未指定にする。
     payment_method_options: {
       card: {
         installments: {
@@ -115,7 +109,7 @@ async function createCheckoutSessionWithFallback(
   try {
     return await stripe.checkout.sessions.create(params);
   } catch (error) {
-    if (!isPayPayConfigurationError(error)) {
+    if (!isPaymentMethodConfigurationError(error)) {
       throw error;
     }
 
@@ -126,9 +120,14 @@ async function createCheckoutSessionWithFallback(
   }
 }
 
-function isPayPayConfigurationError(error: unknown): boolean {
+function isPaymentMethodConfigurationError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const message =
     "message" in error && typeof error.message === "string" ? error.message : "";
-  return message.toLowerCase().includes("paypay");
+  const lowerMessage = message.toLowerCase();
+  return (
+    lowerMessage.includes("payment_method_types") ||
+    lowerMessage.includes("payment method") ||
+    lowerMessage.includes("paypay")
+  );
 }

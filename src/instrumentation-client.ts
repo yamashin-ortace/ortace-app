@@ -17,3 +17,5 @@ if (dsn) {
     replaysOnErrorSampleRate: 0,
   });
 }
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

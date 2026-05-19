@@ -128,6 +128,11 @@ export function LoginCard({ initialError, initialSent }: LoginCardProps) {
           <GoogleIcon />
           {googlePending ? "リダイレクト中..." : "Google で続ける"}
         </Button>
+        <div className="rounded-lg bg-[var(--bg-muted)] px-3 py-2 text-[11px] leading-5 text-[var(--text-3)]">
+          Googleログイン画面に{" "}
+          <span className="font-bold text-[var(--text-1)]">supabase.co</span>{" "}
+          と表示されることがありますが、ORT ACEが利用している認証サービスのドメインです。
+        </div>
 
         <div className="flex items-center gap-3">
           <Separator className="flex-1" />

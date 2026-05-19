@@ -1,8 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware";
 
-/** 未ログインでも閲覧可（LP とログイン画面のみ） */
-const PUBLIC_PATHS = new Set(["/", "/login"]);
+/** 未ログインでも閲覧可（LP・ログイン・法務ページ・問い合わせ） */
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/login",
+  "/contact",
+  "/legal/privacy",
+  "/legal/terms",
+  "/legal/tokushoho",
+]);
 const AUTH_ROUTES = ["/auth/", "/logout"];
 const ONBOARDED_COOKIE = "ortace_onboarded";
 const ONBOARDED_COOKIE_OPTIONS = {

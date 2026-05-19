@@ -6,12 +6,15 @@ import {
   BookOpen,
   BookOpenCheck,
   Brain,
+  CheckCircle2,
   Flame,
   Home,
   LineChart,
+  ListChecks,
   NotebookText,
   RotateCcw,
   Sparkles,
+  Smartphone,
   Target,
 } from "lucide-react";
 
@@ -35,6 +38,11 @@ const AI_FLOW = [
 
 const ITEMS = [
   {
+    icon: Home,
+    title: "今日やることが見える",
+    body: "ホームを開けば、今日の演習・復習・確認テーマをひと目で確認できます。",
+  },
+  {
     icon: BookOpenCheck,
     title: "最新第56回までの過去問1,500問",
     body: "第47〜56回の10年分。最新の第56回も含めて、正誤と解説を振り返れます。",
@@ -43,6 +51,26 @@ const ITEMS = [
     icon: Sparkles,
     title: "解答後AI分析",
     body: "解いたあとに、次へつながる確認テーマをAIコーチMiLu先生が整理します。",
+  },
+  {
+    icon: Target,
+    title: "弱点リペア",
+    body: "正答率が低い分野から、戻るべき問題を拾いやすくします。",
+  },
+  {
+    icon: Brain,
+    title: "思い込みチェック",
+    body: "自信ありで外した問題を拾って、本番で危ない覚え違いに気づけます。",
+  },
+  {
+    icon: CheckCircle2,
+    title: "未回答から解く",
+    body: "まだ手をつけていない問題だけを進めて、過去問の抜けを減らせます。",
+  },
+  {
+    icon: RotateCcw,
+    title: "復習タイミング",
+    body: "忘れたころに戻る復習で、詰め込みだけに頼らない学習を支えます。",
   },
   {
     icon: Bookmark,
@@ -63,6 +91,16 @@ const ITEMS = [
     icon: LineChart,
     title: "分野別の統計",
     body: "得意と苦手を俯瞰し、次の演習に活かせる形で確認できます。",
+  },
+  {
+    icon: ListChecks,
+    title: "記録からすぐ見返す",
+    body: "解いた問題・ノート・ブックマークを、あとからまとめて確認できます。",
+  },
+  {
+    icon: Smartphone,
+    title: "スマホで完結",
+    body: "通学中、実習の合間、寝る前にも、重い書籍なしで進められます。",
   },
 ] as const;
 
@@ -249,9 +287,6 @@ export function LandingFeatures() {
             </article>
           ))}
         />
-        <p className="text-center text-[11px] text-[var(--text-3)] md:text-left">
-          左右にスワイプして、機能カードを順に見られます
-        </p>
       </section>
 
       <section className="relative overflow-hidden rounded-[16px] border border-[#9ee8e0]/45 bg-[var(--bg-card)] p-5 shadow-[0_18px_48px_rgba(44,62,93,0.08)] md:p-7">
