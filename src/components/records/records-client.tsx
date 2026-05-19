@@ -4,10 +4,8 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
-  type TouchEvent,
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -60,8 +58,6 @@ const RECORDS_SCROLL_KEY = "ortace.records.scrollY";
 const HISTORY_PAGE_SIZE = 50;
 type RecordsTab = "bookmarks" | "notes" | "history";
 type HistoryScope = "all" | "today" | "week" | "month";
-const RECORDS_TABS: RecordsTab[] = ["bookmarks", "notes", "history"];
-const SWIPE_THRESHOLD_PX = 56;
 
 const HISTORY_SCOPE_LABELS: Record<HistoryScope, string> = {
   all: "すべて",
@@ -91,13 +87,6 @@ export function RecordsClient({ questions }: Props) {
   const [visibleHistoryCount, setVisibleHistoryCount] =
     useState(HISTORY_PAGE_SIZE);
   const [searchQuery, setSearchQuery] = useState("");
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const swipeStartRef = useRef<{
-    x: number;
-    y: number;
-    tab: RecordsTab;
-  } | null>(null);
   const questionMap = useMemo(
     () => new Map(questions.map((q) => [q.id, q])),
     [questions],
@@ -199,87 +188,8 @@ export function RecordsClient({ questions }: Props) {
 
   const handleTabChange = (value: string) => {
     const nextTab = parseRecordsTab(value);
-    setSwipeOffset(0);
-    setIsSwiping(false);
     setActiveTab(nextTab);
     updateRecordsUrl(nextTab, categoryFilter, historyScope);
-  };
-
-  const moveToTab = useCallback(
-    (nextTab: RecordsTab) => {
-      setSwipeOffset(0);
-      setIsSwiping(false);
-      setActiveTab(nextTab);
-      updateRecordsUrl(nextTab, categoryFilter, historyScope);
-    },
-    [categoryFilter, historyScope, updateRecordsUrl],
-  );
-
-  const handleSwipeStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 1) return;
-    const target = event.target;
-    if (
-      target instanceof Element &&
-      target.closest("button,input,textarea,select,[data-records-swipe-ignore]")
-    ) {
-      swipeStartRef.current = null;
-      return;
-    }
-    const touch = event.touches[0];
-    swipeStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      tab: activeTab,
-    };
-    setSwipeOffset(0);
-    setIsSwiping(false);
-  };
-
-  const handleSwipeMove = (event: TouchEvent<HTMLDivElement>) => {
-    const start = swipeStartRef.current;
-    if (!start || event.touches.length !== 1) return;
-
-    const touch = event.touches[0];
-    const dx = touch.clientX - start.x;
-    const dy = touch.clientY - start.y;
-    if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-
-    const currentIndex = RECORDS_TABS.indexOf(start.tab);
-    const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
-    const hasAdjacent = Boolean(RECORDS_TABS[nextIndex]);
-    setIsSwiping(true);
-    setSwipeOffset(hasAdjacent ? dx : dx * 0.18);
-  };
-
-  const handleSwipeEnd = (event: TouchEvent<HTMLDivElement>) => {
-    const start = swipeStartRef.current;
-    swipeStartRef.current = null;
-    if (!start || event.changedTouches.length !== 1) return;
-
-    const touch = event.changedTouches[0];
-    const dx = touch.clientX - start.x;
-    const dy = touch.clientY - start.y;
-    if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) < Math.abs(dy) * 1.3) {
-      setSwipeOffset(0);
-      setIsSwiping(false);
-      return;
-    }
-
-    const currentIndex = RECORDS_TABS.indexOf(start.tab);
-    const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
-    const nextTab = RECORDS_TABS[nextIndex];
-    if (!nextTab) {
-      setSwipeOffset(0);
-      setIsSwiping(false);
-      return;
-    }
-    moveToTab(nextTab);
-  };
-
-  const handleSwipeCancel = () => {
-    swipeStartRef.current = null;
-    setSwipeOffset(0);
-    setIsSwiping(false);
   };
 
   const handleCategoryFilterChange = (nextCategory: BookmarkCategory | "all") => {
@@ -295,18 +205,6 @@ export function RecordsClient({ questions }: Props) {
 
   const saveRecordsScroll = () => {
     window.sessionStorage.setItem(RECORDS_SCROLL_KEY, String(window.scrollY));
-  };
-
-  const activeIndex = RECORDS_TABS.indexOf(activeTab);
-  const adjacentTab =
-    swipeOffset < 0
-      ? RECORDS_TABS[activeIndex + 1]
-      : swipeOffset > 0
-        ? RECORDS_TABS[activeIndex - 1]
-        : undefined;
-  const adjacentSideClassName = swipeOffset < 0 ? "left-full" : "-left-full";
-  const panelStyle = {
-    transform: `translate3d(${swipeOffset}px, 0, 0)`,
   };
 
   const renderRecordsPanel = (tab: RecordsTab) => {
@@ -496,34 +394,8 @@ export function RecordsClient({ questions }: Props) {
         </TabsTrigger>
       </TabsList>
 
-      <div
-        className="relative touch-pan-y overflow-hidden"
-        onTouchStart={handleSwipeStart}
-        onTouchMove={handleSwipeMove}
-        onTouchEnd={handleSwipeEnd}
-        onTouchCancel={handleSwipeCancel}
-      >
-        <div
-          className={cn(
-            "space-y-3 will-change-transform",
-            !isSwiping && "transition-transform duration-200 ease-out",
-          )}
-          style={panelStyle}
-        >
-          {renderRecordsPanel(activeTab)}
-        </div>
-        {adjacentTab && swipeOffset !== 0 ? (
-          <div
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute top-0 w-full space-y-3 will-change-transform",
-              adjacentSideClassName,
-            )}
-            style={panelStyle}
-          >
-            {renderRecordsPanel(adjacentTab)}
-          </div>
-        ) : null}
+      <div className="space-y-3">
+        {renderRecordsPanel(activeTab)}
       </div>
     </Tabs>
   );
