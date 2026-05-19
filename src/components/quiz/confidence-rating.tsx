@@ -27,20 +27,20 @@ const OPTIONS: {
   },
   {
     level: "mid",
-    label: "微妙",
-    hint: "なんとなく解けたが不安",
+    label: "迷った",
+    hint: "解けたが少し不安が残る",
     icon: Brain,
   },
   {
     level: "guess",
-    label: "勘",
-    hint: "ほぼ当てずっぽうだった",
+    label: "勘かも",
+    hint: "根拠が薄く、当てた感覚がある",
     icon: Lightbulb,
   },
 ];
 
 /**
- * 解答後に「自信あり / 微妙 / 勘」をワンタップで入力する任意UI。
+ * 解答後に「自信あり / 迷った / 勘かも」をワンタップで入力する任意UI。
  * 同じボタンをもう一度押すと選択解除になる。
  */
 export function ConfidenceRating({ questionId }: Props) {
@@ -101,11 +101,19 @@ export function ConfidenceRating({ questionId }: Props) {
       </div>
       {currentConfidence === "guess" ? (
         <p className="mt-2 text-[11px] leading-snug text-[var(--text-3)]">
-          勘で当たった問題は次回の復習で重点的に出題されます。
+          根拠が薄かった解答として記録し、少し時間を空けて確認します。
+        </p>
+      ) : currentConfidence === "mid" && currentEntry.result === "correct" ? (
+        <p className="mt-2 text-[11px] leading-snug text-[var(--text-3)]">
+          迷って正解した問題は、低めの優先度で後日確認します。
+        </p>
+      ) : currentConfidence === "high" && currentEntry.result === "correct" ? (
+        <p className="mt-2 text-[11px] leading-snug text-[var(--text-3)]">
+          自信ありで正解した問題は、復習対象から外します。
         </p>
       ) : currentConfidence === "high" && currentEntry.result === "incorrect" ? (
         <p className="mt-2 text-[11px] leading-snug text-[var(--text-3)]">
-          自信ありで間違えた問題は、思い込みの確認のため最優先で復習対象になります。
+          自信ありで間違えた問題は、思い込みチェックの優先度を上げます。
         </p>
       ) : null}
     </div>

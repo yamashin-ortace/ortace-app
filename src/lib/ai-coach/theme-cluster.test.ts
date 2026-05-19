@@ -48,6 +48,69 @@ describe("AI theme cluster", () => {
     ).toBe("paralytic-strabismus");
   });
 
+  it("眼振と代償頭位はAIコーチ上で別テーマとして扱う", () => {
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "両眼視・斜視",
+          minorCategory: "眼振",
+          theme: "眼振",
+        }),
+      ),
+    ).toBe("眼振");
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "両眼視・斜視",
+          minorCategory: "頭位異常・代償頭位",
+          theme: "代償頭位",
+        }),
+      ),
+    ).toBe("頭位異常・代償頭位");
+  });
+
+  it("外眼筋の神経支配は眼球運動の法則から分ける", () => {
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "両眼視・斜視",
+          minorCategory: "眼球運動・法則",
+          theme: "外眼筋神経支配",
+        }),
+      ),
+    ).toBe("外眼筋の神経支配");
+  });
+
+  it("計算系と弱視系はユーザーに伝わりやすいクラスタ名にする", () => {
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "眼光学・視力学・計算",
+          minorCategory: "視力・視角計算",
+          theme: "調節力計算",
+        }),
+      ),
+    ).toBe("視力・視角・調節力計算");
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "弱視・視能訓練",
+          minorCategory: "弱視の分類・原因",
+          theme: "不同視弱視",
+        }),
+      ),
+    ).toBe("弱視");
+    expect(
+      getAiThemeLabel(
+        question({
+          majorCategory: "眼光学・視力学・計算",
+          minorCategory: "眼内レンズ・手術光学",
+          theme: "IOL度数計算",
+        }),
+      ),
+    ).toBe("眼内レンズ度数計算");
+  });
+
   it("似たぶどう膜炎テーマは同じクラスタへ寄せる", () => {
     const a = question({
       majorCategory: "眼科疾患・神経眼科",

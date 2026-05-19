@@ -1,9 +1,8 @@
 /**
- * 間隔反復（Spaced Repetition）の最小実装
+ * 復習キューの最小スケジューリング。
  *
- * - 連続正解数（streak）に応じて、次回の復習日を 1 / 3 / 7 日後にスケジュール。
- * - 3 回目の正解後は 7 日後にもう一度出し、4 回目の連続正解で「卒業」とみなす。
- * - 誤答の場合は streak=0 にリセットし、翌日に復習対象として戻ってくる。
+ * - 正解だけでは復習対象に積まない。自信度が後から付いた場合だけ必要に応じて調整する。
+ * - 誤答の場合は streak=0 にリセットし、少し間を空けて復習対象として戻ってくる。
  */
 
 import type { AnswerJudgement } from "@/lib/quiz";
@@ -11,20 +10,15 @@ import type { AnswerJudgement } from "@/lib/quiz";
 /** 卒業基準：これ以上は復習対象に出さない */
 export const STREAK_GRADUATION = 4;
 
-/** 連続正解 N 回後の次回復習までの間隔（日） */
-const INTERVALS_BY_STREAK: Record<number, number> = {
-  1: 1,
-  2: 3,
-  3: 7,
-};
+/** 誤答後、復習対象に戻すまでの間隔（日） */
+export const INCORRECT_REVIEW_DELAY_DAYS = 2;
 
 /**
  * 与えられた解答結果から、新しい streak と次回復習日（"YYYY-MM-DD"）を返す。
  *
- * - 不正解: streak=0、翌日復習
- * - 正解: streak=prevStreak+1、interval は INTERVALS_BY_STREAK に従う
+ * - 不正解: streak=0、2日後に復習
+ * - 正解: streak=prevStreak+1、復習対象には積まない
  * - 公式正答なし（no_answer）: streak=0、復習対象にはしない
- * - streak が GRADUATION に達したら nextReviewAt=null（卒業）
  */
 export function computeSpacedRepetition({
   result,
@@ -39,14 +33,13 @@ export function computeSpacedRepetition({
     return { streak: 0, nextReviewAt: null };
   }
   if (result === "incorrect") {
-    return { streak: 0, nextReviewAt: formatLocalDate(addDays(now, 1)) };
+    return {
+      streak: 0,
+      nextReviewAt: formatLocalDate(addDays(now, INCORRECT_REVIEW_DELAY_DAYS)),
+    };
   }
   const streak = previousStreak + 1;
-  if (streak >= STREAK_GRADUATION) {
-    return { streak, nextReviewAt: null };
-  }
-  const intervalDays = INTERVALS_BY_STREAK[streak] ?? 1;
-  return { streak, nextReviewAt: formatLocalDate(addDays(now, intervalDays)) };
+  return { streak, nextReviewAt: null };
 }
 
 /** 「直近のエントリ」だけ見て、今日復習対象かどうかを判定する */

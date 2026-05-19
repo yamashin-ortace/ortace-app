@@ -67,10 +67,10 @@ export function QuizResultScreen({
   return (
     <div className="space-y-4 pt-2">
       {showToast ? (
-        <div className="pointer-events-none fixed top-1/2 left-1/2 z-40 grid w-[min(calc(100vw-48px),360px)] animate-result-toast place-items-center overflow-hidden rounded-[22px] border border-white/35 bg-linear-to-br from-[#2F7D6F] via-[#4B9D88] to-[#7EC9B2] px-6 py-4 text-center text-white shadow-[0_22px_52px_rgba(47,125,111,0.32)] backdrop-blur-md dark:border-white/15">
-          <span className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent" />
-          <span className="pointer-events-none absolute -top-12 right-8 h-24 w-24 rounded-full bg-white/22 blur-2xl" />
-          <span className="relative grid h-9 w-9 place-items-center rounded-full bg-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+        <div className="pointer-events-none fixed top-1/2 left-1/2 z-40 grid w-[min(calc(100vw-48px),360px)] animate-result-toast place-items-center overflow-hidden rounded-[22px] border border-[var(--primary)] bg-linear-to-br from-[var(--primary-soft)] via-[var(--bg-card)] to-[var(--primary-soft)] px-6 py-4 text-center text-[var(--primary-dark)] shadow-[0_22px_52px_rgba(0,0,0,0.14)] backdrop-blur-md">
+          <span className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-[var(--primary)] to-transparent opacity-45" />
+          <span className="pointer-events-none absolute -top-12 right-8 h-24 w-24 rounded-full bg-[var(--primary)] opacity-15 blur-2xl" />
+          <span className="relative grid h-9 w-9 place-items-center rounded-full border border-[var(--primary)] bg-[var(--bg-card)] text-[var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
             {toastPhase === "saving" ? (
               <LoaderCircle className="h-5 w-5 animate-spin" strokeWidth={2.5} />
             ) : (
@@ -80,7 +80,7 @@ export function QuizResultScreen({
           <span className="relative mt-2 text-[16px] font-extrabold tracking-tight">
             おつかれさまでした
           </span>
-          <span className="relative mt-1 inline-flex items-center gap-1 text-[12px] font-bold text-white/95">
+          <span className="relative mt-1 inline-flex items-center gap-1 text-[12px] font-bold text-[var(--text-2)]">
             {toastPhase === "saving" ? (
               <>
                 <span>回答を保存中</span>
@@ -101,28 +101,26 @@ export function QuizResultScreen({
       ) : null}
 
       <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold tracking-wider text-[var(--text-3)] uppercase">
-              正答率
-            </p>
-            <p className="mt-0.5 text-[12px] text-[var(--text-2)] tabular-nums">
-              {correct} / {total}問正解
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-[var(--text-1)]">
+        <div className="border-b border-border pb-3 text-center">
+          <p className="text-[11px] font-semibold tracking-wider text-[var(--text-3)] uppercase">
+            正答率
+          </p>
+          <div className="mt-1 flex items-center justify-center gap-2 text-[var(--text-1)]">
             <CheckCircle2
               className="h-5 w-5 text-[#4CAF7A]"
               strokeWidth={2.5}
               aria-hidden
             />
-            <p className="text-[34px] font-extrabold tracking-tight tabular-nums">
+            <p className="text-[40px] font-extrabold tracking-tight tabular-nums">
               {ratio}
-              <span className="text-[16px] font-bold text-[var(--text-3)]">%</span>
+              <span className="ml-1 text-[17px] font-bold text-[var(--text-3)]">%</span>
             </p>
           </div>
+          <p className="mt-0.5 text-[12px] text-[var(--text-2)] tabular-nums">
+            {correct} / {total}問正解
+          </p>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <StatTile
             label="正解"
             value={correct}

@@ -8,6 +8,7 @@ import {
   parseAnswerHistoryStore,
   recordAnswerHistory,
   serializeAnswerHistoryStore,
+  updateAnswerConfidence,
 } from ".";
 
 const question: Question = {
@@ -107,7 +108,6 @@ describe("answer-history", () => {
       now: new Date("2026-05-08T00:00:00.000Z"),
     });
 
-    // 間隔反復で nextReviewAt は実行時タイムゾーンに依存するため、構造のみ検証する。
     const parsed = JSON.parse(serializeAnswerHistoryStore(store));
     expect(parsed).toMatchObject({
       version: 1,
@@ -124,10 +124,10 @@ describe("answer-history", () => {
           confidence: null,
           durationMs: null,
           streak: 1,
+          nextReviewAt: null,
         },
       ],
     });
-    expect(parsed.entries[0].nextReviewAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it("同じ実体の履歴は表示用に1件へまとめる", () => {
@@ -169,6 +169,7 @@ describe("answer-history", () => {
       now: new Date("2026-05-01T01:00:00.000Z"),
     });
     expect(store.entries[0].streak).toBe(1);
+    expect(store.entries[0].nextReviewAt).toBeNull();
 
     store = recordAnswerHistory(store, {
       question,
@@ -177,6 +178,7 @@ describe("answer-history", () => {
       now: new Date("2026-05-04T01:00:00.000Z"),
     });
     expect(store.entries[0].streak).toBe(2);
+    expect(store.entries[0].nextReviewAt).toBeNull();
 
     store = recordAnswerHistory(store, {
       question,
@@ -185,6 +187,7 @@ describe("answer-history", () => {
       now: new Date("2026-05-05T01:00:00.000Z"),
     });
     expect(store.entries[0].streak).toBe(0);
+    expect(store.entries[0].nextReviewAt).toBe("2026-05-07");
   });
 
   it("正答未確定は復習対象にしない", () => {
@@ -202,7 +205,84 @@ describe("answer-history", () => {
     });
   });
 
-  it("3連続正解では卒業せず、4連続正解で復習対象から外れる", () => {
+  it("自信ありで正解した問題は復習対象にしない", () => {
+    const store = recordAnswerHistory(createAnswerHistoryStore(), {
+      question,
+      result: "correct",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-01T01:00:00.000Z"),
+    });
+
+    expect(store.entries[0].nextReviewAt).toBeNull();
+
+    const updated = updateAnswerConfidence(store, {
+      questionId: question.id,
+      answeredAt: store.entries[0].answeredAt,
+      confidence: "high",
+    });
+
+    expect(updated.entries[0]).toMatchObject({
+      confidence: "high",
+      nextReviewAt: null,
+    });
+  });
+
+  it("迷った正解と勘かも正解だけ後日の軽い復習対象にする", () => {
+    const store = recordAnswerHistory(createAnswerHistoryStore(), {
+      question,
+      result: "correct",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-01T01:00:00.000Z"),
+    });
+    const guessed = updateAnswerConfidence(store, {
+      questionId: question.id,
+      answeredAt: store.entries[0].answeredAt,
+      confidence: "guess",
+    });
+
+    expect(guessed.entries[0]).toMatchObject({
+      confidence: "guess",
+      nextReviewAt: "2026-05-08",
+    });
+
+    const unsure = updateAnswerConfidence(guessed, {
+      questionId: question.id,
+      answeredAt: store.entries[0].answeredAt,
+      confidence: "mid",
+    });
+
+    expect(unsure.entries[0]).toMatchObject({
+      confidence: "mid",
+      nextReviewAt: "2026-05-15",
+    });
+  });
+
+  it("自信度を解除すると正解問題は復習対象から外れる", () => {
+    const store = recordAnswerHistory(createAnswerHistoryStore(), {
+      question,
+      result: "correct",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-01T01:00:00.000Z"),
+    });
+    const guessed = updateAnswerConfidence(store, {
+      questionId: question.id,
+      answeredAt: store.entries[0].answeredAt,
+      confidence: "guess",
+    });
+
+    const cleared = updateAnswerConfidence(guessed, {
+      questionId: question.id,
+      answeredAt: store.entries[0].answeredAt,
+      confidence: null,
+    });
+
+    expect(cleared.entries[0]).toMatchObject({
+      confidence: null,
+      nextReviewAt: null,
+    });
+  });
+
+  it("正解が続いても復習キューは増やさず、連続正解数だけ記録する", () => {
     let store = createAnswerHistoryStore();
     for (const now of [
       "2026-05-01T01:00:00.000Z",
@@ -218,7 +298,7 @@ describe("answer-history", () => {
     }
 
     expect(store.entries[0].streak).toBe(3);
-    expect(store.entries[0].nextReviewAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(store.entries[0].nextReviewAt).toBeNull();
 
     store = recordAnswerHistory(store, {
       question,

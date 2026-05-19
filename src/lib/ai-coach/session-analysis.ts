@@ -255,14 +255,18 @@ function getThemeLabel(question: Question): string {
 }
 
 function getPrimaryTheme(summary: ClusterSummary): string {
-  return [...summary.themes.entries()].sort((a, b) => {
+  const source =
+    summary.themesIncorrect.size > 0 ? summary.themesIncorrect : summary.themes;
+  return [...source.entries()].sort((a, b) => {
     if (a[1] !== b[1]) return b[1] - a[1];
     return a[0].localeCompare(b[0], "ja");
   })[0]?.[0] ?? summary.label;
 }
 
 function getThemePhrase(summary: ClusterSummary): string {
-  const themes = [...summary.themes.entries()]
+  const source =
+    summary.themesIncorrect.size > 0 ? summary.themesIncorrect : summary.themes;
+  const themes = [...source.entries()]
     .sort((a, b) => {
       if (a[1] !== b[1]) return b[1] - a[1];
       return a[0].localeCompare(b[0], "ja");

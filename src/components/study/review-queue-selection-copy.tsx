@@ -5,15 +5,18 @@ export function ReviewQueueSelectionCopy() {
   return (
     <div className="space-y-2 text-[12px] leading-relaxed text-[var(--text-2)]">
       <p>
-        間違えた／無回答だった問題が、その日の復習対象になります。その後、正解が続くと次回復習が{" "}
+        復習は、間違えた問題と、正解していても「迷った」「勘かも」と記録した問題を中心に選びます。自信ありで正解した問題は原則として復習対象に積みません。
+      </p>
+      <p>
+        間違えた問題は少し間を空けて戻し、勘かもは{" "}
         <strong className="font-bold text-[var(--text-1)]">
-          1→3→7日後
+          7日後
         </strong>
-        に延び、7日後の復習にも正解すると
+        、迷った正解は
         <strong className="font-bold text-[var(--text-1)]">
-          卒業
+          14日後
         </strong>
-        します。
+        を目安に軽く確認します。
       </p>
     </div>
   );

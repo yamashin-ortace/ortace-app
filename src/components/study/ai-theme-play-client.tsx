@@ -101,7 +101,7 @@ function scoreQuestion(
   focusTheme: string | null,
 ): number {
   const entry = latest.get(question.id);
-  const focusBonus = focusTheme && getQuestionThemeLabel(question) === focusTheme ? 45 : 0;
+  const focusBonus = isFocusThemeMatch(question, focusTheme) ? 220 : 0;
   if (!entry) return 70 + focusBonus;
   if (entry.result === "incorrect") return 100 + focusBonus;
   if (entry.result === "no_answer") return focusBonus;
@@ -117,6 +117,18 @@ function getQuestionThemeLabel(question: Question): string {
   const minor = question.minorCategory.trim();
   if (minor.length > 0) return minor;
   return question.majorCategory;
+}
+
+function isFocusThemeMatch(question: Question, focusTheme: string | null): boolean {
+  if (!focusTheme) return false;
+  return (
+    normalizeThemeLabel(getQuestionThemeLabel(question)) ===
+    normalizeThemeLabel(focusTheme)
+  );
+}
+
+function normalizeThemeLabel(value: string): string {
+  return value.normalize("NFKC").replace(/[・･\s（）()\[\]［］【】]/g, "");
 }
 
 function getLatestEntryByQuestionId(

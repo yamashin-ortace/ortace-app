@@ -16,8 +16,8 @@ type Props = {
 
 const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
   high: "自信あり",
-  mid: "微妙",
-  guess: "勘",
+  mid: "迷った",
+  guess: "勘かも",
 };
 
 /**

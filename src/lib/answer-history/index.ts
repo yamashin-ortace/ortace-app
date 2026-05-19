@@ -1,6 +1,10 @@
 import type { AnswerJudgement } from "@/lib/quiz";
 import type { ChoiceKey, Question, Session } from "@/lib/questions";
-import { computeSpacedRepetition } from "./spaced-repetition";
+import {
+  computeSpacedRepetition,
+  INCORRECT_REVIEW_DELAY_DAYS,
+  STREAK_GRADUATION,
+} from "./spaced-repetition";
 
 export const ANSWER_HISTORY_STORAGE_KEY = "ortace.stats";
 export const ANSWER_HISTORY_UPDATED_EVENT = "ortace:answer-history-updated";
@@ -139,7 +143,11 @@ export function updateAnswerConfidence(
     if (entry.id !== params.questionId) return entry;
     if (targetAnsweredAt && entry.answeredAt !== targetAnsweredAt) return entry;
     updated = true;
-    return { ...entry, confidence: params.confidence };
+    return {
+      ...entry,
+      confidence: params.confidence,
+      nextReviewAt: computeConfidenceAdjustedNextReviewAt(entry, params.confidence),
+    };
   });
   if (!updated) return current;
   return normalizeAnswerHistoryStore({ version: 1, entries });
@@ -175,6 +183,48 @@ export function createSemanticAnswerHistoryKey(
 function normalizeAnsweredAtForSemanticKey(value: string): string {
   const time = Date.parse(value);
   return Number.isFinite(time) ? new Date(time).toISOString() : value;
+}
+
+function computeConfidenceAdjustedNextReviewAt(
+  entry: AnswerHistoryEntry,
+  confidence: ConfidenceLevel | null,
+): string | null {
+  if (entry.result === "no_answer") return null;
+  const answeredAt = new Date(entry.answeredAt);
+  if (!Number.isFinite(answeredAt.getTime())) return entry.nextReviewAt ?? null;
+
+  if (entry.result === "incorrect") {
+    return formatLocalDate(addDays(answeredAt, INCORRECT_REVIEW_DELAY_DAYS));
+  }
+
+  const streak = typeof entry.streak === "number" ? entry.streak : 1;
+  if (streak >= STREAK_GRADUATION) return null;
+
+  const intervalDays = getCorrectConfidenceIntervalDays(confidence);
+  if (intervalDays === null) return null;
+
+  return formatLocalDate(addDays(answeredAt, intervalDays));
+}
+
+function getCorrectConfidenceIntervalDays(
+  confidence: ConfidenceLevel | null,
+): number | null {
+  if (confidence === "guess") return 7;
+  if (confidence === "mid") return 14;
+  return null;
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date.getTime());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function isAnswerHistoryEntry(value: unknown): value is AnswerHistoryEntry {

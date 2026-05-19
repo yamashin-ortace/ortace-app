@@ -47,6 +47,36 @@ describe("AI coach session analysis", () => {
     expect(analysis.actionHref).toBe("/study/unanswered?count=3");
   });
 
+  it("誤答がある場合は正解テーマではなく誤答テーマを分析と追加3問の軸にする", () => {
+    const questions = [
+      question({
+        id: "56-10",
+        displayNumber: 10,
+        majorCategory: "両眼視・斜視",
+        minorCategory: "眼振",
+        theme: "眼振",
+      }),
+      question({
+        id: "56-11",
+        displayNumber: 11,
+        majorCategory: "両眼視・斜視",
+        minorCategory: "頭位異常・代償頭位",
+        theme: "代償頭位",
+      }),
+    ];
+
+    const analysis = analyzeAiCoachSession(
+      questions,
+      { "56-10": "correct", "56-11": "incorrect" },
+      [entry("56-10", { result: "correct" }), entry("56-11", { result: "incorrect" })],
+    );
+
+    expect(analysis.clusterLabel).toBe("頭位異常・代償頭位");
+    expect(analysis.message).toContain("代償頭位");
+    expect(analysis.message).not.toContain("眼振・代償頭位");
+    expect(decodeURIComponent(analysis.actionHref ?? "")).toContain("focus=代償頭位");
+  });
+
   it("自信あり誤答は件数を入れて説明する", () => {
     const questions = [
       question({

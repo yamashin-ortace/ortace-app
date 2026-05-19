@@ -11,10 +11,10 @@ export const AI_THEME_CLUSTERS = [
   cluster("ocular-development-measurement", "眼の発生と正常値"),
   cluster("lens-prism-optics", "レンズ・プリズム光学"),
   cluster("refraction-accommodation-calculation", "屈折・調節計算"),
-  cluster("acuity-angle-calculation", "視力・視角計算"),
+  cluster("acuity-angle-calculation", "視力・視角・調節力計算"),
   cluster("ocular-optics-aberration", "眼球光学と収差"),
   cluster("contact-lens-optics", "コンタクトレンズ光学"),
-  cluster("iol-surgical-optics", "眼内レンズと手術光学"),
+  cluster("iol-surgical-optics", "眼内レンズ度数計算"),
   cluster("visual-acuity-testing", "視力検査"),
   cluster("refraction-testing", "屈折検査"),
   cluster("anterior-segment-testing", "前眼部検査"),
@@ -26,11 +26,12 @@ export const AI_THEME_CLUSTERS = [
   cluster("dark-adaptation-light-sense", "暗順応・光覚検査"),
   cluster("binocular-basis", "両眼視の基礎"),
   cluster("convergence-accommodation", "輻湊・調節"),
-  cluster("binocular-optics-calculation", "両眼視光学計算"),
+  cluster("binocular-optics-calculation", "AC/A比・両眼視計算"),
   cluster("ocular-motility-exam", "眼球運動検査"),
   cluster("stereopsis-suppression", "立体視・抑制検査"),
   cluster("retinal-correspondence", "網膜対応"),
   cluster("ocular-motility-laws", "眼球運動の法則"),
+  cluster("extraocular-muscle-innervation", "外眼筋の神経支配"),
   cluster("esotropia", "内斜視"),
   cluster("exotropia", "外斜視"),
   cluster("vertical-pattern-strabismus", "垂直斜視・A-V型"),
@@ -38,8 +39,9 @@ export const AI_THEME_CLUSTERS = [
   cluster("special-strabismus-syndrome", "特殊な斜視・症候群"),
   cluster("strabismus-surgery", "斜視手術"),
   cluster("prism-optical-correction", "プリズム療法・光学矯正"),
-  cluster("nystagmus-head-posture", "眼振と代償頭位"),
-  cluster("amblyopia-cause", "弱視の分類・原因"),
+  cluster("nystagmus", "眼振"),
+  cluster("abnormal-head-posture", "頭位異常・代償頭位"),
+  cluster("amblyopia-cause", "弱視"),
   cluster("amblyopia-diagnosis", "弱視の診断・検査"),
   cluster("amblyopia-treatment", "弱視治療・訓練"),
   cluster("low-vision-care", "ロービジョンケア"),
@@ -95,8 +97,8 @@ const MINOR_CLUSTER_IDS: Record<string, string> = {
   "特殊な斜視・症候群": "special-strabismus-syndrome",
   "斜視手術": "strabismus-surgery",
   "プリズム療法・光学矯正": "prism-optical-correction",
-  "眼振": "nystagmus-head-posture",
-  "頭位異常・代償頭位": "nystagmus-head-posture",
+  "眼振": "nystagmus",
+  "頭位異常・代償頭位": "abnormal-head-posture",
   "弱視の分類・原因": "amblyopia-cause",
   "弱視の診断・検査": "amblyopia-diagnosis",
   "弱視治療・訓練": "amblyopia-treatment",
@@ -146,6 +148,15 @@ export function getAiThemeCluster(question: Question): AiThemeCluster {
   }
   if (hasAny(text, ["糖尿病網膜症", "網膜剥離", "黄斑", "網膜静脈", "網膜動脈"])) {
     return requireCluster("retina-fundus-disease");
+  }
+  if (
+    hasAny(text, [
+      "外眼筋神経支配",
+      "外眼筋の神経支配",
+      "動眼神経支配",
+    ])
+  ) {
+    return requireCluster("extraocular-muscle-innervation");
   }
 
   const mapped = MINOR_CLUSTER_IDS[minor];
