@@ -32,7 +32,7 @@ const PLANS = [
     highlight: false,
     bullets: [
       "1日100問まで演習",
-      "AI弱点リペア",
+      "苦手克服",
       "ブックマーク・ノート",
       "端末間同期",
     ],

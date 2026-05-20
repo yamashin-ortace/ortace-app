@@ -27,7 +27,7 @@ export function AttemptBadgeSetting() {
       onClick={() => setShowAttemptCountBeforeAnswer(!enabled)}
       aria-pressed={enabled}
       className={cn(
-        "flex w-full items-start gap-3 rounded-[12px] border border-border bg-[var(--bg-card)] px-3 py-3 text-left transition-colors",
+        "flex w-full items-start gap-3 rounded-[12px] bg-[var(--bg-muted)]/35 px-3 py-3 text-left transition-colors",
         "hover:bg-[var(--bg-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
       )}
     >

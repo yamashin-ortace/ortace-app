@@ -54,6 +54,8 @@ export const AI_THEME_CLUSTERS = [
   cluster("retina-fundus-disease", "網膜疾患と眼底所見"),
   cluster("cataract-lens", "白内障と水晶体"),
   cluster("cornea-conjunctiva-infection", "角結膜・感染症"),
+  cluster("uveitis", "ぶどう膜炎"),
+  cluster("autoimmune-collagen", "自己免疫・膠原病"),
   cluster("uveitis-immunity", "ぶどう膜炎・免疫疾患"),
   cluster("neuro-ophthalmology", "神経眼科"),
   cluster("eyelid-orbit-disease", "眼瞼・眼窩疾患"),
@@ -114,8 +116,8 @@ const MINOR_CLUSTER_IDS: Record<string, string> = {
   "白内障": "cataract-lens",
   "角膜・結膜疾患": "cornea-conjunctiva-infection",
   "感染性眼疾患": "cornea-conjunctiva-infection",
-  "ぶどう膜炎・免疫疾患": "uveitis-immunity",
-  "免疫・病理": "uveitis-immunity",
+  "ぶどう膜炎・免疫疾患": "uveitis",
+  "免疫・病理": "autoimmune-collagen",
   "神経眼科": "neuro-ophthalmology",
   "瞳孔・神経眼科検査": "neuro-ophthalmology",
   "眼瞼・眼窩疾患": "eyelid-orbit-disease",
@@ -148,8 +150,38 @@ export function getAiThemeCluster(question: Question): AiThemeCluster {
   if (hasAny(text, ["緑内障"])) {
     return requireCluster("glaucoma-clinical");
   }
-  if (hasAny(text, ["Vogt", "原田病", "サルコイド", "ぶどう膜炎", "自己免疫"])) {
-    return requireCluster("uveitis-immunity");
+  if (
+    hasAny(themeText, [
+      "自己免疫",
+      "膠原病",
+      "関節リウマチ",
+      "SLE",
+      "Sjögren",
+      "Sjogren",
+      "シェーグレン",
+      "重症筋無力症",
+      "視神経脊髄炎",
+      "Stevens",
+      "スティーブンス",
+    ])
+  ) {
+    return requireCluster("autoimmune-collagen");
+  }
+  if (
+    minor === "ぶどう膜炎・免疫疾患" ||
+    hasAny(themeText, [
+      "Vogt",
+      "原田病",
+      "サルコイド",
+      "ぶどう膜炎",
+      "Behcet",
+      "Behçet",
+      "ベーチェット",
+      "交感性眼炎",
+      "強膜炎",
+    ])
+  ) {
+    return requireCluster("uveitis");
   }
   if (hasAny(text, ["糖尿病網膜症", "網膜剥離", "黄斑", "網膜静脈", "網膜動脈"])) {
     return requireCluster("retina-fundus-disease");

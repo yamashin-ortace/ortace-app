@@ -175,6 +175,24 @@ describe("AI theme cluster", () => {
     });
 
     expect(getAiThemeKey(a)).toBe(getAiThemeKey(b));
+    expect(getAiThemeLabel(a)).toBe("ぶどう膜炎");
+  });
+
+  it("自己免疫疾患はぶどう膜炎とは別クラスタにする", () => {
+    const uveitis = question({
+      majorCategory: "眼科疾患・神経眼科",
+      minorCategory: "ぶどう膜炎・免疫疾患",
+      theme: "サルコイドーシス",
+    });
+    const autoimmune = question({
+      majorCategory: "基礎医学・解剖学",
+      minorCategory: "免疫・病理",
+      theme: "自己免疫疾患",
+    });
+
+    expect(getAiThemeLabel(uveitis)).toBe("ぶどう膜炎");
+    expect(getAiThemeLabel(autoimmune)).toBe("自己免疫・膠原病");
+    expect(getAiThemeKey(autoimmune)).not.toBe(getAiThemeKey(uveitis));
   });
 });
 

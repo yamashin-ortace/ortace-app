@@ -54,7 +54,7 @@ const ITEMS = [
   },
   {
     icon: Target,
-    title: "弱点リペア",
+    title: "苦手克服",
     body: "正答率が低い分野から、戻るべき問題を拾いやすくします。",
   },
   {

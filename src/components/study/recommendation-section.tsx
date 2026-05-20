@@ -98,7 +98,7 @@ export function RecommendationSection({ totalQuestions }: Props) {
         <RecommendStudyLink
           href="/study/weak"
           icon={<Target className="h-6 w-6" strokeWidth={2.5} />}
-          title="弱点リペア"
+          title="苦手克服"
           subtitle={
             hydrated
               ? stats.weakLabel

@@ -11,7 +11,7 @@ const SCREENS = [
   },
   {
     src: "/landing/app-screens/v2/study-menu.jpg",
-    alt: "学習画面：今日のおすすめ、復習、未着手、弱点リペア、思い込みチェックが並ぶ画面",
+    alt: "学習画面：今日のおすすめ、復習、未着手、苦手克服、思い込みチェックが並ぶ画面",
     caption: "学習メニュー",
   },
   {

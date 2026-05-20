@@ -746,7 +746,7 @@ function RecordsSearchInput({
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="問題ID、回数、本文、ノートで検索"
+        placeholder="問題番号やキーワードで検索"
         aria-label="記録を検索"
         className={cn(
           "h-10 w-full rounded-[12px] border border-border bg-[var(--bg-card)] pr-10 pl-9 text-[14px] text-[var(--text-1)]",

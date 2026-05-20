@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ReactNode } from "react";
 import { ThemePicker } from "@/components/theme-picker";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { AttemptBadgeSetting } from "@/components/settings/attempt-badge-setting";
@@ -16,59 +16,69 @@ export default async function SettingsPage() {
         設定
       </h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[16px]">本試験日</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="overflow-hidden rounded-[18px] border border-border bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <SettingsSection
+          title="本試験日"
+          description="ホームのカウントダウンに使う日付です。"
+        >
           <ExamDateSetting />
-        </CardContent>
-      </Card>
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[16px]">学習プリセット（任意）</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <SettingsSection
+          title="学習プリセット（任意）"
+          description="対象範囲・周回・期限を選ぶと、ホームに1日の目安が出ます。"
+        >
           <StudyGoalSetting pastQuestionsTotal={questions.length} />
-        </CardContent>
-      </Card>
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[16px]">学習設定</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <SettingsSection
+          title="学習設定"
+          description="問題を解く画面の表示を調整します。"
+        >
           <AttemptBadgeSetting />
-        </CardContent>
-      </Card>
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[16px]">同期・表示トラブル</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <SettingsSection
+          title="同期・表示トラブル"
+          description="別端末と表示が違うときに、最新データを取り込みます。"
+        >
           <SyncTroubleshooting />
-        </CardContent>
-      </Card>
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[16px]">表示モード</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <SettingsSection title="表示モード">
           <DarkModeToggle />
-        </CardContent>
-      </Card>
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-[16px]">カラーテーマ</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <SettingsSection title="カラーテーマ">
           <ThemePicker />
-        </CardContent>
-      </Card>
+        </SettingsSection>
+      </div>
     </div>
+  );
+}
+
+function SettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-b border-border/70 px-4 py-4 last:border-b-0">
+      <div className="mb-3">
+        <h2 className="text-[15px] font-extrabold tracking-tight text-[var(--text-1)]">
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-3)]">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      {children}
+    </section>
   );
 }

@@ -105,19 +105,9 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
 
   return (
     <div id="study-goal" className="scroll-mt-24 space-y-3">
-      <div className="rounded-[12px] bg-[var(--bg-muted)]/45 px-3 py-3">
-        <p className="text-[12px] font-semibold text-[var(--text-3)]">
-          学習プリセット（任意）
-        </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-2)]">
-          「対象範囲 × 周回 × 期限」の3つを選んで、自分の目標を組み立てます。
-          選ばなくても学習は進められます。
-        </p>
-      </div>
-
       <div
         className={cn(
-          "flex items-center justify-between gap-3 rounded-[14px] px-4 py-3",
+          "flex items-center justify-between gap-3 rounded-[14px] px-3 py-3",
           draft.enabled
             ? "bg-[var(--primary-soft)]"
             : "bg-[var(--bg-muted)]/35",
@@ -128,7 +118,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
             目標を立てる
           </p>
           <p className="mt-0.5 text-[11px] leading-snug text-[var(--text-2)]">
-            オフのときはホームのペース表示は出ません（自分のペース派向け）。
+            オフにすると、ホームのペース表示は出ません。
           </p>
         </div>
         <button
@@ -261,7 +251,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
             ? "保存すると他の端末にも反映されます。"
             : savedNotice
               ? "保存しました。"
-              : "保存済みです。"}
+              : ""}
         </p>
         <div className="flex gap-2">
           <Button

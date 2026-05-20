@@ -67,12 +67,18 @@ export function HomeEstimatedScore({ questions }: Props) {
 
         {hydrated && estimated ? (
           <>
+            <ScoreOverview
+              score={estimated.score}
+              maxScore={estimated.maxScore}
+              estimatedRate={estimatedRate}
+              passLineRate={passLineRate}
+            />
             <ScoreGauge
               score={estimated.score}
               max={estimated.maxScore}
               passLine={estimated.passLineScore}
             />
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--text-2)]">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-[var(--text-2)]">
               {estimated.score >= estimated.passLineScore ? (
                 <span className="inline-flex items-center gap-1 font-bold text-[var(--primary-dark)]">
                   <TrendingUp className="h-3 w-3" strokeWidth={2.5} />
@@ -91,24 +97,66 @@ export function HomeEstimatedScore({ questions }: Props) {
                   データ不足の分野 {estimated.insufficientFields.length}
                 </span>
               ) : null}
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[var(--text-3)]">
-              <ScoreMetric
-                markerClassName="bg-[var(--primary-dark)]"
-                label="推定正答率"
-                value={`${estimatedRate}%`}
-              />
-              <ScoreMetric
-                markerClassName="w-0.5 rounded-full bg-[var(--primary-dark)]"
-                label="合格基準"
-                value={`${passLineRate}%`}
-              />
-              <ScoreMetric label="カバー率" value={`${estimated.coverage}%`} />
+              <span className="text-[var(--text-3)]">
+                カバー率 {estimated.coverage}%
+              </span>
             </div>
           </>
         ) : null}
       </div>
     </section>
+  );
+}
+
+function ScoreOverview({
+  score,
+  maxScore,
+  estimatedRate,
+  passLineRate,
+}: {
+  score: number;
+  maxScore: number;
+  estimatedRate: number | null;
+  passLineRate: number | null;
+}) {
+  if (estimatedRate === null || passLineRate === null) return null;
+  const diff = estimatedRate - passLineRate;
+  const isAtPass = diff >= 0;
+
+  return (
+    <div className="flex items-end justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold text-[var(--text-3)]">
+          推定正答率
+        </p>
+        <p className="mt-0.5 text-[38px] font-extrabold leading-none tracking-tight text-[var(--text-1)]">
+          {estimatedRate}
+          <span className="text-[18px] font-black text-[var(--text-2)]">%</span>
+        </p>
+        <p className="mt-1 text-[11px] font-semibold text-[var(--text-3)]">
+          {score}/{maxScore}点換算
+        </p>
+      </div>
+      <div
+        className={cn(
+          "shrink-0 rounded-[12px] px-3 py-2 text-right",
+          isAtPass ? "bg-[var(--primary-soft)]" : "bg-[var(--bg-muted)]",
+        )}
+      >
+        <p className="text-[10px] font-bold text-[var(--text-3)]">
+          合格基準60%との差
+        </p>
+        <p
+          className={cn(
+            "mt-0.5 text-[18px] font-extrabold leading-none tabular-nums",
+            isAtPass ? "text-[var(--primary-dark)]" : "text-[var(--text-1)]",
+          )}
+        >
+          {isAtPass ? "+" : ""}
+          {diff}pt
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -128,14 +176,14 @@ function ScoreGauge({
   const passPercent = Math.round(passRatio * 100);
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div
-        className="relative py-2"
+        className="relative pt-4 pb-2"
         aria-label={`推定正答率 ${scorePercent}%、合格基準 ${passPercent}%`}
       >
-        <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
+        <div className="relative h-5 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
           <div
-            className="absolute top-0 right-0 h-full bg-[var(--primary-soft)]"
+            className="absolute top-0 right-0 h-full bg-[var(--primary-soft)]/90"
             style={{ left: `${passRatio * 100}%` }}
           />
           <div
@@ -146,49 +194,30 @@ function ScoreGauge({
             style={{ width: `${ratio * 100}%` }}
           />
           <div
-            className="absolute top-1/2 h-7 w-0.5 -translate-y-1/2 rounded-full bg-[var(--primary-dark)] shadow-[0_0_0_2px_var(--bg-card)]"
+            className="absolute top-1/2 h-9 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--text-1)] shadow-[0_0_0_2px_var(--bg-card)]"
             style={{ left: `${passRatio * 100}%` }}
           />
           <div
             className={cn(
-              "absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-card)] shadow-sm",
+              "absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[var(--bg-card)] shadow-[0_2px_7px_rgba(0,0,0,0.18)]",
               isAtPass ? "bg-[var(--primary-dark)]" : "bg-[var(--primary)]",
             )}
             style={{ left: `${ratio * 100}%` }}
           />
-        </div>
-      </div>
-      <div className="flex justify-between text-[10px] font-semibold text-[var(--text-3)]">
-        <span>0%</span>
-        <span>100%</span>
-      </div>
-    </div>
-  );
-}
-
-function ScoreMetric({
-  label,
-  value,
-  markerClassName,
-}: {
-  label: string;
-  value: string;
-  markerClassName?: string;
-}) {
-  return (
-    <div className="min-w-0 rounded-[10px] bg-[var(--bg-muted)]/45 px-2 py-1.5">
-      <div className="flex items-center gap-1.5">
-        {markerClassName ? (
           <span
             aria-hidden
-            className={cn("h-2.5 w-2.5 shrink-0 rounded-full", markerClassName)}
+            className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/95"
+            style={{ left: `${ratio * 100}%` }}
           />
-        ) : null}
-        <span className="truncate font-semibold">{label}</span>
+        </div>
       </div>
-      <p className="mt-0.5 text-[13px] font-extrabold leading-none tabular-nums text-[var(--text-1)]">
-        {value}
-      </p>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center text-[10px] font-bold text-[var(--text-3)]">
+        <span>0%</span>
+        <span className="rounded-full bg-[var(--text-1)] px-2 py-0.5 text-white">
+          合格基準 {passPercent}%
+        </span>
+        <span className="text-right">100%</span>
+      </div>
     </div>
   );
 }

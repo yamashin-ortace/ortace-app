@@ -74,7 +74,7 @@ describe("buildHomeAiCoachComment", () => {
     expect(result.kind).toBe("accuracy_up");
   });
 
-  it("直近正答率が前週より下がっていれば accuracy_down と弱点リペア導線", () => {
+  it("直近正答率が前週より下がっていれば accuracy_down と苦手克服導線", () => {
     const entries = [
       ...accuracyBatch(NOW, 10, 0.85, 10),
       ...accuracyBatch(NOW, 3, 0.5, 20),

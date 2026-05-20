@@ -108,8 +108,8 @@ export function buildHomeAiCoachComment(
     if (delta <= -5) {
       return {
         kind: "accuracy_down",
-        message: `直近1週間の正答率がやや低下しています（${previousAccuracy}% → ${recentAccuracy}%）。今日は復習と弱点リペアで基本に戻る回がおすすめ。`,
-        cta: { href: "/study/weak", label: "弱点リペア" },
+        message: `直近1週間の正答率がやや低下しています（${previousAccuracy}% → ${recentAccuracy}%）。今日は復習と苦手克服で基本に戻る回がおすすめ。`,
+        cta: { href: "/study/weak", label: "苦手克服" },
       };
     }
   }

@@ -20,7 +20,7 @@ export function ExamDateSetting() {
 
   return (
     <div id="exam-date" className="space-y-3 scroll-mt-24">
-      <div className="flex items-start gap-3 rounded-[12px] border border-border bg-[var(--bg-muted)]/45 px-3 py-3">
+      <div className="flex items-start gap-3 rounded-[12px] bg-[var(--bg-muted)]/45 px-3 py-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
           <CalendarDays className="h-4 w-4" strokeWidth={2.5} />
         </span>
@@ -33,7 +33,6 @@ export function ExamDateSetting() {
           </p>
           <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-2)]">
             視能訓練士国家試験は例年「2月の第3木曜日」に実施されるため、その日付を仮で表示しています。
-            個別に試験日を変更する設定は当面ご用意していません。
           </p>
         </div>
       </div>
