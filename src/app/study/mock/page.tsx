@@ -1,4 +1,4 @@
-import { Clock, FileText, Hourglass, Sparkles, Trophy } from "lucide-react";
+import { Clock, FileText, Hourglass, ImageOff, Sparkles, Trophy } from "lucide-react";
 import { BackLink } from "@/components/study/back-link";
 
 export default function MockStartPage() {
@@ -47,6 +47,11 @@ export default function MockStartPage() {
         <div className="space-y-2.5 text-[14px] text-[var(--text-1)]">
           <Row icon={<FileText className="h-4 w-4" strokeWidth={2.5} />}>
             <strong className="font-bold">オリジナル問題75問</strong> を、過去の出題形式に沿って出題
+          </Row>
+          <Row icon={<ImageOff className="h-4 w-4" strokeWidth={2.5} />}>
+            初回版は画像・写真問題なし。代わりに
+            <strong className="font-bold">画像所見を文章化した問題</strong>
+            を含めます
           </Row>
           <Row icon={<Clock className="h-4 w-4" strokeWidth={2.5} />}>
             制限時間 <strong className="font-bold">120分</strong>（午前または午後1回分の想定）
