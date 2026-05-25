@@ -23,6 +23,9 @@ import {
   pickAiCoachRecommended,
   pickMisconceptionQuestions,
 } from "@/lib/ai-coach/recommendation";
+import { WeakAiComment } from "@/components/study/weak-ai-comment";
+import { analyzeMidCategoryWeakness } from "@/lib/weak/mid-category-analysis";
+import { pickOrderedWeakQuestions } from "@/lib/weak/ordered-question-picker";
 import { shuffle } from "@/lib/quiz";
 
 export type RecommendedMode =
@@ -71,8 +74,8 @@ export function RecommendedPlayClient({
 
   useEffect(() => {
     if (frozenPool !== null) return;
-    const pool = pickPoolByMode(mode, questions, entries, MAX_LIMIT);
-    const ordered = orderPoolForMode(mode, pool);
+    const pool = pickPoolByMode(mode, questions, entries, MAX_LIMIT, plan);
+    const ordered = orderPoolForMode(mode, pool, plan);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- ハイドレーション後にプールを確定する
     setFrozenPool(ordered.slice(0, MAX_LIMIT));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回マウント時のみ pool を凍結する
@@ -81,6 +84,10 @@ export function RecommendedPlayClient({
   const sessionQuestions = frozenPool
     ? frozenPool.slice(0, Math.min(limit, frozenPool.length))
     : null;
+  const examWeakAnalysis =
+    mode === "weak" && plan === "exam"
+      ? analyzeMidCategoryWeakness(questions, entries)
+      : null;
 
   if (sessionQuestions === null) {
     return (
@@ -90,8 +97,30 @@ export function RecommendedPlayClient({
     );
   }
 
+  if (examWeakAnalysis?.readiness === "collecting") {
+    return <WeakAiComment analysis={examWeakAnalysis} />;
+  }
+
+  if (examWeakAnalysis && examWeakAnalysis.rows.length === 0) {
+    return <WeakAiComment analysis={examWeakAnalysis} />;
+  }
+
   if (sessionQuestions.length === 0) {
     return <EmptyState title={emptyTitle} message={emptyMessage} />;
+  }
+
+  if (examWeakAnalysis) {
+    return (
+      <div className="space-y-4">
+        <WeakAiComment analysis={examWeakAnalysis} />
+        <QuizPlayer
+          questions={sessionQuestions}
+          mode="random"
+          plan={plan}
+          resumeLabel={resumeLabel}
+        />
+      </div>
+    );
   }
 
   return (
@@ -108,9 +137,15 @@ export function RecommendedPlayClient({
  * モードごとに pool の並びを「最終的な出題順」に整える（凍結前の1回だけ）。
  * - today/unanswered/misconception：すでに pickPoolByMode 内で並び順が確定しているのでそのまま
  * - review/weak：ランダム性を持たせるためここで一度だけ shuffle する
+ * - examのweak：中分類ごとに基礎→自信あり誤答→類題の順に組むため、そのまま
  */
-function orderPoolForMode(mode: RecommendedMode, pool: Question[]): Question[] {
+function orderPoolForMode(
+  mode: RecommendedMode,
+  pool: Question[],
+  plan: PlanType,
+): Question[] {
   if (pool.length === 0) return [];
+  if (mode === "weak" && plan === "exam") return pool;
   if (mode === "today" || mode === "unanswered" || mode === "misconception") {
     return pool;
   }
@@ -122,6 +157,7 @@ function pickPoolByMode(
   questions: Question[],
   entries: AnswerHistoryEntry[],
   limit: number,
+  plan: PlanType,
 ): Question[] {
   const scorableQuestions = questions.filter(isScorableQuestion);
   if (mode === "review") {
@@ -135,6 +171,16 @@ function pickPoolByMode(
     });
   }
   if (mode === "weak") {
+    if (plan === "exam") {
+      const analysis = analyzeMidCategoryWeakness(scorableQuestions, entries);
+      if (analysis.readiness !== "ready") return [];
+      return pickOrderedWeakQuestions(
+        scorableQuestions,
+        entries,
+        analysis.rows,
+        limit,
+      );
+    }
     const stats = getFieldStats(scorableQuestions, entries);
     const staged = getStagedWeakFields(stats);
     // 確定（10問以上）を優先し、足りなければ暫定（5問以上）で補う。

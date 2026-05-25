@@ -12,6 +12,7 @@ export default async function WeakPage() {
   const plan = sessionContext?.profile
     ? getEffectivePlanForProfile(sessionContext.profile)
     : "free";
+  const isExamPlan = plan === "exam";
 
   return (
     <div className="space-y-4 pt-2">
@@ -21,15 +22,21 @@ export default async function WeakPage() {
           苦手克服
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          確定苦手（10問以上）と暫定苦手（5問以上）の3分野からランダム出題
+          {isExamPlan
+            ? "中分類別に苦手を見つけ、基礎→自信あり誤答→類題の順で出題"
+            : "確定苦手（10問以上）と暫定苦手（5問以上）の3分野からランダム出題"}
         </p>
       </div>
 
       <QuestionCountSelector defaultCount={20} />
 
       <DataReadinessHint
-        threshold={15}
-        benefitMessage="あと少し解くと、苦手分野の判定がぐっと精度を増します。"
+        threshold={isExamPlan ? 30 : 15}
+        benefitMessage={
+          isExamPlan
+            ? "中分類ごとの苦手判定とMiLu先生コメントの精度が上がります。"
+            : "苦手分野の判定がぐっと精度を増します。"
+        }
       />
 
       <RecommendedPlayClient
@@ -37,8 +44,16 @@ export default async function WeakPage() {
         mode="weak"
         limit={20}
         resumeLabel="苦手克服"
-        emptyTitle="苦手分野の判定にはデータが足りません"
-        emptyMessage="少し問題を解くと、正答率の低い分野からおすすめできるようになります。"
+        emptyTitle={
+          isExamPlan
+            ? "中分類の判定にはデータが足りません"
+            : "苦手分野の判定にはデータが足りません"
+        }
+        emptyMessage={
+          isExamPlan
+            ? "もっと解くと、中分類別の正答率からおすすめできるようになります。"
+            : "少し問題を解くと、正答率の低い分野からおすすめできるようになります。"
+        }
         plan={plan}
       />
     </div>
