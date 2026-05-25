@@ -29,7 +29,7 @@ export default function DiagnosticIntroPage() {
         <ul className="space-y-2 text-[12px] text-[var(--text-2)]">
           <BenefitItem icon={Target}>
             <strong className="font-bold text-[var(--text-1)]">分野別の正答率</strong>{" "}
-            が一気に揃い、ホームに「苦手」「推定スコア」が表示されます。
+            が一気に揃い、ホームに「苦手」「慎重推定スコアの初期値」が表示されます。
           </BenefitItem>
           <BenefitItem icon={Sparkles}>
             今日のおすすめが <strong className="font-bold text-[var(--text-1)]">あなた専用</strong>{" "}

@@ -2,15 +2,14 @@
 
 import { Popover } from "@base-ui/react/popover";
 import { Info } from "lucide-react";
-import { TodayRecommendedSelectionCopy } from "@/components/study/today-recommended-selection-copy";
+import { MisconceptionSelectionCopy } from "@/components/study/misconception-selection-copy";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  /** 「今日のおすすめ」の横に並べる想定 */
   className?: string;
 };
 
-export function TodayRecommendedHowItWorksPopover({ className }: Props) {
+export function MisconceptionHowItWorksPopover({ className }: Props) {
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -21,7 +20,7 @@ export function TodayRecommendedHowItWorksPopover({ className }: Props) {
           "hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]",
         )}
-        aria-label="今日のおすすめの選び方"
+        aria-label="思い込みチェックの選び方"
       >
         <Info className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
       </Popover.Trigger>
@@ -43,10 +42,10 @@ export function TodayRecommendedHowItWorksPopover({ className }: Props) {
             initialFocus={false}
           >
             <p className="text-[13px] font-bold text-[var(--text-1)]">
-              今日のおすすめの組み立て方
+              思い込みチェックの選び方
             </p>
             <div className="mt-2">
-              <TodayRecommendedSelectionCopy />
+              <MisconceptionSelectionCopy />
             </div>
           </Popover.Popup>
         </Popover.Positioner>

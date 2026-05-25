@@ -1,4 +1,4 @@
-import type { Question, Field } from "@/lib/questions";
+import { FIELDS, type Question, type Field } from "@/lib/questions";
 import {
   DEFAULT_PASS_LINE_SCORE,
   EXAM_FIELD_DISTRIBUTION,
@@ -98,6 +98,7 @@ export type FieldStat = {
   remaining: number;
   /** 正誤判定済みの解答数（同じ問題は最新のみ集計） */
   judged: number;
+  correct: number;
   correctRate: number | null;
   accuracyRate: number | null;
 };
@@ -159,6 +160,7 @@ export function getFieldStats(
       answered,
       remaining: Math.max(0, total - answered),
       judged,
+      correct: bucket?.correct ?? 0,
       correctRate,
       accuracyRate,
     };
@@ -213,14 +215,60 @@ export function getStagedWeakFields(
 
 /** 推定スコアの計算に使う、分野ごとの最小解答数 */
 export const MIN_FIELD_JUDGED_FOR_SCORE = 3;
+/** 信頼できる現在地として扱うための、採点可能なユニーク解答数 */
+export const TARGET_TOTAL_JUDGED_FOR_SCORE = 1000;
+/** 各分野で目標にする収録問題カバー率 */
+export const TARGET_FIELD_COVERAGE_RATE_FOR_SCORE = 0.7;
+/** 問題数が少ない分野でも目安にする最低到達問数 */
+export const MIN_TARGET_FIELD_JUDGED_FOR_SCORE = 60;
+
+const CONSERVATIVE_SCORE_PRIOR_RATE = 0.5;
+
+export type EstimatedScoreReadiness = "collecting" | "provisional" | "ready";
+
+export type EstimatedScoreFieldProgress = {
+  field: Field;
+  total: number;
+  judged: number;
+  minimumTargetJudged: number;
+  minimumRemaining: number;
+  targetJudged: number;
+  remaining: number;
+  ready: boolean;
+};
 
 export type EstimatedScore = {
-  /** 150点満点換算の推定スコア（小数点を四捨五入） */
+  /** 150点満点換算の慎重推定スコア（小数点を四捨五入） */
   score: number;
-  /** 0〜100 のカバー率（推定に使えた分野の出題数 / 合計出題数） */
+  /** 補正前の実測スコア。UIでは主表示にしない。 */
+  observedScore: number;
+  /** 0〜100 のカバー率（最低解答数を満たした分野の出題数 / 合計出題数） */
   coverage: number;
-  /** 5問未満などでスコア化できなかった分野名 */
+  /** 0〜100 の網羅率（目標解答数を満たした分野の出題数 / 合計出題数） */
+  readinessCoverage: number;
+  /** 正誤判定済みの総解答数（同じ問題は最新のみ集計） */
+  totalJudged: number;
+  targetTotalJudged: number;
+  targetFieldCoverageRate: number;
+  minTargetFieldJudged: number;
+  /** 全分野3問の仮推定に必要な残り問題数 */
+  minimumFieldRemaining: number;
+  /** 分野別の信頼目標に必要な残り問題数 */
+  readyFieldRemaining: number;
+  /** 合計1000問に必要な残り問題数 */
+  totalRemaining: number;
+  /** 次の評価段階までに最低限必要な残り問題数 */
+  nextStageRemaining: number;
+  fieldProgress: EstimatedScoreFieldProgress[];
+  scoredFieldCount: number;
+  readyFieldCount: number;
+  totalFieldCount: number;
+  readiness: EstimatedScoreReadiness;
+  canJudgePassLine: boolean;
+  /** 最低解答数未満でスコア化できなかった分野名 */
   insufficientFields: Field[];
+  /** スコア化はするが、まだ目標解答数に届いていない分野名 */
+  underSampledFields: Field[];
   /** 合格圏ライン（点） */
   passLineScore: number;
   /** 満点 */
@@ -229,39 +277,144 @@ export type EstimatedScore = {
 
 /**
  * 分野別の最新正答率を、本試験の分野別出題数で加重平均して
- * 150点満点の推定スコアに換算する。
+ * 150点満点の慎重推定スコアに換算する。
  *
- * - 解答数が `MIN_FIELD_JUDGED_FOR_SCORE` 未満の分野はカウントしない（仮値で埋めない）。
- * - 対象外になった分野はカバー率としてユーザーに表示し、データ充実を促す。
+ * - 3問未満の分野はカウントしない（仮値で埋めない）。
+ * - 分野ごとの目標到達前は、未到達分を50%として扱い、偶然の高得点を抑える。
+ * - 合計1000問と全9分野の網羅目標に届くまでは、合格基準の判定には使わない。
  */
 export function calculateEstimatedScore(
   fieldStats: readonly FieldStat[],
   passLineScore: number = DEFAULT_PASS_LINE_SCORE,
 ): EstimatedScore {
   let score = 0;
+  let observedScore = 0;
   let coveredDistribution = 0;
+  let readyDistribution = 0;
+  let totalJudged = 0;
+  let scoredFieldCount = 0;
+  let readyFieldCount = 0;
+  let minimumFieldRemaining = 0;
+  let readyFieldRemaining = 0;
+  const fieldProgress: EstimatedScoreFieldProgress[] = [];
   const insufficientFields: Field[] = [];
+  const underSampledFields: Field[] = [];
 
   for (const stat of fieldStats) {
     const field = stat.field as Field;
     const dist = EXAM_FIELD_DISTRIBUTION[field] ?? 0;
     if (dist === 0) continue;
+    totalJudged += stat.judged;
+    const minimumRemaining = Math.max(0, MIN_FIELD_JUDGED_FOR_SCORE - stat.judged);
+    minimumFieldRemaining += minimumRemaining;
+    const targetFieldJudged = getTargetFieldJudgedForScore(stat.total);
+    const fieldRemaining = Math.max(0, targetFieldJudged - stat.judged);
+    readyFieldRemaining += fieldRemaining;
+    fieldProgress.push({
+      field,
+      total: stat.total,
+      judged: stat.judged,
+      minimumTargetJudged: Math.min(stat.total, MIN_FIELD_JUDGED_FOR_SCORE),
+      minimumRemaining,
+      targetJudged: targetFieldJudged,
+      remaining: fieldRemaining,
+      ready: fieldRemaining === 0,
+    });
     if (stat.judged < MIN_FIELD_JUDGED_FOR_SCORE || stat.accuracyRate === null) {
       insufficientFields.push(field);
       continue;
     }
-    score += (stat.accuracyRate / 100) * dist;
+    const observedRate = getObservedAccuracyRate(stat);
+    const conservativeRate = getConservativeAccuracyRate(
+      stat,
+      targetFieldJudged,
+    );
+    observedScore += observedRate * dist;
+    score += conservativeRate * dist;
     coveredDistribution += dist;
+    scoredFieldCount += 1;
+    if (stat.judged >= targetFieldJudged) {
+      readyDistribution += dist;
+      readyFieldCount += 1;
+    } else {
+      underSampledFields.push(field);
+    }
   }
 
   const totalDistribution = EXAM_FIELD_DISTRIBUTION_TOTAL || 1;
+  const totalFieldCount = FIELDS.length;
+  const hasAllFieldsScored = scoredFieldCount === totalFieldCount;
+  const hasAllFieldsReady = readyFieldCount === totalFieldCount;
+  const hasEnoughTotalJudged = totalJudged >= TARGET_TOTAL_JUDGED_FOR_SCORE;
+  const readiness: EstimatedScoreReadiness = hasAllFieldsReady && hasEnoughTotalJudged
+    ? "ready"
+    : hasAllFieldsScored
+      ? "provisional"
+      : "collecting";
+  const totalRemaining = Math.max(
+    0,
+    TARGET_TOTAL_JUDGED_FOR_SCORE - totalJudged,
+  );
+  const nextStageRemaining =
+    readiness === "collecting"
+      ? minimumFieldRemaining
+      : readiness === "provisional"
+        ? Math.max(totalRemaining, readyFieldRemaining)
+        : 0;
+
   return {
     score: Math.round(score),
+    observedScore: Math.round(observedScore),
     coverage: Math.round((coveredDistribution / totalDistribution) * 100),
+    readinessCoverage: Math.round((readyDistribution / totalDistribution) * 100),
+    totalJudged,
+    targetTotalJudged: TARGET_TOTAL_JUDGED_FOR_SCORE,
+    targetFieldCoverageRate: Math.round(
+      TARGET_FIELD_COVERAGE_RATE_FOR_SCORE * 100,
+    ),
+    minTargetFieldJudged: MIN_TARGET_FIELD_JUDGED_FOR_SCORE,
+    minimumFieldRemaining,
+    readyFieldRemaining,
+    totalRemaining,
+    nextStageRemaining,
+    fieldProgress,
+    scoredFieldCount,
+    readyFieldCount,
+    totalFieldCount,
+    readiness,
+    canJudgePassLine: readiness === "ready",
     insufficientFields,
+    underSampledFields,
     passLineScore,
     maxScore: MAX_EXAM_SCORE,
   };
+}
+
+function getObservedAccuracyRate(stat: FieldStat): number {
+  if (stat.judged <= 0) return 0;
+  return Math.max(0, Math.min(1, stat.correct / stat.judged));
+}
+
+export function getTargetFieldJudgedForScore(total: number): number {
+  if (total <= 0) return 0;
+  const coverageTarget = Math.ceil(total * TARGET_FIELD_COVERAGE_RATE_FOR_SCORE);
+  return Math.min(
+    total,
+    Math.max(MIN_TARGET_FIELD_JUDGED_FOR_SCORE, coverageTarget),
+  );
+}
+
+function getConservativeAccuracyRate(
+  stat: FieldStat,
+  targetFieldJudged: number,
+): number {
+  if (targetFieldJudged <= 0) return getObservedAccuracyRate(stat);
+  const correct = Math.max(0, Math.min(stat.correct, stat.judged));
+  const missingToTarget = Math.max(0, targetFieldJudged - stat.judged);
+  return (
+    (correct + CONSERVATIVE_SCORE_PRIOR_RATE * missingToTarget) /
+    Math.max(1, stat.judged + missingToTarget)
+  );
 }
 
 /**

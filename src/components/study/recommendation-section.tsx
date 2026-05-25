@@ -10,6 +10,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { MisconceptionHowItWorksPopover } from "@/components/study/misconception-how-it-works-popover";
 import { ReviewQueueHowItWorksPopover } from "@/components/study/review-queue-how-it-works-popover";
 import { TodayRecommendedHowItWorksPopover } from "@/components/study/today-recommended-how-it-works-popover";
 import { UnansweredHowItWorksPopover } from "@/components/study/unanswered-how-it-works-popover";
@@ -126,7 +127,7 @@ export function RecommendationSection({ totalQuestions }: Props) {
               ? stats.misconceptionCount
               : null
           }
-          trailing={null}
+          trailing={<MisconceptionHowItWorksPopover />}
         />
       </div>
     </section>

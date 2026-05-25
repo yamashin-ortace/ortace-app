@@ -14,8 +14,9 @@ type Props = {
 };
 
 /**
- * 学習タブで「あなたの苦手なテーマ」を、AIテーマ分類ごとの正答率が低い順に最大5件表示する。
+ * 学習タブで「テーマ別 3問チェック」を、AIテーマ分類ごとの正答率が低い順に最大5件表示する。
  * 各行タップで AIテーマクラスタごとの「3問だけ確認」へ遷移。
+ * 苦手克服（20問の集中演習）に対して、こちらは「気になるテーマをサクッと3問」のミニ確認用。
  */
 export function WeakClusterSection({ clusters }: Props) {
   const { entries } = useAnswerHistoryList();
@@ -46,11 +47,11 @@ export function WeakClusterSection({ clusters }: Props) {
   return (
     <section className="space-y-2">
       <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
-        苦手なテーマ
+        テーマ別 3問チェック
       </h2>
       <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <p className="mb-2 px-1 text-[11px] text-[var(--text-3)]">
-          解答履歴をAIテーマ分類でまとめ、正答率が低めのテーマを並べました。タップで近い問題を3問だけ確認できます。
+          解答履歴をAIテーマ分類でまとめ、正答率が低めのテーマを並べました。タップで近い問題を3問だけサクッと確認できます。
         </p>
         <ul className="divide-y divide-border/70">
           {rows.map((row) => (

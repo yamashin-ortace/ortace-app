@@ -108,14 +108,14 @@ export function HomeTodayCta({ totalQuestions, clusters }: Props) {
             <TodayRecommendedHowItWorksPopover />
           </div>
 
-          {/* 補助CTA: AIコメントから条件付きで出る（例: 思い込みチェック） */}
+          {/* 補助CTA: 条件付きで出るMiLu先生からの一押し（メニューではなく文脈ベースの提案） */}
           {aiComment?.cta ? (
             <Link
               href={aiComment.cta.href}
               className="group flex items-center justify-between gap-2 rounded-[12px] border border-[var(--primary)]/30 bg-[var(--primary-soft)]/40 px-3 py-2.5 text-[var(--primary-dark)] transition-colors hover:bg-[var(--primary-soft)]/70"
             >
               <span className="text-[12px] font-bold">
-                AIコーチMiLu先生のおすすめ → {aiComment.cta.label}
+                今日のひと押し：{aiComment.cta.label}
               </span>
               <ChevronRight
                 className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"

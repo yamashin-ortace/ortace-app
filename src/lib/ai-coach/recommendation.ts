@@ -13,10 +13,10 @@ export const AI_COACH_RECOMMENDATION_LIMIT = 20;
 export const AI_COACH_DATA_READINESS_THRESHOLD = 30;
 
 export const AI_COACH_TARGETS = {
-  review: 6,
+  review: 5,
   weak: 5,
   misconception: 3,
-  unanswered: 6,
+  unanswered: 5,
 } as const;
 
 export type AnswerDurationBucket = "fast" | "standard" | "deliberate";

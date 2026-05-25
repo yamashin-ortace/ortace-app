@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Play, Shuffle } from "lucide-react";
 import { PrimaryCta } from "@/components/ui/primary-cta";
 import {
@@ -31,10 +31,16 @@ type Props = {
  */
 export function UnansweredSettingsClient({ questions, fields }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fieldsParam = searchParams.get("fields") ?? "";
+  const initialFields = useMemo(
+    () => parseSelectedFieldsParam(fieldsParam, fields),
+    [fields, fieldsParam],
+  );
   const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
   const [mode, setMode] = useState<SelectionMode>("selected");
-  const [selectedFields, setSelectedFields] = useState<Field[]>([]);
+  const [selectedFields, setSelectedFields] = useState<Field[]>(initialFields);
   const [count, setCount] = useState<AllowedCount>(DEFAULT_COUNT);
 
   useEffect(() => {
@@ -218,6 +224,21 @@ export function UnansweredSettingsClient({ questions, fields }: Props) {
       </PrimaryCta>
     </div>
   );
+}
+
+function parseSelectedFieldsParam(
+  value: string,
+  fields: readonly Field[],
+): Field[] {
+  if (!value) return [];
+  const validFields = new Set<string>(fields);
+  const selected: Field[] = [];
+  for (const item of value.split("|")) {
+    if (!validFields.has(item)) continue;
+    if (selected.includes(item as Field)) continue;
+    selected.push(item as Field);
+  }
+  return selected;
 }
 
 function ModeButton({

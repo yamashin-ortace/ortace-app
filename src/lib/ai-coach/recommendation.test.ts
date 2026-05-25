@@ -24,8 +24,8 @@ describe("AI coach recommendation", () => {
 
     expect(recommendation.dataReadiness).toBe("collecting");
     expect(recommendation.questions).toHaveLength(20);
-    expect(recommendation.buckets.unanswered).toHaveLength(6);
-    expect(recommendation.buckets.fill).toHaveLength(14);
+    expect(recommendation.buckets.unanswered).toHaveLength(5);
+    expect(recommendation.buckets.fill).toHaveLength(15);
     expect(new Set(recommendation.questions.map((q) => q.id)).size).toBe(20);
   });
 
@@ -192,12 +192,12 @@ describe("AI coach recommendation", () => {
     expect(new Set(rec.questions.map((q) => q.id)).size).toBe(20);
     // 思い込みは最大3
     expect(rec.buckets.misconception.length).toBeLessThanOrEqual(3);
-    // 未回答は最大6
-    expect(rec.buckets.unanswered.length).toBeLessThanOrEqual(6);
+    // 未回答は基本枠で最大5、残りはfillで補う
+    expect(rec.buckets.unanswered.length).toBeLessThanOrEqual(5);
     // 弱点は最大5
     expect(rec.buckets.weak.length).toBeLessThanOrEqual(5);
-    // 復習は最大6
-    expect(rec.buckets.review.length).toBeLessThanOrEqual(6);
+    // 復習は最大5
+    expect(rec.buckets.review.length).toBeLessThanOrEqual(5);
   });
 
   it("テーマ名が少し違っても同じAIテーマクラスタなら反復ミスとして拾う", () => {
