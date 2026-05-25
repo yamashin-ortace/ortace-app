@@ -1,4 +1,8 @@
-import type { BillingPlan, BillingPlanStatus } from "@/lib/supabase/database.types";
+import type {
+  BillingPlan,
+  BillingPlanStatus,
+  ProfilesRow,
+} from "@/lib/supabase/database.types";
 
 export type PaidPlan = Exclude<BillingPlan, "free">;
 
@@ -137,18 +141,44 @@ export function getEffectivePlan({
   plan,
   status,
   expiresAt,
+  trialEndsAt,
+  trialUsedAt,
   now = new Date(),
 }: {
   plan: BillingPlan;
   status: BillingPlanStatus;
   expiresAt: string | null;
+  trialEndsAt?: string | null;
+  trialUsedAt?: string | null;
   now?: Date;
 }): BillingPlan {
-  if (plan === "free") return "free";
-  if (status !== "active") return "free";
-  if (!expiresAt) return "free";
-  if (new Date(expiresAt).getTime() <= now.getTime()) return "free";
-  return plan;
+  if (plan !== "free" && status === "active" && expiresAt) {
+    if (new Date(expiresAt).getTime() > now.getTime()) return plan;
+  }
+
+  if (isTrialActiveForPlan(trialEndsAt, trialUsedAt, now)) return "low";
+  return "free";
+}
+
+export function getEffectivePlanForProfile(
+  profile: Pick<
+    ProfilesRow,
+    | "plan"
+    | "plan_status"
+    | "plan_expires_at"
+    | "trial_ends_at"
+    | "trial_used_at"
+  >,
+  now = new Date(),
+): BillingPlan {
+  return getEffectivePlan({
+    plan: profile.plan,
+    status: profile.plan_status,
+    expiresAt: profile.plan_expires_at,
+    trialEndsAt: profile.trial_ends_at,
+    trialUsedAt: profile.trial_used_at,
+    now,
+  });
 }
 
 export function calculatePlanExpiresAt(
@@ -200,4 +230,13 @@ function getTokyoDateParts(date: Date): Record<string, string> {
       .filter((part) => part.type !== "literal")
       .map((part) => [part.type, part.value]),
   );
+}
+
+function isTrialActiveForPlan(
+  trialEndsAt: string | null | undefined,
+  trialUsedAt: string | null | undefined,
+  now: Date,
+): boolean {
+  if (!trialEndsAt || !trialUsedAt) return false;
+  return new Date(trialEndsAt).getTime() > now.getTime();
 }

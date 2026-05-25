@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/study/back-link";
 import { SingleQuestionPlayer } from "@/components/study/single-question-player";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { isExamRound, loadQuestion } from "@/lib/questions/loader";
 
@@ -23,11 +23,7 @@ export default async function SavedQuestionPage({ params, searchParams }: Props)
   if (!question) notFound();
   const session = await getSessionContext();
   const plan = session?.profile
-    ? getEffectivePlan({
-        plan: session.profile.plan,
-        status: session.profile.plan_status,
-        expiresAt: session.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(session.profile)
     : "free";
 
   return (

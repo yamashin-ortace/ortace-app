@@ -31,6 +31,9 @@ export type ProfilesRow = {
   stripe_checkout_session_id: string | null;
   stripe_payment_intent_id: string | null;
   plan_updated_at: string;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  trial_used_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -47,6 +50,9 @@ export type ProfilesInsert = {
   stripe_checkout_session_id?: string | null;
   stripe_payment_intent_id?: string | null;
   plan_updated_at?: string;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
+  trial_used_at?: string | null;
 };
 
 export type ProfilesUpdate = {
@@ -60,6 +66,9 @@ export type ProfilesUpdate = {
   stripe_checkout_session_id?: string | null;
   stripe_payment_intent_id?: string | null;
   plan_updated_at?: string;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
+  trial_used_at?: string | null;
 };
 
 export type DailyLimitsRow = {

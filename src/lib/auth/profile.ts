@@ -1,11 +1,20 @@
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  getTrialAuthProvider,
+  getTrialState,
+  isTrialEligibleAuthProvider,
+  type TrialAuthProvider,
+  type TrialState,
+} from "@/lib/billing/trial";
 import type { ProfilesRow } from "@/lib/supabase/database.types";
 
 export type SessionContext = {
   userId: string;
   email: string | null;
+  authProvider: TrialAuthProvider;
   profile: ProfilesRow | null;
+  trial: TrialState | null;
 };
 
 /**
@@ -29,10 +38,16 @@ export const getSessionContext = cache(
       .eq("id", user.id)
       .maybeSingle();
 
+    const authProvider = getTrialAuthProvider(user);
+
     return {
       userId: user.id,
       email: user.email ?? null,
+      authProvider,
       profile: profile ?? null,
+      trial: profile
+        ? getTrialState(profile, new Date(), isTrialEligibleAuthProvider(authProvider))
+        : null,
     };
   },
 );

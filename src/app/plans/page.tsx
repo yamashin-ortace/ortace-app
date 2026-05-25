@@ -14,8 +14,10 @@ import {
   PAID_PLANS,
   PLAN_DEFINITIONS,
   getEffectivePlan,
+  getEffectivePlanForProfile,
 } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
+import type { TrialState } from "@/lib/billing/trial";
 import type { BillingPlan } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,7 @@ export default async function PlansPage({ searchParams }: Props) {
         expiresAt: profile.plan_expires_at,
       })
     : "free";
+  const learningPlan = profile ? getEffectivePlanForProfile(profile) : "free";
 
   return (
     <div className="space-y-6 pt-2">
@@ -69,9 +72,10 @@ export default async function PlansPage({ searchParams }: Props) {
 
       {profile ? (
         <CurrentPlanCard
-          plan={currentPlan}
+          plan={learningPlan}
           rawPlan={profile.plan}
           expiresAt={profile.plan_expires_at}
+          trial={session?.trial ?? null}
         />
       ) : null}
 
@@ -83,6 +87,7 @@ export default async function PlansPage({ searchParams }: Props) {
             plan={plan}
             currentPlan={currentPlan}
             isLoggedIn={Boolean(session)}
+            trial={session?.trial ?? null}
           />
         ))}
       </section>
@@ -109,13 +114,16 @@ function CurrentPlanCard({
   plan,
   rawPlan,
   expiresAt,
+  trial,
 }: {
   plan: BillingPlan;
   rawPlan: BillingPlan;
   expiresAt: string | null;
+  trial: TrialState | null;
 }) {
   const definition = PLAN_DEFINITIONS[plan];
   const isExpiredPaidPlan = rawPlan !== "free" && plan === "free";
+  const isTrialActive = Boolean(trial?.isActive && plan === "low");
 
   return (
     <section className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4">
@@ -127,18 +135,41 @@ function CurrentPlanCard({
         <div className="space-y-1">
           <p className="text-[13px] font-bold text-[var(--text-1)]">
             現在のプラン：{definition.name}
+            {isTrialActive ? "（トライアル）" : null}
           </p>
           <p className="text-[12px] leading-relaxed text-[var(--text-3)]">
-            {isExpiredPaidPlan
-              ? "以前の有料プランは期限切れです。必要な場合は再購入できます。"
-              : expiresAt
-                ? `${formatDate(expiresAt)} まで利用できます。`
-                : "無料プランとして利用中です。"}
+            {getCurrentPlanDescription({
+              isExpiredPaidPlan,
+              expiresAt,
+              isTrialActive,
+              trial,
+            })}
           </p>
         </div>
       </div>
     </section>
   );
+}
+
+function getCurrentPlanDescription({
+  isExpiredPaidPlan,
+  expiresAt,
+  isTrialActive,
+  trial,
+}: {
+  isExpiredPaidPlan: boolean;
+  expiresAt: string | null;
+  isTrialActive: boolean;
+  trial: TrialState | null;
+}): string {
+  if (isTrialActive && trial?.isActive) {
+    return `あと${trial.remainingDays}日、1日100問まで利用できます。`;
+  }
+  if (isExpiredPaidPlan) {
+    return "以前の有料プランは期限切れです。必要な場合は再購入できます。";
+  }
+  if (expiresAt) return `${formatDate(expiresAt)} まで利用できます。`;
+  return "無料プランとして利用中です。";
 }
 
 function FreePlanCard({ currentPlan }: { currentPlan: BillingPlan }) {

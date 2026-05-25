@@ -1,6 +1,6 @@
 import { BackLink } from "@/components/study/back-link";
 import { DiagnosticPlayClient } from "@/components/onboarding/diagnostic-play-client";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { DIAGNOSTIC_QUESTION_COUNT } from "@/lib/onboarding/diagnostic";
 import { loadAllQuestions } from "@/lib/questions/loader";
@@ -9,11 +9,7 @@ export default async function DiagnosticPlayPage() {
   const questions = await loadAllQuestions();
   const sessionContext = await getSessionContext();
   const plan = sessionContext?.profile
-    ? getEffectivePlan({
-        plan: sessionContext.profile.plan,
-        status: sessionContext.profile.plan_status,
-        expiresAt: sessionContext.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(sessionContext.profile)
     : "free";
 
   return (

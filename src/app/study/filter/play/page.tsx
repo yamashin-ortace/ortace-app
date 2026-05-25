@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/study/back-link";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import {
   EXAM_ROUNDS,
@@ -50,11 +50,7 @@ export default async function FilteredQuizPage({ searchParams }: Props) {
   const picked = shuffle(filtered).slice(0, Math.min(limit, filtered.length));
   const sessionContext = await getSessionContext();
   const plan = sessionContext?.profile
-    ? getEffectivePlan({
-        plan: sessionContext.profile.plan,
-        status: sessionContext.profile.plan_status,
-        expiresAt: sessionContext.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(sessionContext.profile)
     : "free";
 
   return (

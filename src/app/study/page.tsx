@@ -8,7 +8,7 @@ import { RoundCard } from "@/components/study/round-card";
 import { BookmarkSetSection } from "@/components/study/bookmark-set-section";
 import { WeakClusterSection } from "@/components/study/weak-cluster-section";
 import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { EXAM_ROUNDS } from "@/lib/questions";
 import { loadAllQuestions } from "@/lib/questions/loader";
@@ -17,11 +17,7 @@ import { getAiThemeCluster } from "@/lib/ai-coach/theme-cluster";
 export default async function StudyPage() {
   const session = await getSessionContext();
   const plan = session?.profile
-    ? getEffectivePlan({
-        plan: session.profile.plan,
-        status: session.profile.plan_status,
-        expiresAt: session.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(session.profile)
     : "free";
 
   const questions = await loadAllQuestions();

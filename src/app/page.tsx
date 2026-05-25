@@ -7,6 +7,7 @@ import { HomeStatsRow } from "@/components/home-stats-row";
 import { HomeTodayCta } from "@/components/home-today-cta";
 import { HomeTrendChart } from "@/components/home-trend-chart";
 import { DiagnosticBanner } from "@/components/onboarding/diagnostic-banner";
+import { TrialBanner } from "@/components/billing/trial-banner";
 import { LandingPage } from "@/components/landing/landing-page";
 import { getSessionContext } from "@/lib/auth/profile";
 import { FIELDS, type Field } from "@/lib/questions";
@@ -51,6 +52,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-6 pt-2">
       <HomeGreeting />
+      <TrialBanner trial={session.trial} />
       <DiagnosticBanner />
       <HomeExamCountdown totalQuestions={questions.length} />
       <HomeTodayCta totalQuestions={questions.length} clusters={clusters} />

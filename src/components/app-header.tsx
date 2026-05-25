@@ -3,17 +3,13 @@ import { Settings } from "lucide-react";
 import { HeaderUserMenu } from "@/components/header-user-menu";
 import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 import { getSessionContext } from "@/lib/auth/profile";
-import { getEffectivePlan, PLAN_DEFINITIONS } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile, PLAN_DEFINITIONS } from "@/lib/billing/plans";
 
 export async function AppHeader() {
   const session = await getSessionContext();
   const nickname = session?.profile?.nickname ?? null;
   const plan = session?.profile
-    ? getEffectivePlan({
-        plan: session.profile.plan,
-        status: session.profile.plan_status,
-        expiresAt: session.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(session.profile)
     : "free";
   const planLabel = getHeaderPlanLabel(plan);
 

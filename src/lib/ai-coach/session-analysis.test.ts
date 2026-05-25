@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import type { Question } from "@/lib/questions";
+import type { AnswerJudgement } from "@/lib/quiz";
 import { analyzeAiCoachSession } from "./session-analysis";
 
 describe("AI coach session analysis", () => {
@@ -256,7 +257,7 @@ describe("AI coach session analysis", () => {
         theme: index < 10 ? "緑内障視野" : "視力検査",
       }),
     );
-    const judgements = Object.fromEntries(
+    const judgements: Record<string, AnswerJudgement> = Object.fromEntries(
       questions.map((item, index) => [
         item.id,
         index % 5 === 0 ? "incorrect" : "correct",

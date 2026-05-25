@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/study/back-link";
 import { FieldStudyClient } from "@/components/study/field-study-client";
 import { QuestionCountSelector } from "@/components/study/question-count-selector";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { FIELDS, type Field } from "@/lib/questions";
 import { loadAllQuestions } from "@/lib/questions/loader";
@@ -26,11 +26,7 @@ export default async function FieldStudyPage({ params }: Props) {
 
   const sessionContext = await getSessionContext();
   const plan = sessionContext?.profile
-    ? getEffectivePlan({
-        plan: sessionContext.profile.plan,
-        status: sessionContext.profile.plan_status,
-        expiresAt: sessionContext.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(sessionContext.profile)
     : "free";
 
   return (

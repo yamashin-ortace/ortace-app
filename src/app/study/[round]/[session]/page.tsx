@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/study/back-link";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { isExamRound, loadSession } from "@/lib/questions/loader";
 
@@ -31,11 +31,7 @@ export default async function QuizPage({ params }: Props) {
   if (questions.length === 0) notFound();
   const authSession = await getSessionContext();
   const plan = authSession?.profile
-    ? getEffectivePlan({
-        plan: authSession.profile.plan,
-        status: authSession.profile.plan_status,
-        expiresAt: authSession.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(authSession.profile)
     : "free";
 
   return (

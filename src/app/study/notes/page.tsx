@@ -1,6 +1,6 @@
 import { BackLink } from "@/components/study/back-link";
 import { BookmarkSetPlayClient } from "@/components/study/bookmark-set-play-client";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { loadAllQuestions } from "@/lib/questions/loader";
 import { getBookmarkStudyMode } from "@/lib/study-items/study-modes";
@@ -10,11 +10,7 @@ export default async function NotesPlayPage() {
   const questions = await loadAllQuestions();
   const session = await getSessionContext();
   const plan = session?.profile
-    ? getEffectivePlan({
-        plan: session.profile.plan,
-        status: session.profile.plan_status,
-        expiresAt: session.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(session.profile)
     : "free";
 
   return (

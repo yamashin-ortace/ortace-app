@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/study/back-link";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { loadAllQuestions } from "@/lib/questions/loader";
 import { shuffle } from "@/lib/quiz";
@@ -21,11 +21,7 @@ export default async function RandomQuizPage({ searchParams }: Props) {
   const picked = shuffle(all).slice(0, count);
   const session = await getSessionContext();
   const plan = session?.profile
-    ? getEffectivePlan({
-        plan: session.profile.plan,
-        status: session.profile.plan_status,
-        expiresAt: session.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(session.profile)
     : "free";
 
   return (

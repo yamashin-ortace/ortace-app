@@ -1,7 +1,7 @@
 import { BackLink } from "@/components/study/back-link";
 import { QuestionCountSelector } from "@/components/study/question-count-selector";
 import { RecommendedPlayClient } from "@/components/study/recommended-play-client";
-import { getEffectivePlan } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import { loadAllQuestions } from "@/lib/questions/loader";
 
@@ -9,11 +9,7 @@ export default async function ReviewPage() {
   const questions = await loadAllQuestions();
   const sessionContext = await getSessionContext();
   const plan = sessionContext?.profile
-    ? getEffectivePlan({
-        plan: sessionContext.profile.plan,
-        status: sessionContext.profile.plan_status,
-        expiresAt: sessionContext.profile.plan_expires_at,
-      })
+    ? getEffectivePlanForProfile(sessionContext.profile)
     : "free";
 
   return (
