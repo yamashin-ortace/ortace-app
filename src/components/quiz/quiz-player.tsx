@@ -670,6 +670,10 @@ function DailyLimitReachedNotice({
   plan: PlanType;
 }) {
   const label = plan === "low" ? "基礎定着パス" : "無料分";
+  const upgradeCopy =
+    plan === "low"
+      ? "国試対策パックなら、今日も制限なく続けられます。"
+      : "基礎定着パスは1日100問、国試対策パックは無制限で演習できます。";
   return (
     <div className="flex items-start gap-3 rounded-[12px] border border-[var(--primary)] bg-[var(--primary-soft)] px-4 py-3">
       <LockKeyhole
@@ -681,14 +685,14 @@ function DailyLimitReachedNotice({
           今日の{label}（{limit || DAILY_LIMIT}問）を使い切りました
         </p>
         <p className="text-[12px] leading-relaxed text-[var(--text-2)]">
-          解答済みの問題は、この画面内で見直せます。新しい解答は明日0時に再開できます。
+          解答済みの問題は、この画面内で見直せます。新しい解答は明日0時に再開できます。{upgradeCopy}
         </p>
         <Link
           href="/plans"
-          className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[var(--primary-dark)] underline-offset-2 hover:underline"
+          className="inline-flex items-center gap-1.5 rounded-[10px] bg-[var(--primary)] px-3 py-2 text-[12px] font-bold text-white"
         >
           <Crown className="h-3.5 w-3.5" strokeWidth={2.5} />
-          無制限プランの詳細
+          プランを確認する
         </Link>
       </div>
     </div>

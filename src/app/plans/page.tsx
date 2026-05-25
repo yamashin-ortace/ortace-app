@@ -2,8 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import {
+  BookOpen,
   Check,
   CreditCard,
+  Crown,
   FileText,
   Smartphone,
   Store,
@@ -79,6 +81,8 @@ export default async function PlansPage({ searchParams }: Props) {
         />
       ) : null}
 
+      <LimitExplanationCard />
+
       <section className="grid gap-3 md:grid-cols-3">
         <FreePlanCard currentPlan={currentPlan} />
         {PAID_PLANS.map((plan) => (
@@ -106,6 +110,55 @@ export default async function PlansPage({ searchParams }: Props) {
           Apple Pay / Google Pay とカード分割は、利用端末・ブラウザ・カード会社の条件により表示が変わります。
         </p>
       </section>
+    </div>
+  );
+}
+
+function LimitExplanationCard() {
+  return (
+    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+          <BookOpen className="h-5 w-5" strokeWidth={2.5} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[15px] font-bold text-[var(--text-1)]">
+            1日の演習上限
+          </h2>
+          <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-3)]">
+            上限に達しても、解答済み問題の見直し・記録の確認はできます。新しい解答だけが翌日0時まで止まります。
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <LimitCell label="無料" value="20問/日" />
+        <LimitCell label="基礎定着パス" value="100問/日" />
+        <LimitCell
+          label="国試対策パック"
+          value="無制限"
+          icon={<Crown className="h-3.5 w-3.5" strokeWidth={2.5} />}
+        />
+      </div>
+    </section>
+  );
+}
+
+function LimitCell({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon?: ReactNode;
+}) {
+  return (
+    <div className="rounded-[10px] border border-border bg-[var(--bg-muted)] px-3 py-2">
+      <p className="text-[11px] font-semibold text-[var(--text-3)]">{label}</p>
+      <p className="mt-0.5 inline-flex items-center gap-1 text-[15px] font-extrabold text-[var(--text-1)]">
+        {icon}
+        {value}
+      </p>
     </div>
   );
 }

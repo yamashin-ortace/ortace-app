@@ -35,6 +35,10 @@ export function DailyLimitBanner({ used, plan = "free" }: Props) {
 
   const remaining = Math.max(0, limit - actualUsed);
   const planLabel = plan === "low" ? "基礎定着パス" : "無料分";
+  const upgradeCopy =
+    plan === "low"
+      ? "国試対策パックなら、今日も制限なく続けられます"
+      : "基礎定着パスは1日100問、国試対策パックは無制限です";
 
   // 上限到達：CTAバナー
   if (remaining === 0) {
@@ -49,7 +53,7 @@ export function DailyLimitBanner({ used, plan = "free" }: Props) {
             今日の{planLabel}（{limit}問）を使い切りました
           </p>
           <p className="text-[11px] text-[var(--text-2)]">
-            国試対策パックで続けて学習する
+            {upgradeCopy}
           </p>
         </div>
       </Link>
@@ -68,7 +72,7 @@ export function DailyLimitBanner({ used, plan = "free" }: Props) {
           href="/plans"
           className="text-[11px] text-[var(--primary-dark)] underline-offset-2 hover:underline"
         >
-          プランの詳細
+          上限を増やす
         </Link>
       </div>
     </div>
