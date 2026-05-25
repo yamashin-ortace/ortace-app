@@ -5,10 +5,16 @@ import { AttemptBadgeSetting } from "@/components/settings/attempt-badge-setting
 import { ExamDateSetting } from "@/components/settings/exam-date-setting";
 import { StudyGoalSetting } from "@/components/settings/study-goal-setting";
 import { SyncTroubleshooting } from "@/components/settings/sync-troubleshooting";
+import { ActiveDevices } from "@/components/settings/active-devices";
+import { getSessionContext } from "@/lib/auth/profile";
+import type { ActiveDevice } from "@/lib/auth/device-limit";
 import { loadAllQuestions } from "@/lib/questions/loader";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
+  const session = await getSessionContext();
   const questions = await loadAllQuestions();
+  const devices = session ? await loadActiveDevices(session.userId) : [];
 
   return (
     <div className="space-y-4 pt-2">
@@ -45,6 +51,13 @@ export default async function SettingsPage() {
           <SyncTroubleshooting />
         </SettingsSection>
 
+        <SettingsSection
+          title="ログイン中の端末"
+          description="アカウント共有防止のため、同時ログインは最大3端末までです。"
+        >
+          <ActiveDevices devices={devices} />
+        </SettingsSection>
+
         <SettingsSection title="表示モード">
           <DarkModeToggle />
         </SettingsSection>
@@ -55,6 +68,20 @@ export default async function SettingsPage() {
       </div>
     </div>
   );
+}
+
+async function loadActiveDevices(userId: string): Promise<ActiveDevice[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("user_devices")
+    .select(
+      "id,device_fingerprint,device_label,user_agent,last_seen_at,created_at",
+    )
+    .eq("user_id", userId)
+    .is("revoked_at", null)
+    .order("last_seen_at", { ascending: false });
+
+  return data ?? [];
 }
 
 function SettingsSection({

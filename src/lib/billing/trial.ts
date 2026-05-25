@@ -117,5 +117,5 @@ function isGoogleProvider(provider: string): boolean {
 }
 
 function isLineProvider(provider: string): boolean {
-  return provider === "line" || provider === "custom:line" || provider.startsWith("custom:line-");
+  return provider === "line" || provider.startsWith("custom:line");
 }

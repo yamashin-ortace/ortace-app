@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { Provider } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import {
   signUpWithPasswordAction,
 } from "@/lib/auth/actions";
 import { GoogleIcon } from "@/components/auth/google-icon";
+import { LineIcon } from "@/components/auth/line-icon";
 import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 import { ChevronDown, ChevronUp, Mail } from "lucide-react";
 
@@ -22,12 +24,19 @@ type EmailMode = "login" | "signup" | "magic";
 interface LoginCardProps {
   initialError?: string;
   initialSent?: string;
+  initialDeviceRevoked?: boolean;
 }
 
-export function LoginCard({ initialError, initialSent }: LoginCardProps) {
+export function LoginCard({
+  initialError,
+  initialSent,
+  initialDeviceRevoked,
+}: LoginCardProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [googlePending, setGooglePending] = useState(false);
+  const [oauthPending, setOauthPending] = useState<"google" | "line" | null>(
+    null,
+  );
   const [showEmail, setShowEmail] = useState(false);
   const [emailMode, setEmailMode] = useState<EmailMode>("login");
   const [email, setEmail] = useState("");
@@ -38,19 +47,29 @@ export function LoginCard({ initialError, initialSent }: LoginCardProps) {
       ? "ログイン用リンクをメールで送信しました。受信トレイをご確認ください。"
       : initialSent === "signup"
         ? "確認メールを送信しました。メール内のリンクから登録を完了してください。"
+        : initialDeviceRevoked
+          ? "他の端末からログインされたため、この端末は切断されました。心当たりがない場合はパスワードを変更してください。"
         : null,
   );
 
   async function handleGoogle() {
+    await handleOAuth("google");
+  }
+
+  async function handleLine() {
+    await handleOAuth("line");
+  }
+
+  async function handleOAuth(providerKind: "google" | "line") {
     setError(null);
-    setGooglePending(true);
+    setOauthPending(providerKind);
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider: getOAuthProvider(providerKind),
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) {
-      setGooglePending(false);
+      setOauthPending(null);
       setError(error.message);
     }
   }
@@ -121,15 +140,23 @@ export function LoginCard({ initialError, initialSent }: LoginCardProps) {
       <CardContent className="space-y-4">
         <Button
           onClick={handleGoogle}
-          disabled={googlePending || pending}
+          disabled={Boolean(oauthPending) || pending}
           variant="outline"
           className="h-11 w-full gap-2 text-[14px]"
         >
           <GoogleIcon />
-          {googlePending ? "リダイレクト中..." : "Google で続ける"}
+          {oauthPending === "google" ? "リダイレクト中..." : "Google で続ける"}
+        </Button>
+        <Button
+          onClick={handleLine}
+          disabled={Boolean(oauthPending) || pending}
+          className="h-11 w-full gap-2 bg-[#06C755] text-[14px] text-white hover:bg-[#06C755]/90"
+        >
+          <LineIcon />
+          {oauthPending === "line" ? "リダイレクト中..." : "LINE で続ける"}
         </Button>
         <div className="rounded-lg bg-[var(--bg-muted)] px-3 py-2 text-[11px] leading-5 text-[var(--text-3)]">
-          Googleログイン画面に{" "}
+          Google/LINEログイン画面に{" "}
           <span className="font-bold text-[var(--text-1)]">supabase.co</span>{" "}
           と表示されることがありますが、ORT ACEが利用している認証サービスのドメインです。
         </div>
@@ -248,6 +275,12 @@ export function LoginCard({ initialError, initialSent }: LoginCardProps) {
       </CardContent>
     </Card>
   );
+}
+
+function getOAuthProvider(providerKind: "google" | "line"): Provider {
+  if (providerKind === "google") return "google";
+  return (process.env.NEXT_PUBLIC_SUPABASE_LINE_PROVIDER ??
+    "custom:line") as Provider;
 }
 
 function ModeTab({

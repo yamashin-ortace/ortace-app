@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { NavigationPendingIndicator } from "@/components/navigation-pending-indicator";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { DeviceSessionGuard } from "@/components/auth/device-session-guard";
 import { AppHeader } from "@/components/app-header";
 import { MarketingHeader } from "@/components/marketing-header";
 import { getSessionContext } from "@/lib/auth/profile";
@@ -130,6 +131,7 @@ export default async function RootLayout({
               {children}
             </main>
             <NavigationPendingIndicator />
+            {session ? <DeviceSessionGuard userId={session.userId} /> : null}
             {showAppChrome ? <BottomNav /> : null}
           </div>
           <ServiceWorkerRegister />

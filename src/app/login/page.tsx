@@ -10,7 +10,7 @@ export const metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; sent?: string }>;
+  searchParams: Promise<{ error?: string; sent?: string; device?: string }>;
 }) {
   const params = await searchParams;
   const session = await getSessionContext();
@@ -21,7 +21,11 @@ export default async function LoginPage({
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-sm items-center justify-center px-4 py-8">
       <Suspense>
-        <LoginCard initialError={params.error} initialSent={params.sent} />
+        <LoginCard
+          initialError={params.error}
+          initialSent={params.sent}
+          initialDeviceRevoked={params.device === "revoked"}
+        />
       </Suspense>
     </div>
   );
