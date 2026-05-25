@@ -11,10 +11,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Bookmark,
+  ChevronRight,
   CheckCircle2,
   FileText,
   HelpCircle,
   History,
+  RotateCcw,
   Search,
   Trash2,
   X,
@@ -96,6 +98,10 @@ export function RecordsClient({ questions }: Props) {
     for (const note of notes) map.set(note.id, note.text);
     return map;
   }, [notes]);
+  const bookmarkCountsByCategory = useMemo(
+    () => calculateBookmarkCounts(bookmarks),
+    [bookmarks],
+  );
 
   const matchesSearch = useCallback(
     (questionId: string, extraText: string = "") => {
@@ -143,6 +149,10 @@ export function RecordsClient({ questions }: Props) {
   }, [answerHistory, historyScope, matchesSearch, noteTextMap]);
   const fieldSummaries = useMemo(
     () => calculateFieldSummaries(displayedHistory),
+    [displayedHistory],
+  );
+  const displayedHistoryIncorrectCount = useMemo(
+    () => displayedHistory.filter((entry) => entry.result === "incorrect").length,
     [displayedHistory],
   );
   const visibleHistory = displayedHistory.slice(0, visibleHistoryCount);
@@ -232,6 +242,11 @@ export function RecordsClient({ questions }: Props) {
             ))}
           </div>
 
+          <BookmarkReviewActions
+            counts={bookmarkCountsByCategory}
+            activeCategory={categoryFilter}
+          />
+
           {bookmarks.length === 0 ? (
             <EmptyState
               title="ブックマークはまだありません"
@@ -273,28 +288,42 @@ export function RecordsClient({ questions }: Props) {
           description="覚えておきたいことを書くと、ここから見返せます。"
         />
       ) : filteredNotes.length === 0 ? (
-        <EmptyState
-          title="一致するノートはありません"
-          description="検索条件を変えてみてください。"
-        />
+        <>
+          <RecordsActionLink
+            href="/study/notes"
+            label="ノートした問題を見直す"
+            detail={`${notes.length}問`}
+          />
+          <EmptyState
+            title="一致するノートはありません"
+            description="検索条件を変えてみてください。"
+          />
+        </>
       ) : (
-        filteredNotes.map((item) => {
-          const question = questionMap.get(item.id);
-          if (!question) return null;
-          return (
-            <SavedQuestionCard
-              key={item.id}
-              mode="note"
-              question={question}
-              date={item.updatedAt}
-              noteBody={item.text}
-              actionLabel="ノート削除"
-              onRemove={() => removeNote(item.id)}
-              onOpenDetail={saveRecordsScroll}
-              source="note"
-            />
-          );
-        })
+        <>
+          <RecordsActionLink
+            href="/study/notes"
+            label="ノートした問題を見直す"
+            detail={`${notes.length}問`}
+          />
+          {filteredNotes.map((item) => {
+            const question = questionMap.get(item.id);
+            if (!question) return null;
+            return (
+              <SavedQuestionCard
+                key={item.id}
+                mode="note"
+                question={question}
+                date={item.updatedAt}
+                noteBody={item.text}
+                actionLabel="ノート削除"
+                onRemove={() => removeNote(item.id)}
+                onOpenDetail={saveRecordsScroll}
+                source="note"
+              />
+            );
+          })}
+        </>
       );
     }
 
@@ -335,6 +364,13 @@ export function RecordsClient({ questions }: Props) {
           />
         ) : (
           <>
+            {displayedHistoryIncorrectCount > 0 ? (
+              <RecordsActionLink
+                href="/study/review"
+                label="間違えた問題を復習"
+                detail={`${displayedHistoryIncorrectCount}件の不正解`}
+              />
+            ) : null}
             <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
             {visibleHistory.map((entry) => {
               const question = questionMap.get(entry.id);
@@ -377,6 +413,7 @@ export function RecordsClient({ questions }: Props) {
         >
           <Bookmark className="h-4 w-4" strokeWidth={2.5} />
           ブックマーク
+          <RecordCountPill count={bookmarks.length} />
         </TabsTrigger>
         <TabsTrigger
           value="notes"
@@ -384,6 +421,7 @@ export function RecordsClient({ questions }: Props) {
         >
           <FileText className="h-4 w-4" strokeWidth={2.5} />
           ノート
+          <RecordCountPill count={notes.length} />
         </TabsTrigger>
         <TabsTrigger
           value="history"
@@ -391,6 +429,7 @@ export function RecordsClient({ questions }: Props) {
         >
           <History className="h-4 w-4" strokeWidth={2.5} />
           履歴
+          <RecordCountPill count={answerHistory.length} />
         </TabsTrigger>
       </TabsList>
 
@@ -398,6 +437,89 @@ export function RecordsClient({ questions }: Props) {
         {renderRecordsPanel(activeTab)}
       </div>
     </Tabs>
+  );
+}
+
+function RecordCountPill({ count }: { count: number }) {
+  return (
+    <span className="ml-1 rounded-full bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums text-[var(--text-3)]">
+      {count > 999 ? "999+" : count}
+    </span>
+  );
+}
+
+function BookmarkReviewActions({
+  counts,
+  activeCategory,
+}: {
+  counts: Record<BookmarkCategory, number>;
+  activeCategory: BookmarkCategory | "all";
+}) {
+  if (activeCategory !== "all") {
+    const category = BOOKMARK_CATEGORIES.find((item) => item.id === activeCategory);
+    const count = counts[activeCategory] ?? 0;
+    if (!category || count === 0) return null;
+    return (
+      <RecordsActionLink
+        href={`/study/bookmark/${activeCategory}`}
+        label={`「${category.label}」を復習`}
+        detail={`${count}問`}
+      />
+    );
+  }
+
+  const availableCategories = BOOKMARK_CATEGORIES.filter(
+    (category) => counts[category.id] > 0,
+  );
+  if (availableCategories.length === 0) return null;
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {availableCategories.map((category) => (
+        <RecordsActionLink
+          key={category.id}
+          href={`/study/bookmark/${category.id}`}
+          label={`「${category.label}」を復習`}
+          detail={`${counts[category.id]}問`}
+          compact
+        />
+      ))}
+    </div>
+  );
+}
+
+function RecordsActionLink({
+  href,
+  label,
+  detail,
+  compact = false,
+}: {
+  href: string;
+  label: string;
+  detail: string;
+  compact?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "choice-pressable flex items-center gap-3 rounded-[14px] border border-[var(--primary)]/30 bg-[var(--primary-soft)] px-3 text-[var(--primary-dark)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]",
+        compact ? "py-2.5" : "py-3",
+      )}
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--primary)] text-white">
+        <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-extrabold text-[var(--text-1)]">
+          {label}
+        </span>
+        <span className="block text-[11px] font-semibold text-[var(--text-3)]">
+          {detail}
+        </span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+    </Link>
   );
 }
 
@@ -699,6 +821,13 @@ function FieldSummaryRow({ summary }: { summary: FieldSummary }) {
           </span>
         ) : null}
       </div>
+      <Link
+        href={`/study/field/${encodeURIComponent(summary.majorCategory)}`}
+        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-[var(--bg-card)] px-3 py-1.5 text-[11px] font-bold text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
+      >
+        この分野を解く
+        <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+      </Link>
     </div>
   );
 }
@@ -832,6 +961,20 @@ function calculateFieldSummaries(entries: AnswerHistoryEntry[]): FieldSummary[] 
     if (b.total !== a.total) return b.total - a.total;
     return a.majorCategory.localeCompare(b.majorCategory, "ja");
   });
+}
+
+function calculateBookmarkCounts(
+  bookmarks: readonly { categories: readonly BookmarkCategory[] }[],
+): Record<BookmarkCategory, number> {
+  const counts = Object.fromEntries(
+    BOOKMARK_CATEGORIES.map((category) => [category.id, 0]),
+  ) as Record<BookmarkCategory, number>;
+  for (const bookmark of bookmarks) {
+    for (const category of bookmark.categories) {
+      counts[category] += 1;
+    }
+  }
+  return counts;
 }
 
 function isAnsweredToday(entry: AnswerHistoryEntry): boolean {
