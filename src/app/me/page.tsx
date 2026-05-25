@@ -66,84 +66,145 @@ export default async function MePage() {
             icon={<GraduationCap />}
             label="学年"
             value={profile?.grade ?? "未設定"}
+            subValue={profile?.grade ? undefined : "初回設定が未完了です"}
           />
           <ProfileTile
             icon={<Target />}
             label="目標"
             value={profile?.goal ?? "未設定"}
-          />
-          <ProfileTile
-            icon={<ShieldCheck />}
-            label="利用中プラン"
-            value={planName}
-            subValue={getPlanStatusLabel(profile?.plan_status)}
-          />
-          <ProfileTile
-            icon={<CalendarClock />}
-            label="利用期限"
-            value={expiresAt ?? "期限なし"}
-            subValue={expiresAt ? "この日まで有料機能を利用できます" : "無料プランとして利用中です"}
+            subValue={profile?.goal ? undefined : "初回設定が未完了です"}
           />
         </div>
       </section>
 
+      <PlanStatusBanner
+        planName={planName}
+        statusLabel={getPlanStatusLabel(profile?.plan_status)}
+        expiresAt={expiresAt}
+        isFree={effectivePlan === "free"}
+      />
+
       <section className="overflow-hidden rounded-[18px] border border-border bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          <Link
-            href="/plans"
-            className="btn-pressable flex items-center justify-between gap-3 border-b border-border px-4 py-4 text-[14px] text-[var(--text-1)] hover:bg-[var(--bg-muted)]"
+        <SettingsLink
+          href="/plans"
+          icon={<CreditCard className="h-4 w-4" strokeWidth={2.3} />}
+          title="プラン・お支払い"
+          description="プラン確認・購入・支払い方法"
+        />
+        <SettingsLink
+          href="/settings"
+          icon={<Settings className="h-4 w-4" strokeWidth={2.3} />}
+          title="設定"
+          description="学習プリセット・表示・同期"
+          last
+        />
+      </section>
+
+      <section className="overflow-hidden rounded-[18px] border border-border bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="btn-pressable flex w-full items-center justify-between gap-3 px-4 py-4 text-left text-[14px] text-destructive hover:bg-destructive/5"
           >
             <span className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--bg-muted)] text-[var(--primary-dark)]">
-                <CreditCard className="h-4 w-4" strokeWidth={2.3} />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-destructive/10 text-destructive">
+                <LogOut className="h-4 w-4" strokeWidth={2.3} />
               </span>
               <span className="min-w-0">
-                <span className="block font-bold">プラン・お支払い</span>
-                <span className="block truncate text-[12px] text-[var(--text-3)]">
-                  プラン確認・購入・支払い方法
+                <span className="block font-bold">ログアウト</span>
+                <span className="block truncate text-[12px] text-destructive/70">
+                  この端末からサインアウトします
                 </span>
               </span>
             </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-4)]" />
-          </Link>
-
-          <Link
-            href="/settings"
-            className="btn-pressable flex items-center justify-between gap-3 border-b border-border px-4 py-4 text-[14px] text-[var(--text-1)] hover:bg-[var(--bg-muted)]"
-          >
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--bg-muted)] text-[var(--primary-dark)]">
-                <Settings className="h-4 w-4" strokeWidth={2.3} />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-bold">設定</span>
-                <span className="block truncate text-[12px] text-[var(--text-3)]">
-                  学習プリセット・表示・同期
-                </span>
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-4)]" />
-          </Link>
-
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              className="btn-pressable flex w-full items-center justify-between gap-3 px-4 py-4 text-left text-[14px] text-destructive hover:bg-destructive/5"
-            >
-              <span className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-destructive/10 text-destructive">
-                  <LogOut className="h-4 w-4" strokeWidth={2.3} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-bold">ログアウト</span>
-                  <span className="block truncate text-[12px] text-destructive/70">
-                    この端末からサインアウトします
-                  </span>
-                </span>
-              </span>
-            </button>
-          </form>
+          </button>
+        </form>
       </section>
     </div>
+  );
+}
+
+function PlanStatusBanner({
+  planName,
+  statusLabel,
+  expiresAt,
+  isFree,
+}: {
+  planName: string;
+  statusLabel: string;
+  expiresAt: string | null;
+  isFree: boolean;
+}) {
+  return (
+    <section className="rounded-[18px] border border-[var(--primary)]/30 bg-[var(--primary-soft)]/55 p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[var(--primary)] text-white">
+          <ShieldCheck className="h-5 w-5" strokeWidth={2.5} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold text-[var(--primary-dark)]">
+            利用中プラン
+          </p>
+          <p className="mt-0.5 text-[18px] font-extrabold text-[var(--text-1)]">
+            {planName}
+          </p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--text-2)]">
+            <span>{statusLabel}</span>
+            <span className="inline-flex items-center gap-1 text-[var(--text-3)]">
+              <CalendarClock className="h-3.5 w-3.5" strokeWidth={2.3} />
+              {expiresAt
+                ? `${expiresAt}まで`
+                : isFree
+                  ? "無料プランとして利用中"
+                  : "期限なし"}
+            </span>
+          </p>
+        </div>
+      </div>
+      <Link
+        href="/plans"
+        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-[12px] bg-[var(--primary)] px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
+      >
+        プランを確認する
+        <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+      </Link>
+    </section>
+  );
+}
+
+function SettingsLink({
+  href,
+  icon,
+  title,
+  description,
+  last = false,
+}: {
+  href: string;
+  icon: ReactNode;
+  title: string;
+  description: string;
+  last?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`btn-pressable flex items-center justify-between gap-3 px-4 py-4 text-[14px] text-[var(--text-1)] hover:bg-[var(--bg-muted)] ${
+        last ? "" : "border-b border-border"
+      }`}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--bg-muted)] text-[var(--primary-dark)]">
+          {icon}
+        </span>
+        <span className="min-w-0">
+          <span className="block font-bold">{title}</span>
+          <span className="block truncate text-[12px] text-[var(--text-3)]">
+            {description}
+          </span>
+        </span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-4)]" />
+    </Link>
   );
 }
 
