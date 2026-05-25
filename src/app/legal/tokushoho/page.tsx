@@ -43,7 +43,8 @@ export default function TokushohoPage() {
             <th>販売価格</th>
             <td>
               <ul className="legal-ul" style={{ margin: 0 }}>
-                <li>低学年プラン：¥5,400／1年（税込）</li>
+                <li>基礎定着パス 3ヶ月：¥1,500／3ヶ月（税込）</li>
+                <li>基礎定着パス 1年：¥4,800／1年（税込）</li>
                 <li>国試対策パック：¥9,800／受験年度（税込）</li>
                 <li>卒業記念パッケージ：¥500（税込・予定）</li>
               </ul>

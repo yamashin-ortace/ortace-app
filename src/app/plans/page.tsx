@@ -9,12 +9,11 @@ import {
   Store,
   TimerReset,
 } from "lucide-react";
-import { CheckoutButton } from "@/components/billing/checkout-button";
+import { PaidPlanCard } from "@/components/billing/paid-plan-card";
 import {
   PAID_PLANS,
   PLAN_DEFINITIONS,
   getEffectivePlan,
-  type PaidPlan,
 } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import type { BillingPlan } from "@/lib/supabase/database.types";
@@ -22,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "プラン｜ORT ACE",
-  description: "ORT ACEの無料・低学年プラン・国試対策パックの比較と購入。",
+  description: "ORT ACEの無料・基礎定着パス・国試対策パックの比較と購入。",
 };
 
 type Props = {
@@ -53,7 +52,7 @@ export default async function PlansPage({ searchParams }: Props) {
           合格点まで仕上げる学習パス
         </h1>
         <p className="text-[14px] leading-relaxed text-[var(--text-2)]">
-          低学年は日々の復習、受験生は国試直前までの総仕上げ。支払いはStripeの安全な決済画面で行います。
+          基礎定着パスは日々の復習、国試対策パックは受験年度の総仕上げ。支払いはStripeの安全な決済画面で行います。
         </p>
       </div>
 
@@ -146,12 +145,38 @@ function FreePlanCard({ currentPlan }: { currentPlan: BillingPlan }) {
   const definition = PLAN_DEFINITIONS.free;
 
   return (
-    <PlanCardShell title={definition.name} highlighted={false}>
-      <PlanHeader definition={definition} />
-      <FeatureList
-        features={definition.featureLabels}
-        note={definition.featureNote}
-      />
+    <FreePlanShell title={definition.name}>
+      <div className="space-y-2">
+        <h2 className="text-[17px] font-bold text-[var(--text-1)]">
+          {definition.name}
+        </h2>
+        <p className="min-h-[42px] text-[12px] leading-relaxed text-[var(--text-3)]">
+          {definition.description}
+        </p>
+        <div>
+          <span className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
+            {definition.priceLabel}
+          </span>
+          {definition.periodLabel ? (
+            <p className="text-[12px] font-medium text-[var(--text-3)]">
+              {definition.periodLabel}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <div className="flex-1 space-y-3">
+        <ul className="space-y-2">
+          {definition.featureLabels.map((feature) => (
+            <li key={feature} className="flex gap-2 text-[12px] text-[var(--text-2)]">
+              <Check
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--success)]"
+                strokeWidth={2.5}
+              />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
       <div className="pt-2">
         <Link
           href="/study"
@@ -160,129 +185,24 @@ function FreePlanCard({ currentPlan }: { currentPlan: BillingPlan }) {
           {currentPlan === "free" ? "学習を続ける" : "無料プラン"}
         </Link>
       </div>
-    </PlanCardShell>
+    </FreePlanShell>
   );
 }
 
-function PaidPlanCard({
-  plan,
-  currentPlan,
-  isLoggedIn,
-}: {
-  plan: PaidPlan;
-  currentPlan: BillingPlan;
-  isLoggedIn: boolean;
-}) {
-  const definition = PLAN_DEFINITIONS[plan];
-  const highlighted = plan === "exam";
-  const isCurrent = currentPlan === plan;
-
-  return (
-    <PlanCardShell title={definition.name} highlighted={highlighted}>
-      <PlanHeader definition={definition} />
-      <FeatureList features={definition.featureLabels} />
-      <div className="space-y-2 pt-2">
-        {isLoggedIn ? (
-          <CheckoutButton
-            plan={plan}
-            disabled={isCurrent}
-            className={cn(!highlighted && "bg-[var(--navy)]")}
-          >
-            {isCurrent ? "現在のプランです" : definition.checkoutLabel}
-          </CheckoutButton>
-        ) : (
-          <Link
-            href="/login"
-            className={cn(
-              "inline-flex h-12 w-full items-center justify-center rounded-[12px] px-4 text-[14px] font-bold text-white",
-              highlighted ? "bg-[var(--primary)]" : "bg-[var(--navy)]",
-            )}
-          >
-            ログインして購入
-          </Link>
-        )}
-      </div>
-    </PlanCardShell>
-  );
-}
-
-function PlanCardShell({
+function FreePlanShell({
   title,
-  highlighted,
   children,
 }: {
   title: string;
-  highlighted: boolean;
   children: ReactNode;
 }) {
   return (
     <article
       aria-label={title}
-      className={cn(
-        "rounded-[14px] border bg-[var(--bg-card)] p-4 shadow-sm",
-        highlighted
-          ? "border-[var(--primary)] shadow-[0_4px_16px_var(--primary-shadow-soft)]"
-          : "border-border",
-      )}
+      className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-sm"
     >
       <div className="flex h-full flex-col gap-4">{children}</div>
     </article>
-  );
-}
-
-function PlanHeader({
-  definition,
-}: {
-  definition: (typeof PLAN_DEFINITIONS)[BillingPlan];
-}) {
-  return (
-    <div className="space-y-2">
-      <h2 className="text-[17px] font-bold text-[var(--text-1)]">
-        {definition.name}
-      </h2>
-      <p className="min-h-[42px] text-[12px] leading-relaxed text-[var(--text-3)]">
-        {definition.description}
-      </p>
-      <div>
-        <span className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
-          {definition.priceLabel}
-        </span>
-        {definition.periodLabel ? (
-          <p className="text-[12px] font-medium text-[var(--text-3)]">
-            {definition.periodLabel}
-          </p>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function FeatureList({
-  features,
-  note,
-}: {
-  features: string[];
-  note?: string;
-}) {
-  return (
-    <div className="flex-1 space-y-3">
-      <ul className="space-y-2">
-        {features.map((feature) => (
-          <li key={feature} className="flex gap-2 text-[12px] text-[var(--text-2)]">
-            <Check
-              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--success)]"
-              strokeWidth={2.5}
-            />
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
-      {note ? (
-        <p className="rounded-[10px] border border-border bg-[var(--bg-muted)] px-3 py-2 text-[11px] leading-relaxed text-[var(--text-3)]">
-          {note}
-        </p>
-      ) : null}
-    </div>
   );
 }
 

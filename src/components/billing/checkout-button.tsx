@@ -8,12 +8,13 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   plan: PaidPlan;
+  durationId?: string;
   children: ReactNode;
   className?: string;
   disabled?: boolean;
 };
 
-export function CheckoutButton({ plan, children, className, disabled }: Props) {
+export function CheckoutButton({ plan, durationId, children, className, disabled }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +26,7 @@ export function CheckoutButton({ plan, children, className, disabled }: Props) {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, durationId }),
       });
       const data = (await response.json().catch(() => null)) as {
         url?: string;

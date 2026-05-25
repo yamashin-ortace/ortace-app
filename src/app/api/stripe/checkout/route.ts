@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAppUrl, getStripe } from "@/lib/stripe/server";
 import { createSupabaseAdminClient } from "@/lib/billing/supabase-admin";
-import { getStripePriceId, isPaidPlan } from "@/lib/billing/plans";
+import { getStripePriceId, isPaidPlan, resolveDurationId } from "@/lib/billing/plans";
 
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
@@ -17,14 +17,17 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as {
     plan?: string;
+    durationId?: string;
   } | null;
   const plan = body?.plan;
+  const requestedDurationId = body?.durationId;
 
   if (!plan || !isPaidPlan(plan)) {
     return NextResponse.json({ error: "プランが不正です" }, { status: 400 });
   }
 
-  const priceId = getStripePriceId(plan);
+  const durationId = resolveDurationId(plan, requestedDurationId);
+  const priceId = getStripePriceId(plan, durationId);
   if (!priceId) {
     return NextResponse.json(
       { error: "Stripe Price ID が設定されていません" },
@@ -80,11 +83,13 @@ export async function POST(request: Request) {
     metadata: {
       user_id: user.id,
       plan,
+      ...(durationId ? { duration_id: durationId } : {}),
     },
     payment_intent_data: {
       metadata: {
         user_id: user.id,
         plan,
+        ...(durationId ? { duration_id: durationId } : {}),
       },
     },
   } satisfies Stripe.Checkout.SessionCreateParams;

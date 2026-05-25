@@ -63,6 +63,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 async function grantPlanFromSession(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id ?? session.client_reference_id;
   const plan = session.metadata?.plan;
+  const durationId = session.metadata?.duration_id;
 
   if (!userId || !plan || !isPaidPlan(plan)) return;
 
@@ -73,7 +74,7 @@ async function grantPlanFromSession(session: Stripe.Checkout.Session) {
     .update({
       plan,
       plan_status: "active",
-      plan_expires_at: calculatePlanExpiresAt(plan, now),
+      plan_expires_at: calculatePlanExpiresAt(plan, now, durationId),
       stripe_customer_id: getStripeId(session.customer),
       stripe_checkout_session_id: session.id,
       stripe_payment_intent_id: getStripeId(session.payment_intent),

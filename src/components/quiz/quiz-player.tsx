@@ -669,7 +669,7 @@ function DailyLimitReachedNotice({
   limit: number;
   plan: PlanType;
 }) {
-  const label = plan === "low" ? "低学年プラン" : "無料分";
+  const label = plan === "low" ? "基礎定着パス" : "無料分";
   return (
     <div className="flex items-start gap-3 rounded-[12px] border border-[var(--primary)] bg-[var(--primary-soft)] px-4 py-3">
       <LockKeyhole

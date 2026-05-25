@@ -21,7 +21,7 @@ type Props = {
  *
  * 表示ルール：
  * - 国試対策パック：常に非表示
- * - 無料/低学年プラン：残り4問以下になったら警告として表示
+ * - 無料/基礎定着パス：残り4問以下になったら警告として表示
  * - 上限到達：課金CTAを目立たせる
  */
 export function DailyLimitBanner({ used, plan = "free" }: Props) {
@@ -34,7 +34,7 @@ export function DailyLimitBanner({ used, plan = "free" }: Props) {
   if (actualUsed < limit - DAILY_LIMIT_WARNING_REMAINING) return null;
 
   const remaining = Math.max(0, limit - actualUsed);
-  const planLabel = plan === "low" ? "低学年プラン" : "無料分";
+  const planLabel = plan === "low" ? "基礎定着パス" : "無料分";
 
   // 上限到達：CTAバナー
   if (remaining === 0) {

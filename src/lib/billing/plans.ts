@@ -4,16 +4,33 @@ export type PaidPlan = Exclude<BillingPlan, "free">;
 
 export const PAID_PLANS: PaidPlan[] = ["low", "exam"];
 
+/** 同じプランの中で選べる期間バリエーション（基礎定着パスのみ複数を持つ） */
+export type PlanDuration = {
+  id: string;
+  months: number;
+  label: string;
+  priceLabel: string;
+  /** 月あたりの単価表示（任意） */
+  perMonthLabel?: string;
+  priceEnvKey?: string;
+  fallbackPriceId?: string;
+};
+
 export type PlanDefinition = {
   id: BillingPlan;
   name: string;
-  priceLabel: string;
-  periodLabel: string;
   description: string;
   checkoutLabel: string;
   dailyLimit: number | null;
+  /** 単一期間プラン（無料・国試対策パック）の表示用ラベル */
+  priceLabel?: string;
+  periodLabel?: string;
+  /** 単一期間プランの Stripe Price ID 解決 */
   priceEnvKey?: string;
   fallbackPriceId?: string;
+  /** 複数期間プラン（基礎定着パス）の期間バリエーション */
+  durations?: PlanDuration[];
+  defaultDurationId?: string;
   featureLabels: string[];
   featureNote?: string;
 };
@@ -31,14 +48,31 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
   },
   low: {
     id: "low",
-    name: "低学年プラン",
-    priceLabel: "¥5,400",
-    periodLabel: "1年アクセス",
+    name: "基礎定着パス",
     description: "授業・日々の復習を続けるための学習パスです。",
-    checkoutLabel: "低学年プランを購入",
+    checkoutLabel: "基礎定着パスを購入",
     dailyLimit: 100,
-    priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_LOW_YEAR_PASS",
-    fallbackPriceId: "price_1TUwkLFUkpvTvQkQyHTN8ha5",
+    durations: [
+      {
+        id: "3m",
+        months: 3,
+        label: "3ヶ月",
+        priceLabel: "¥1,500",
+        perMonthLabel: "月あたり¥500",
+        priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_LOW_3M_PASS",
+        fallbackPriceId: "price_1TaoHeFUkpvTvQkQVLaX7zOn",
+      },
+      {
+        id: "1y",
+        months: 12,
+        label: "1年",
+        priceLabel: "¥4,800",
+        perMonthLabel: "月あたり¥400",
+        priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_LOW_YEAR_PASS",
+        fallbackPriceId: "price_1TaoHiFUkpvTvQkQ3uHmAiW6",
+      },
+    ],
+    defaultDurationId: "1y",
     featureLabels: [
       "1日100問まで",
       "ブックマーク・ノート",
@@ -58,12 +92,14 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
     fallbackPriceId: "price_1TUwmrFUkpvTvQkQy8InMoBp",
     featureLabels: [
       "過去問演習が無制限",
-      "ブックマーク・ノート",
-      "成績・履歴",
-      "端末間同期",
+      "オリジナル予想問題180問",
+      "75問模試（本番形式）",
+      "直近テーマ問題集",
+      "苦手克服の中分類深掘り",
+      "AIコーチMiLu先生の深掘り",
     ],
     featureNote:
-      "模試モード、苦手復習、分野別弱点診断、直前チェックは順次追加予定です。",
+      "合格ライン逆算・詳細レポートは順次追加予定です。",
   },
 };
 
@@ -71,8 +107,27 @@ export function isPaidPlan(value: string): value is PaidPlan {
   return value === "low" || value === "exam";
 }
 
-export function getStripePriceId(plan: PaidPlan): string {
+/** PaidPlan の duration ID を解決する。指定なしならプランの既定値を返す */
+export function resolveDurationId(plan: PaidPlan, durationId?: string): string | undefined {
   const definition = PLAN_DEFINITIONS[plan];
+  if (!definition.durations || definition.durations.length === 0) return undefined;
+  if (durationId && definition.durations.some((d) => d.id === durationId)) {
+    return durationId;
+  }
+  return definition.defaultDurationId ?? definition.durations[0]?.id;
+}
+
+export function getStripePriceId(plan: PaidPlan, durationId?: string): string {
+  const definition = PLAN_DEFINITIONS[plan];
+
+  if (definition.durations && definition.durations.length > 0) {
+    const resolvedId = resolveDurationId(plan, durationId);
+    const duration = definition.durations.find((d) => d.id === resolvedId);
+    if (!duration) return "";
+    const configured = duration.priceEnvKey ? process.env[duration.priceEnvKey] : undefined;
+    return configured || duration.fallbackPriceId || "";
+  }
+
   const configured =
     definition.priceEnvKey ? process.env[definition.priceEnvKey] : undefined;
   return configured || definition.fallbackPriceId || "";
@@ -96,10 +151,18 @@ export function getEffectivePlan({
   return plan;
 }
 
-export function calculatePlanExpiresAt(plan: PaidPlan, now = new Date()): string {
+export function calculatePlanExpiresAt(
+  plan: PaidPlan,
+  now = new Date(),
+  durationId?: string,
+): string {
   if (plan === "low") {
+    const definition = PLAN_DEFINITIONS.low;
+    const resolvedId = resolveDurationId(plan, durationId);
+    const duration = definition.durations?.find((d) => d.id === resolvedId);
+    const months = duration?.months ?? 12;
     const expiresAt = new Date(now);
-    expiresAt.setUTCFullYear(expiresAt.getUTCFullYear() + 1);
+    expiresAt.setUTCMonth(expiresAt.getUTCMonth() + months);
     return expiresAt.toISOString();
   }
 

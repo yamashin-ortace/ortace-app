@@ -47,6 +47,6 @@ export async function AppHeader() {
 
 function getHeaderPlanLabel(plan: keyof typeof PLAN_DEFINITIONS): string {
   if (plan === "exam") return "国試";
-  if (plan === "low") return "低学年";
+  if (plan === "low") return "基礎";
   return "無料";
 }
