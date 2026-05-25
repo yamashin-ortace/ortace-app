@@ -11,6 +11,7 @@ export type Grade = "1年" | "2年" | "3年" | "4年" | "受験生";
 export type Goal = "基礎固め" | "苦手克服" | "本番対策";
 export type BillingPlan = "free" | "low" | "exam";
 export type BillingPlanStatus = "active" | "expired" | "payment_failed";
+export type SupportClaimStatus = "pending" | "approved" | "rejected";
 export type Json =
   | string
   | number
@@ -34,6 +35,7 @@ export type ProfilesRow = {
   trial_started_at: string | null;
   trial_ends_at: string | null;
   trial_used_at: string | null;
+  support_claim_used_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -53,6 +55,7 @@ export type ProfilesInsert = {
   trial_started_at?: string | null;
   trial_ends_at?: string | null;
   trial_used_at?: string | null;
+  support_claim_used_at?: string | null;
 };
 
 export type ProfilesUpdate = {
@@ -69,6 +72,7 @@ export type ProfilesUpdate = {
   trial_started_at?: string | null;
   trial_ends_at?: string | null;
   trial_used_at?: string | null;
+  support_claim_used_at?: string | null;
 };
 
 export type DailyLimitsRow = {
@@ -235,6 +239,40 @@ export type UserDevicesUpdate = {
   revoked_by_device_fingerprint?: string | null;
 };
 
+export type SupportClaimsRow = {
+  id: string;
+  user_id: string;
+  status: SupportClaimStatus;
+  evidence_url: string;
+  user_comment: string | null;
+  reject_reason: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+};
+
+export type SupportClaimsInsert = {
+  id?: string;
+  user_id: string;
+  status?: SupportClaimStatus;
+  evidence_url: string;
+  user_comment?: string | null;
+  reject_reason?: string | null;
+  submitted_at?: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+};
+
+export type SupportClaimsUpdate = {
+  status?: SupportClaimStatus;
+  evidence_url?: string;
+  user_comment?: string | null;
+  reject_reason?: string | null;
+  submitted_at?: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -280,6 +318,12 @@ export type Database = {
         Update: UserDevicesUpdate;
         Relationships: [];
       };
+      support_claims: {
+        Row: SupportClaimsRow;
+        Insert: SupportClaimsInsert;
+        Update: SupportClaimsUpdate;
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -288,7 +332,7 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      support_claim_status: SupportClaimStatus;
     };
     CompositeTypes: {
       [_ in never]: never;

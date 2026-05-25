@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { ChevronRight, ShieldCheck } from "lucide-react";
 import { ThemePicker } from "@/components/theme-picker";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { AttemptBadgeSetting } from "@/components/settings/attempt-badge-setting";
@@ -56,6 +58,32 @@ export default async function SettingsPage() {
           description="アカウント共有防止のため、同時ログインは最大3端末までです。"
         >
           <ActiveDevices devices={devices} />
+        </SettingsSection>
+
+        <SettingsSection
+          title="サポート"
+          description="国試対策パックの保証申請を確認できます。"
+        >
+          <Link
+            href="/support-claim"
+            className="group flex items-center gap-3 rounded-[12px] border border-border bg-[var(--bg-muted)]/45 px-3 py-3 transition-colors hover:bg-[var(--bg-muted)]"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+              <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={2.5} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-[var(--text-1)]">
+                合格サポート保証 申請
+              </p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-3)]">
+                不合格時の翌年度延長申請と申請履歴を確認します。
+              </p>
+            </div>
+            <ChevronRight
+              className="h-4 w-4 shrink-0 text-[var(--text-3)] transition-transform group-hover:translate-x-0.5"
+              strokeWidth={2.5}
+            />
+          </Link>
         </SettingsSection>
 
         <SettingsSection title="表示モード">
