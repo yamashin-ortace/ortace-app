@@ -1,10 +1,12 @@
 import { LandingMotionSection } from "@/components/landing/landing-motion-section";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingFeatures } from "@/components/landing/landing-features";
+import { LandingExplanationSample } from "@/components/landing/landing-explanation-sample";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingGuarantee } from "@/components/landing/landing-guarantee";
 import { LandingFaq } from "@/components/landing/landing-faq";
 import { LandingFinalCta } from "@/components/landing/landing-final-cta";
+import { LandingForParents } from "@/components/landing/landing-for-parents";
 import { LandingFooter } from "@/components/landing/landing-footer";
 
 export function LandingPage() {
@@ -15,6 +17,9 @@ export function LandingPage() {
       </LandingMotionSection>
       <LandingMotionSection>
         <LandingFeatures />
+      </LandingMotionSection>
+      <LandingMotionSection>
+        <LandingExplanationSample />
       </LandingMotionSection>
       <LandingMotionSection>
         <LandingPricing />
@@ -28,6 +33,7 @@ export function LandingPage() {
       <LandingMotionSection>
         <LandingFinalCta />
       </LandingMotionSection>
+      <LandingForParents />
       <LandingFooter />
     </div>
   );
