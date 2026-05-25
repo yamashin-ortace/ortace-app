@@ -7,6 +7,7 @@ import { RecommendationSection } from "@/components/study/recommendation-section
 import { RoundCard } from "@/components/study/round-card";
 import { BookmarkSetSection } from "@/components/study/bookmark-set-section";
 import { WeakClusterSection } from "@/components/study/weak-cluster-section";
+import { UnansweredModeCard } from "@/components/study/unanswered-mode-card";
 import { HorizontalSnapRow } from "@/components/ui/horizontal-snap-row";
 import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
@@ -33,26 +34,32 @@ export default async function StudyPage() {
       </h1>
 
       <DailyLimitBanner plan={plan} />
-      <RecommendationSection totalQuestions={questions.length} />
-      <WeakClusterSection clusters={clusters} />
       <ContinueQuizCard />
+      <RecommendationSection />
 
       <section className="space-y-2">
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
-          演習モード
+          自分で選んで解く
         </h2>
         <div className="space-y-2.5">
+          <UnansweredModeCard />
           <FilterModeCard />
           <RandomModeCard />
-          <section className="space-y-2">
-            <HorizontalSnapRow
-              ariaLabel="第47回〜第56回 過去問の年度カード"
-              items={EXAM_ROUNDS.map((round) => (
-                <RoundCard key={round} round={round} />
-              ))}
-            />
-          </section>
         </div>
+      </section>
+
+      <WeakClusterSection clusters={clusters} />
+
+      <section className="space-y-2">
+        <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
+          年度別に解く
+        </h2>
+        <HorizontalSnapRow
+          ariaLabel="第47回〜第56回 過去問の年度カード"
+          items={EXAM_ROUNDS.map((round) => (
+            <RoundCard key={round} round={round} />
+          ))}
+        />
       </section>
 
       <section className="space-y-2">

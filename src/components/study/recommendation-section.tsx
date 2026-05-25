@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   BrainCircuit,
   ChevronRight,
-  Inbox,
   RefreshCcw,
   Sparkles,
   Target,
@@ -13,7 +12,6 @@ import {
 import { MisconceptionHowItWorksPopover } from "@/components/study/misconception-how-it-works-popover";
 import { ReviewQueueHowItWorksPopover } from "@/components/study/review-queue-how-it-works-popover";
 import { TodayRecommendedHowItWorksPopover } from "@/components/study/today-recommended-how-it-works-popover";
-import { UnansweredHowItWorksPopover } from "@/components/study/unanswered-how-it-works-popover";
 import { WeakFieldHowItWorksPopover } from "@/components/study/weak-field-how-it-works-popover";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import {
@@ -22,11 +20,7 @@ import {
 } from "@/lib/answer-history/status";
 import { countMisconceptionCandidates } from "@/lib/ai-coach/recommendation";
 
-type Props = {
-  totalQuestions: number;
-};
-
-export function RecommendationSection({ totalQuestions }: Props) {
+export function RecommendationSection() {
   const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
 
@@ -39,25 +33,21 @@ export function RecommendationSection({ totalQuestions }: Props) {
     if (!hydrated) {
       return {
         reviewCount: 0,
-        untouchedCount: 0,
         weakLabel: "",
         weakStage: null as null | "confirmed" | "provisional",
         misconceptionCount: 0,
       };
     }
     const reviewCount = getReviewTargetIds(entries).size;
-    const answered = new Set(entries.map((entry) => entry.id));
-    const untouchedCount = Math.max(0, totalQuestions - answered.size);
     const weak = getWeakFieldFromHistory(entries);
     const misconceptionCount = countMisconceptionCandidates(entries);
     return {
       reviewCount,
-      untouchedCount,
       weakLabel: weak?.field ?? "",
       weakStage: weak?.stage === "confirmed" || weak?.stage === "provisional" ? weak.stage : null,
       misconceptionCount,
     };
-  }, [entries, hydrated, totalQuestions]);
+  }, [entries, hydrated]);
 
   return (
     <section className="space-y-2">
@@ -65,72 +55,103 @@ export function RecommendationSection({ totalQuestions }: Props) {
         AIコーチMiLu先生
       </h2>
       <div className="space-y-2">
-        <RecommendStudyLink
+        <PrimaryRecommendStudyLink
           href="/study/today"
           icon={<Sparkles className="h-6 w-6" strokeWidth={2.5} />}
           title="今日のおすすめ"
-          subtitle="回答履歴・正答率・自信度・解答時間から分析"
+          subtitle="迷ったらここから。復習・弱点・思い込み・未着手を20問にまとめます。"
           trailing={<TodayRecommendedHowItWorksPopover />}
         />
-        <RecommendStudyLink
-          href="/study/review"
-          icon={<RefreshCcw className="h-6 w-6" strokeWidth={2.5} />}
-          title="復習する"
-          subtitle={
-            hydrated
-              ? stats.reviewCount > 0
-                ? `今日の復習 ${stats.reviewCount}問`
-                : "今日復習する問題はありません"
-              : "計算中…"
-          }
-          trailing={<ReviewQueueHowItWorksPopover />}
-        />
-        <RecommendStudyLink
-          href="/study/unanswered"
-          icon={<Inbox className="h-6 w-6" strokeWidth={2.5} />}
-          title="未着手から解く"
-          subtitle={
-            hydrated
-              ? `未着手 ${stats.untouchedCount.toLocaleString()} / ${totalQuestions.toLocaleString()}問`
-              : "計算中…"
-          }
-          trailing={<UnansweredHowItWorksPopover />}
-        />
-        <RecommendStudyLink
-          href="/study/weak"
-          icon={<Target className="h-6 w-6" strokeWidth={2.5} />}
-          title="苦手克服"
-          subtitle={
-            hydrated
-              ? stats.weakLabel
-                ? stats.weakStage === "provisional"
-                  ? `正答率から暫定分析：${stats.weakLabel}`
-                  : `正答率から分析：${stats.weakLabel}`
-                : "正答率の低い分野をAIコーチMiLu先生が集中補強"
-              : "計算中…"
-          }
-          trailing={<WeakFieldHowItWorksPopover />}
-        />
-        <RecommendStudyLink
-          href="/study/misconception"
-          icon={<BrainCircuit className="h-6 w-6" strokeWidth={2.5} />}
-          title="思い込みチェック"
-          subtitle={
-            hydrated
-              ? stats.misconceptionCount > 0
-                ? `候補 ${stats.misconceptionCount}問（自信あり誤答・急ぎすぎ誤答）`
-                : "自信あり誤答・急ぎすぎた誤答を分析"
-              : "計算中…"
-          }
-          badge={
-            hydrated && stats.misconceptionCount > 0
-              ? stats.misconceptionCount
-              : null
-          }
-          trailing={<MisconceptionHowItWorksPopover />}
-        />
+        <div className="grid gap-2 sm:grid-cols-3">
+          <RecommendStudyLink
+            href="/study/review"
+            icon={<RefreshCcw className="h-5 w-5" strokeWidth={2.5} />}
+            title="復習する"
+            subtitle={
+              hydrated
+                ? stats.reviewCount > 0
+                  ? `今日の復習 ${stats.reviewCount}問`
+                  : "復習待ちはありません"
+                : "計算中…"
+            }
+            trailing={<ReviewQueueHowItWorksPopover />}
+          />
+          <RecommendStudyLink
+            href="/study/weak"
+            icon={<Target className="h-5 w-5" strokeWidth={2.5} />}
+            title="苦手克服"
+            subtitle={
+              hydrated
+                ? stats.weakLabel
+                  ? stats.weakStage === "provisional"
+                    ? `暫定：${stats.weakLabel}`
+                    : stats.weakLabel
+                  : "正答率の低い分野を補強"
+                : "計算中…"
+            }
+            trailing={<WeakFieldHowItWorksPopover />}
+          />
+          <RecommendStudyLink
+            href="/study/misconception"
+            icon={<BrainCircuit className="h-5 w-5" strokeWidth={2.5} />}
+            title="思い込み"
+            subtitle={
+              hydrated
+                ? stats.misconceptionCount > 0
+                  ? `候補 ${stats.misconceptionCount}問`
+                  : "自信あり誤答を確認"
+                : "計算中…"
+            }
+            badge={
+              hydrated && stats.misconceptionCount > 0
+                ? stats.misconceptionCount
+                : null
+            }
+            trailing={<MisconceptionHowItWorksPopover />}
+          />
+        </div>
       </div>
     </section>
+  );
+}
+
+function PrimaryRecommendStudyLink({
+  href,
+  icon,
+  title,
+  subtitle,
+  trailing,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  trailing: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-[16px] border border-[var(--primary)]/35 bg-[var(--primary-soft)] p-4 text-[var(--text-1)] shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-px hover:border-[var(--primary)]/55 hover:shadow-[0_5px_16px_rgba(0,0,0,0.08)]">
+      <Link
+        href={href}
+        className="group flex min-w-0 flex-1 items-center gap-3"
+      >
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[12px] bg-[var(--primary)] text-white">
+          {icon}
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-[18px] font-extrabold tracking-tight text-[var(--text-1)]">
+            {title}
+          </span>
+          <span className="mt-0.5 text-[12px] leading-snug text-[var(--text-2)]">
+            {subtitle}
+          </span>
+        </div>
+        <ChevronRight
+          className="h-5 w-5 shrink-0 text-[var(--primary-dark)] transition-transform duration-200 group-hover:translate-x-0.5"
+          strokeWidth={2.5}
+        />
+      </Link>
+      {trailing}
+    </div>
   );
 }
 
@@ -150,17 +171,17 @@ function RecommendStudyLink({
   badge?: number | null;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-[16px] border border-border bg-[var(--bg-card)] p-4 text-[var(--text-1)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-px hover:border-[var(--primary)]/35 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)]">
+    <div className="flex min-h-[96px] items-start gap-1.5 rounded-[14px] border border-border bg-[var(--bg-card)] p-3 text-[var(--text-1)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-px hover:border-[var(--primary)]/35 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)]">
       <Link
         href={href}
-        className="group flex min-w-0 flex-1 items-center gap-3"
+        className="group flex min-w-0 flex-1 items-start gap-2.5"
       >
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
           {icon}
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="flex items-center gap-2">
-            <span className="text-[16px] font-extrabold tracking-tight text-[var(--text-1)]">
+            <span className="text-[14px] font-extrabold tracking-tight text-[var(--text-1)]">
               {title}
             </span>
             {badge && badge > 0 ? (
@@ -169,12 +190,12 @@ function RecommendStudyLink({
               </span>
             ) : null}
           </span>
-          <span className="mt-0.5 text-[12px] text-[var(--text-2)]">
+          <span className="mt-0.5 text-[11px] leading-snug text-[var(--text-2)]">
             {subtitle}
           </span>
         </div>
         <ChevronRight
-          className="h-5 w-5 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--primary-dark)]"
+          className="mt-2 h-4 w-4 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--primary-dark)]"
           strokeWidth={2.5}
         />
       </Link>
