@@ -54,17 +54,17 @@ export default async function HomePage() {
       <HomeGreeting />
       <TrialBanner trial={session.trial} />
       <DiagnosticBanner />
-      <HomeExamCountdown totalQuestions={questions.length} />
-      <HomeTodayCta totalQuestions={questions.length} clusters={clusters} />
+      <HomeTodayCta clusters={clusters} />
       <HomeStatsRow />
       <HomeEstimatedScore questions={questions} />
-      <HomeTrendChart />
       <HomeDashboard
         questionTotals={{
           total: questions.length,
           fields: fieldTotals,
         }}
       />
+      <HomeTrendChart />
+      <HomeExamCountdown totalQuestions={questions.length} />
     </div>
   );
 }

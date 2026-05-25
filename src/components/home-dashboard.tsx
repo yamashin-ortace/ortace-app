@@ -81,7 +81,7 @@ export function HomeDashboard({ questionTotals }: Props) {
           href="/study/unanswered"
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-[12px] border border-border bg-[var(--bg-card)] px-4 py-2.5 text-[13px] font-bold text-[var(--text-1)] hover:bg-[var(--bg-muted)]"
         >
-          未着手モードで分野を選ぶ
+          ほかの未着手も見る
           <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
         </Link>
       </CardContent>

@@ -121,15 +121,7 @@ export function HomeEstimatedScore({ questions }: Props) {
                   </span>
                 ) : (
                   <span>
-                    全体の1000問まではあと
-                    <strong className="font-bold text-[var(--text-1)]">
-                      {estimated.totalRemaining}問
-                    </strong>
-                    ですが、分野の偏りを埋めるにはあと
-                    <strong className="font-bold text-[var(--text-1)]">
-                      {estimated.readyFieldRemaining}問
-                    </strong>
-                    必要です。下の不足分野を優先しましょう。
+                    信頼できる目安にするには、全体量だけでなく分野の偏りも埋める必要があります。下の不足分野を優先しましょう。
                   </span>
                 )}
                 <PriorityFieldAction estimated={estimated} />
@@ -180,7 +172,7 @@ function ScoreOverview({
         )}
       >
         <p className="text-[10px] font-bold text-[var(--text-3)]">
-          合格基準60%との差
+          {canJudgePassLine ? "合格基準60%との差" : "参考ライン60%との差"}
         </p>
         <p
           className={cn(

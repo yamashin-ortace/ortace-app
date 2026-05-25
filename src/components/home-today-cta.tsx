@@ -11,7 +11,6 @@ import { buildHomeAiCoachComment } from "@/lib/ai-coach/home-comment";
 import type { QuestionClusterLookup } from "@/lib/ai-coach/cluster-weakness";
 
 type Props = {
-  totalQuestions: number;
   /** AIコーチコメントを具体テーマで補強するための問題ID→クラスタ辞書 */
   clusters?: readonly { id: string; clusterId: string; clusterLabel: string }[];
 };
@@ -21,7 +20,7 @@ type Props = {
  * 上半分にAIコーチのナレーション、下半分に「今日のおすすめ20問」CTA。
  * 復習対象がある日だけ復習導線が追加で出る。
  */
-export function HomeTodayCta({ totalQuestions, clusters }: Props) {
+export function HomeTodayCta({ clusters }: Props) {
   const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
 
@@ -32,13 +31,11 @@ export function HomeTodayCta({ totalQuestions, clusters }: Props) {
 
   const summary = useMemo(() => {
     if (!hydrated) {
-      return { reviewCount: 0, untouchedCount: totalQuestions };
+      return { reviewCount: 0 };
     }
     const reviewCount = getReviewTargetIds(entries).size;
-    const answered = new Set(entries.map((entry) => entry.id));
-    const untouchedCount = Math.max(0, totalQuestions - answered.size);
-    return { reviewCount, untouchedCount };
-  }, [entries, hydrated, totalQuestions]);
+    return { reviewCount };
+  }, [entries, hydrated]);
 
   const lookup = useMemo<QuestionClusterLookup | undefined>(() => {
     if (!clusters || clusters.length === 0) return undefined;
