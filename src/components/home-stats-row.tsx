@@ -33,11 +33,11 @@ export function HomeStatsRow() {
       key="streak"
       icon={<Flame className="h-4 w-4" strokeWidth={2} />}
       label="連続学習"
-      value={String(stats.streakThroughYesterdayDays)}
+      value={String(stats.streakDays)}
       unit="日"
       trailing={
         <InfoPopover label="連続学習の説明">
-          1問でも解いた日が連続している日数です。当日まだ0問でも、昨日まで続いていれば途切れません。
+          1問でも解いた日が連続している日数です。今日1問解けばその場で+1されます。今日まだ0問でも、昨日まで続いていれば途切れません。
         </InfoPopover>
       }
     />,
@@ -142,7 +142,7 @@ function calculateHomeStats(entries: AnswerHistoryEntry[]) {
   return {
     todayCount: todayEntries.length,
     todayAccuracy: calculateAccuracy(todayEntries),
-    streakThroughYesterdayDays: calculateStreakThroughYesterday(entries, today),
+    streakDays: calculateStreak(entries, today),
     totalStudyDays: calculateTotalDistinctStudyDays(entries),
   };
 }
@@ -154,7 +154,7 @@ function calculateAccuracy(entries: AnswerHistoryEntry[]): number | null {
   return Math.round((correct / judged.length) * 100);
 }
 
-function calculateStreakThroughYesterday(
+function calculateStreak(
   entries: AnswerHistoryEntry[],
   todayTokyo: string,
 ): number {
@@ -162,9 +162,15 @@ function calculateStreakThroughYesterday(
     entries.map((entry) => getTokyoDateString(new Date(entry.answeredAt))),
   );
   const todayNoonTokyo = new Date(`${todayTokyo}T12:00:00+09:00`);
-  let cursor = new Date(todayNoonTokyo.getTime() - 24 * 60 * 60 * 1000);
-  let streak = 0;
 
+  // 今日に解答があれば今日から、なければ昨日からさかのぼってカウントする。
+  // これにより、今日1問でも解いた瞬間にカウントが +1 される。
+  let cursor = todayNoonTokyo;
+  if (!learnedDates.has(getTokyoDateString(cursor))) {
+    cursor = new Date(cursor.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  let streak = 0;
   while (learnedDates.has(getTokyoDateString(cursor))) {
     streak += 1;
     cursor = new Date(cursor.getTime() - 24 * 60 * 60 * 1000);
