@@ -9,13 +9,13 @@ import {
   CircleSlash,
   Home,
   LoaderCircle,
+  RefreshCcw,
   RotateCw,
   Sparkles,
   XCircle,
 } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
-import { PrimaryCta } from "@/components/ui/primary-cta";
 import { AiCoachResultAnalysis } from "./ai-coach-result-analysis";
 import { QuestionReviewItem } from "./question-review-item";
 
@@ -153,6 +153,8 @@ export function QuizResultScreen({
         />
       ) : null}
 
+      <ResultNextActions incorrect={incorrect} onRestart={onRestart} />
+
       <section className="space-y-2">
         <button
           type="button"
@@ -187,13 +189,7 @@ export function QuizResultScreen({
         ) : null}
       </section>
 
-      <div className="space-y-3">
-        {onRestart ? (
-          <PrimaryCta onClick={onRestart}>
-            <RotateCw className="h-4 w-4" strokeWidth={2.5} />
-            もう一度
-          </PrimaryCta>
-        ) : null}
+      <div>
         <Link
           href={backHref}
           className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-6 py-3 text-[14px] font-semibold text-[var(--text-1)] transition-colors hover:bg-[var(--bg-muted)]"
@@ -203,6 +199,119 @@ export function QuizResultScreen({
         </Link>
       </div>
     </div>
+  );
+}
+
+function ResultNextActions({
+  incorrect,
+  onRestart,
+}: {
+  incorrect: number;
+  onRestart?: () => void;
+}) {
+  return (
+    <section className="space-y-2">
+      <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
+        次にやること
+      </h2>
+      <div className="space-y-2">
+        {incorrect > 0 ? (
+          <ResultActionLink
+            href="/study/review"
+            icon={<RefreshCcw className="h-4 w-4" strokeWidth={2.5} />}
+            title="間違えた問題を復習"
+            detail={`${incorrect}問を復習キューに反映済み`}
+            primary
+          />
+        ) : (
+          <ResultActionLink
+            href="/study/today"
+            icon={<Sparkles className="h-4 w-4" strokeWidth={2.5} />}
+            title="今日のおすすめをもう1セット"
+            detail="今の結果を次の20問に反映"
+            primary
+          />
+        )}
+        {incorrect > 0 || onRestart ? (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {incorrect > 0 ? (
+              <ResultActionLink
+                href="/study/today"
+                icon={<Sparkles className="h-4 w-4" strokeWidth={2.5} />}
+                title="今日のおすすめへ"
+                detail="復習・弱点・未着手をまとめて解く"
+              />
+            ) : null}
+            {onRestart ? (
+              <button
+                type="button"
+                onClick={onRestart}
+                className="choice-pressable flex min-h-[3.75rem] items-center gap-3 rounded-[12px] border border-border bg-[var(--bg-card)] px-3 text-left text-[var(--text-1)] transition-colors hover:bg-[var(--bg-muted)]"
+              >
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--bg-muted)] text-[var(--text-2)]">
+                  <RotateCw className="h-4 w-4" strokeWidth={2.5} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-bold">
+                    同じ問題をもう一度
+                  </span>
+                  <span className="block text-[11px] text-[var(--text-3)]">
+                    解き直して確認
+                  </span>
+                </span>
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ResultActionLink({
+  href,
+  icon,
+  title,
+  detail,
+  primary = false,
+}: {
+  href: string;
+  icon: ReactNode;
+  title: string;
+  detail: string;
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={
+        primary
+          ? "choice-pressable flex min-h-[3.75rem] items-center gap-3 rounded-[12px] bg-[var(--primary)] px-3 text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
+          : "choice-pressable flex min-h-[3.75rem] items-center gap-3 rounded-[12px] border border-border bg-[var(--bg-card)] px-3 text-[var(--text-1)] transition-colors hover:bg-[var(--bg-muted)]"
+      }
+    >
+      <span
+        className={
+          primary
+            ? "grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-white/18 text-white"
+            : "grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--bg-muted)] text-[var(--text-2)]"
+        }
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-bold">{title}</span>
+        <span
+          className={
+            primary
+              ? "block text-[11px] text-white/80"
+              : "block text-[11px] text-[var(--text-3)]"
+          }
+        >
+          {detail}
+        </span>
+      </span>
+    </Link>
   );
 }
 

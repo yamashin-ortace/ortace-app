@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { ChevronRight, LoaderCircle, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
@@ -14,23 +14,12 @@ type Props = {
   selectedAnswers: Readonly<Record<string, ChoiceKey[]>>;
 };
 
-const STEPS = [
-  "履歴を確認中",
-  "解答傾向を分析中",
-  "テーマを整理中",
-  "確認テーマを選定中",
-] as const;
-
 export function AiCoachResultAnalysis({
   questions,
   judgements,
   selectedAnswers,
 }: Props) {
   const { entries } = useAnswerHistoryList();
-  const [stepIndex, setStepIndex] = useState<number | null>(null);
-  const isAnalyzing = stepIndex !== null && stepIndex < STEPS.length;
-  const isDone = stepIndex !== null && stepIndex >= STEPS.length;
-
   const answeredCount = useMemo(
     () =>
       questions.filter((question) => {
@@ -45,14 +34,6 @@ export function AiCoachResultAnalysis({
     [entries, judgements, questions],
   );
 
-  const startAnalysis = () => {
-    if (isAnalyzing) return;
-    setStepIndex(0);
-    for (let index = 1; index <= STEPS.length; index += 1) {
-      window.setTimeout(() => setStepIndex(index), index * 780);
-    }
-  };
-
   return (
     <section className="relative overflow-hidden rounded-[16px] border border-[var(--primary)]/25 bg-[var(--bg-card)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[var(--primary)]/55 to-transparent" />
@@ -63,72 +44,47 @@ export function AiCoachResultAnalysis({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-extrabold text-[var(--text-1)]">
-            AIコーチMiLu先生の分析
+            MiLu先生のひとこと分析
           </p>
           <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--text-3)]">
-            今回の{answeredCount}問から、確認しておきたいテーマを見つけます。
+            今回の{answeredCount}問から、次に確認したいテーマを整理しました。
           </p>
         </div>
       </div>
 
-      {!isDone ? (
-        <div className="mt-4 space-y-3">
-          {isAnalyzing ? (
-            <div className="rounded-[12px] border border-[var(--primary)]/20 bg-linear-to-br from-[var(--primary-soft)]/55 to-[var(--bg-card)] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-              <div className="flex items-center gap-2 text-[13px] font-bold text-[var(--text-1)]">
-                <LoaderCircle
-                  className="h-4 w-4 animate-spin text-[var(--primary-dark)]"
-                  strokeWidth={2.5}
-                />
-                {STEPS[Math.min(stepIndex ?? 0, STEPS.length - 1)]}
-              </div>
+      <div className="mt-4 space-y-3">
+        <div className="rounded-[12px] border border-[var(--primary)]/20 bg-[var(--primary-soft)]/45 px-3 py-3">
+          {analysis.clusterLabel ? (
+            <p className="mb-1 text-[11px] font-bold text-[var(--primary-dark)]">
+              注目テーマ候補: {analysis.clusterLabel}
+            </p>
+          ) : null}
+          <p className="text-[13px] leading-relaxed text-[var(--text-1)]">
+            {analysis.message}
+          </p>
+          {analysis.details.length > 0 ? (
+            <div className="mt-2 space-y-1.5">
+              {analysis.details.map((detail) => (
+                <p
+                  key={detail}
+                  className="rounded-[10px] bg-[var(--bg-card)]/75 px-2.5 py-2 text-[12px] leading-relaxed text-[var(--text-2)]"
+                >
+                  {detail}
+                </p>
+              ))}
             </div>
           ) : null}
-          <button
-            type="button"
-            onClick={startAnalysis}
-            disabled={isAnalyzing}
-            className="choice-pressable flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)] disabled:opacity-70"
+        </div>
+        {analysis.actionHref && analysis.actionLabel ? (
+          <Link
+            href={analysis.actionHref}
+            className="choice-pressable flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
           >
-            <Sparkles className="h-4 w-4" strokeWidth={2.5} />
-            AIコーチMiLu先生に分析してもらう
-          </button>
-        </div>
-      ) : (
-        <div className="mt-4 space-y-3">
-          <div className="rounded-[12px] border border-[var(--primary)]/20 bg-[var(--primary-soft)]/45 px-3 py-3">
-            {analysis.clusterLabel ? (
-              <p className="mb-1 text-[11px] font-bold text-[var(--primary-dark)]">
-                注目テーマ候補: {analysis.clusterLabel}
-              </p>
-            ) : null}
-            <p className="text-[13px] leading-relaxed text-[var(--text-1)]">
-              {analysis.message}
-            </p>
-            {analysis.details.length > 0 ? (
-              <div className="mt-2 space-y-1.5">
-                {analysis.details.map((detail) => (
-                  <p
-                    key={detail}
-                    className="rounded-[10px] bg-[var(--bg-card)]/75 px-2.5 py-2 text-[12px] leading-relaxed text-[var(--text-2)]"
-                  >
-                    {detail}
-                  </p>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          {analysis.actionHref && analysis.actionLabel ? (
-            <Link
-              href={analysis.actionHref}
-              className="choice-pressable flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
-            >
-              {analysis.actionLabel}
-              <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
-            </Link>
-          ) : null}
-        </div>
-      )}
+            {analysis.actionLabel}
+            <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+          </Link>
+        ) : null}
+      </div>
     </section>
   );
 }
