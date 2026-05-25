@@ -3,7 +3,7 @@ import { isScorableQuestion, type Question } from "@/lib/questions";
 import {
   getFieldStats,
   getLatestEntryByQuestionId,
-  getReviewTargetIds,
+  getReviewQuestions,
   getStagedWeakFields,
   getUntouchedQuestions,
 } from "@/lib/answer-history/status";
@@ -73,10 +73,7 @@ export function pickAiCoachRecommended(
     }
   };
 
-  const reviewIds = getReviewTargetIds(entries);
-  const reviewPool = rankBySourceOrder(
-    scorableQuestions.filter((question) => reviewIds.has(question.id)),
-  );
+  const reviewPool = getReviewQuestions(scorableQuestions, entries);
   const weakPool = buildWeakPool(scorableQuestions, entries, latest);
   const misconceptionPool = buildMisconceptionPool(
     scorableQuestions,

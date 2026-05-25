@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { FIELDS, type Field } from "@/lib/questions";
+import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import type { Question } from "@/lib/questions";
 import {
   calculateEstimatedScore,
+  getReviewQuestions,
   getTargetFieldJudgedForScore,
   MIN_TARGET_FIELD_JUDGED_FOR_SCORE,
   TARGET_FIELD_COVERAGE_RATE_FOR_SCORE,
@@ -104,6 +107,61 @@ describe("calculateEstimatedScore", () => {
   });
 });
 
+describe("getReviewQuestions", () => {
+  it("復習対象を自信あり誤答、繰り返し誤答、通常誤答、迷いが残った正解の順に寄せる", () => {
+    const questions = [
+      question("56-1", 1),
+      question("56-2", 2),
+      question("56-3", 3),
+      question("56-4", 4),
+    ];
+    const entries: AnswerHistoryEntry[] = [
+      answerEntry("56-4", "correct", "2026-05-01T00:00:00.000Z", {
+        confidence: "guess",
+        nextReviewAt: "2026-05-03",
+      }),
+      answerEntry("56-3", "incorrect", "2026-05-02T00:00:00.000Z", {
+        nextReviewAt: "2026-05-04",
+      }),
+      answerEntry("56-2", "incorrect", "2026-05-03T00:00:00.000Z", {
+        nextReviewAt: "2026-05-04",
+      }),
+      answerEntry("56-2", "incorrect", "2026-04-28T00:00:00.000Z", {
+        nextReviewAt: "2026-04-30",
+      }),
+      answerEntry("56-1", "incorrect", "2026-05-04T00:00:00.000Z", {
+        confidence: "high",
+        nextReviewAt: "2026-05-05",
+      }),
+    ];
+
+    expect(
+      getReviewQuestions(questions, entries, new Date("2026-05-06T00:00:00.000Z"))
+        .map((q) => q.id),
+    ).toEqual(["56-1", "56-2", "56-3", "56-4"]);
+  });
+
+  it("同じ優先度なら最新解答が新しい問題を先にする", () => {
+    const questions = [
+      question("56-1", 1),
+      question("56-2", 2),
+    ];
+    const entries: AnswerHistoryEntry[] = [
+      answerEntry("56-1", "incorrect", "2026-05-01T00:00:00.000Z", {
+        nextReviewAt: "2026-05-03",
+      }),
+      answerEntry("56-2", "incorrect", "2026-05-02T00:00:00.000Z", {
+        nextReviewAt: "2026-05-03",
+      }),
+    ];
+
+    expect(
+      getReviewQuestions(questions, entries, new Date("2026-05-03T00:00:00.000Z"))
+        .map((q) => q.id),
+    ).toEqual(["56-2", "56-1"]);
+  });
+});
+
 function fieldStat(
   field: Field,
   judged: number,
@@ -119,5 +177,48 @@ function fieldStat(
     correct,
     correctRate: Math.round((judged / total) * 100),
     accuracyRate: judged > 0 ? Math.round((correct / judged) * 100) : null,
+  };
+}
+
+function question(id: string, displayNumber: number): Question {
+  return {
+    id,
+    round: 56,
+    number: displayNumber,
+    displayNumber,
+    session: "am",
+    field: "視能検査・検査機器",
+    theme: "視力検査",
+    questionText: "問題文",
+    choices: { "1": "A", "2": "B" },
+    correctAnswer: "1",
+    correctAnswers: ["1"],
+    format: "1択",
+    majorCategory: "視能検査・検査機器",
+    minorCategory: "視力検査",
+    explanation: "解説",
+  };
+}
+
+function answerEntry(
+  id: string,
+  result: AnswerHistoryEntry["result"],
+  answeredAt: string,
+  overrides: Partial<AnswerHistoryEntry> = {},
+): AnswerHistoryEntry {
+  return {
+    id,
+    answeredAt,
+    result,
+    selectedAnswers: result === "correct" ? ["1"] : ["2"],
+    round: 56,
+    session: "am",
+    displayNumber: Number(id.split("-")[1] ?? 1),
+    majorCategory: "視能検査・検査機器",
+    confidence: null,
+    durationMs: null,
+    streak: result === "correct" ? 1 : 0,
+    nextReviewAt: null,
+    ...overrides,
   };
 }

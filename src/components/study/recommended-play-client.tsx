@@ -136,7 +136,8 @@ export function RecommendedPlayClient({
 /**
  * モードごとに pool の並びを「最終的な出題順」に整える（凍結前の1回だけ）。
  * - today/unanswered/misconception：すでに pickPoolByMode 内で並び順が確定しているのでそのまま
- * - review/weak：ランダム性を持たせるためここで一度だけ shuffle する
+ * - review：今日復習すべき優先順を保つ
+ * - weak：ランダム性を持たせるためここで一度だけ shuffle する
  * - examのweak：中分類ごとに基礎→自信あり誤答→類題の順に組むため、そのまま
  */
 function orderPoolForMode(
@@ -146,7 +147,12 @@ function orderPoolForMode(
 ): Question[] {
   if (pool.length === 0) return [];
   if (mode === "weak" && plan === "exam") return pool;
-  if (mode === "today" || mode === "unanswered" || mode === "misconception") {
+  if (
+    mode === "today" ||
+    mode === "review" ||
+    mode === "unanswered" ||
+    mode === "misconception"
+  ) {
     return pool;
   }
   return shuffle(pool);

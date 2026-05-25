@@ -86,9 +86,97 @@ export function getUntouchedQuestions(
 export function getReviewQuestions(
   questions: readonly Question[],
   entries: readonly AnswerHistoryEntry[],
+  now: Date = new Date(),
 ): Question[] {
-  const targets = getReviewTargetIds(entries);
-  return questions.filter((question) => targets.has(question.id));
+  const targets = getReviewTargetIds(entries, now);
+  const latest = getLatestEntryByQuestionId(entries);
+  const entriesByQuestionId = groupEntriesByQuestionId(entries);
+  return questions
+    .filter((question) => targets.has(question.id))
+    .sort((a, b) => {
+      const aEntry = latest.get(a.id);
+      const bEntry = latest.get(b.id);
+      const aScore = getReviewPriorityScore(
+        aEntry,
+        entriesByQuestionId.get(a.id) ?? [],
+        now,
+      );
+      const bScore = getReviewPriorityScore(
+        bEntry,
+        entriesByQuestionId.get(b.id) ?? [],
+        now,
+      );
+      if (aScore !== bScore) return bScore - aScore;
+      const aAnsweredAt = aEntry?.answeredAt ?? "";
+      const bAnsweredAt = bEntry?.answeredAt ?? "";
+      if (aAnsweredAt !== bAnsweredAt) return bAnsweredAt.localeCompare(aAnsweredAt);
+      return compareQuestionSource(a, b);
+    });
+}
+
+function groupEntriesByQuestionId(
+  entries: readonly AnswerHistoryEntry[],
+): Map<string, AnswerHistoryEntry[]> {
+  const grouped = new Map<string, AnswerHistoryEntry[]>();
+  for (const entry of entries) {
+    const list = grouped.get(entry.id) ?? [];
+    list.push(entry);
+    grouped.set(entry.id, list);
+  }
+  return grouped;
+}
+
+function getReviewPriorityScore(
+  latest: AnswerHistoryEntry | undefined,
+  entries: readonly AnswerHistoryEntry[],
+  now: Date,
+): number {
+  if (!latest) return 0;
+  let score = getReviewOverdueScore(latest, now);
+  const incorrectCount = entries.filter((entry) => entry.result === "incorrect").length;
+
+  if (latest.result === "incorrect") {
+    score += 1000;
+    if (latest.confidence === "high") score += 400;
+    if (isFastIncorrect(latest)) score += 260;
+    if (incorrectCount >= 2) score += 180 + incorrectCount * 20;
+  } else if (latest.result === "correct") {
+    if (latest.confidence === "guess") score += 180;
+    if (latest.confidence === "mid") score += 120;
+  }
+
+  return score;
+}
+
+function getReviewOverdueScore(
+  entry: AnswerHistoryEntry,
+  now: Date,
+): number {
+  if (!entry.nextReviewAt) return 0;
+  const dueAt = new Date(`${entry.nextReviewAt}T00:00:00`);
+  const today = new Date(`${formatLocalDate(now)}T00:00:00`);
+  if (!Number.isFinite(dueAt.getTime()) || !Number.isFinite(today.getTime())) {
+    return 0;
+  }
+  const days = Math.floor(
+    (today.getTime() - dueAt.getTime()) / (24 * 60 * 60 * 1000),
+  );
+  return Math.max(0, Math.min(90, days * 6));
+}
+
+function isFastIncorrect(entry: AnswerHistoryEntry): boolean {
+  return (
+    entry.result === "incorrect" &&
+    typeof entry.durationMs === "number" &&
+    Number.isFinite(entry.durationMs) &&
+    entry.durationMs < 15_000
+  );
+}
+
+function compareQuestionSource(a: Question, b: Question): number {
+  if (a.round !== b.round) return a.round - b.round;
+  if (a.session !== b.session) return a.session === "am" ? -1 : 1;
+  return a.displayNumber - b.displayNumber;
 }
 
 export type FieldStat = {

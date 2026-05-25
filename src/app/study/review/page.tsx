@@ -20,7 +20,7 @@ export default async function ReviewPage() {
           復習する
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          間違えた問題や、迷った・勘かもで正解した問題を後日確認します
+          自信あり誤答・繰り返し誤答・迷いが残った問題から優先して確認します
         </p>
       </div>
 
