@@ -819,7 +819,7 @@ function FieldSummaryList({
           分野別の成績
         </h3>
         <p className="shrink-0 text-[10px] text-[var(--text-3)]">
-          {scopeSummary}の正答率と解答数
+          {scopeSummary}の正解/解答
         </p>
       </div>
       <div className="divide-y divide-border/70">
@@ -833,47 +833,34 @@ function FieldSummaryList({
 
 function FieldSummaryRow({ summary }: { summary: FieldSummary }) {
   const accuracy = summary.accuracy;
+  const incorrect = Math.max(0, summary.judged - summary.correct);
   return (
     <div className="px-1 py-2">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1">
-        <p className="min-w-0 truncate text-[12px] font-bold text-[var(--text-1)]">
-          {summary.majorCategory}
-        </p>
-        <p className="shrink-0 text-[10px] font-semibold text-[var(--text-3)]">
-          正答率{" "}
-          <span className="text-[15px] font-extrabold tabular-nums text-[var(--primary-dark)]">
-            {accuracy === null ? "--" : accuracy}
-          </span>
-          %
-        </p>
-        <div className="col-span-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
-          <div
-            className="h-full rounded-full bg-[var(--primary)] transition-[width]"
-            style={{ width: `${Math.max(0, Math.min(100, accuracy ?? 0))}%` }}
-          />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1">
+        <div className="min-w-0">
+          <p className="truncate text-[12px] font-bold text-[var(--text-1)]">
+            {summary.majorCategory}
+          </p>
+          <p className="mt-0.5 truncate text-[10px] text-[var(--text-3)]">
+            不正解 {formatRecordCount(incorrect)}
+            {summary.noAnswer > 0
+              ? ` / 正答なし ${formatRecordCount(summary.noAnswer)}`
+              : ""}
+          </p>
         </div>
-        <div className="min-w-0 text-[10px] text-[var(--text-3)]">
-          <span>
-            解答{" "}
-            <span className="font-bold tabular-nums text-[var(--text-2)]">
-              {formatRecordCount(summary.total)}
-            </span>
+        <p className="shrink-0 text-right text-[11px] font-bold text-[var(--text-3)]">
+          <span className="text-[16px] font-extrabold tabular-nums text-[var(--text-1)]">
+            {formatRecordCount(summary.correct)}
           </span>
-          <span className="ml-2">
-            正解{" "}
-            <span className="font-bold tabular-nums text-[var(--text-2)]">
-              {formatRecordCount(summary.correct)}
-            </span>
+          <span className="mx-0.5 text-[11px] text-[var(--text-3)]">/</span>
+          <span className="tabular-nums text-[var(--text-2)]">
+            {formatRecordCount(summary.total)}
           </span>
-          {summary.noAnswer > 0 ? (
-            <span className="ml-2">
-              正答なし{" "}
-              <span className="font-bold tabular-nums text-[var(--text-2)]">
-                {formatRecordCount(summary.noAnswer)}
-              </span>
-            </span>
-          ) : null}
-        </div>
+          <span className="ml-0.5 text-[10px] text-[var(--text-3)]">問</span>
+          <span className="ml-2 rounded-full bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-[var(--text-3)]">
+            {accuracy === null ? "--" : `${accuracy}%`}
+          </span>
+        </p>
         <Link
           href={`/study/field/${encodeURIComponent(summary.majorCategory)}`}
           className="justify-self-end rounded-full border border-border bg-[var(--bg-card)] px-2.5 py-1 text-[10px] font-bold text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
