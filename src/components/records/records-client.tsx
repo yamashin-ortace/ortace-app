@@ -35,6 +35,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getTokyoDateString } from "@/lib/daily-limit";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import { getReviewTargetIds } from "@/lib/answer-history/status";
 import { useStudyItemsLists } from "@/lib/study-items/use-study-items";
 import {
   BOOKMARK_CATEGORIES,
@@ -93,14 +94,26 @@ export function RecordsClient({ questions }: Props) {
     () => new Map(questions.map((q) => [q.id, q])),
     [questions],
   );
+  const validBookmarks = useMemo(
+    () => bookmarks.filter((item) => questionMap.has(item.id)),
+    [bookmarks, questionMap],
+  );
+  const validNotes = useMemo(
+    () => notes.filter((item) => questionMap.has(item.id)),
+    [notes, questionMap],
+  );
   const noteTextMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const note of notes) map.set(note.id, note.text);
     return map;
   }, [notes]);
   const bookmarkCountsByCategory = useMemo(
-    () => calculateBookmarkCounts(bookmarks),
-    [bookmarks],
+    () => calculateBookmarkCounts(validBookmarks),
+    [validBookmarks],
+  );
+  const reviewTargetCount = useMemo(
+    () => getReviewTargetIds(answerHistory).size,
+    [answerHistory],
   );
 
   const matchesSearch = useCallback(
@@ -126,16 +139,18 @@ export function RecordsClient({ questions }: Props) {
   const filteredBookmarks = useMemo(() => {
     const byCategory =
       categoryFilter === "all"
-        ? bookmarks
-        : bookmarks.filter((item) => item.categories.includes(categoryFilter));
+        ? validBookmarks
+        : validBookmarks.filter((item) =>
+            item.categories.includes(categoryFilter),
+          );
     return byCategory.filter((item) =>
       matchesSearch(item.id, noteTextMap.get(item.id) ?? ""),
     );
-  }, [bookmarks, categoryFilter, matchesSearch, noteTextMap]);
+  }, [validBookmarks, categoryFilter, matchesSearch, noteTextMap]);
 
   const filteredNotes = useMemo(
-    () => notes.filter((item) => matchesSearch(item.id, item.text)),
-    [notes, matchesSearch],
+    () => validNotes.filter((item) => matchesSearch(item.id, item.text)),
+    [validNotes, matchesSearch],
   );
 
   const displayedHistory = useMemo(() => {
@@ -149,10 +164,6 @@ export function RecordsClient({ questions }: Props) {
   }, [answerHistory, historyScope, matchesSearch, noteTextMap]);
   const fieldSummaries = useMemo(
     () => calculateFieldSummaries(displayedHistory),
-    [displayedHistory],
-  );
-  const displayedHistoryIncorrectCount = useMemo(
-    () => displayedHistory.filter((entry) => entry.result === "incorrect").length,
     [displayedHistory],
   );
   const visibleHistory = displayedHistory.slice(0, visibleHistoryCount);
@@ -247,7 +258,7 @@ export function RecordsClient({ questions }: Props) {
             activeCategory={categoryFilter}
           />
 
-          {bookmarks.length === 0 ? (
+          {validBookmarks.length === 0 ? (
             <EmptyState
               title="ブックマークはまだありません"
               description="演習中に保存した問題がここに並びます。"
@@ -282,7 +293,7 @@ export function RecordsClient({ questions }: Props) {
     }
 
     if (tab === "notes") {
-      return notes.length === 0 ? (
+      return validNotes.length === 0 ? (
         <EmptyState
           title="ノートはまだありません"
           description="覚えておきたいことを書くと、ここから見返せます。"
@@ -292,7 +303,7 @@ export function RecordsClient({ questions }: Props) {
           <RecordsActionLink
             href="/study/notes"
             label="ノートした問題を見直す"
-            detail={`${notes.length}問`}
+            detail={`${formatRecordCount(validNotes.length)}問`}
           />
           <EmptyState
             title="一致するノートはありません"
@@ -304,7 +315,7 @@ export function RecordsClient({ questions }: Props) {
           <RecordsActionLink
             href="/study/notes"
             label="ノートした問題を見直す"
-            detail={`${notes.length}問`}
+            detail={`${formatRecordCount(validNotes.length)}問`}
           />
           {filteredNotes.map((item) => {
             const question = questionMap.get(item.id);
@@ -364,13 +375,6 @@ export function RecordsClient({ questions }: Props) {
           />
         ) : (
           <>
-            {displayedHistoryIncorrectCount > 0 ? (
-              <RecordsActionLink
-                href="/study/review"
-                label="間違えた問題を復習"
-                detail={`${displayedHistoryIncorrectCount}件の不正解`}
-              />
-            ) : null}
             <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
             {visibleHistory.map((entry) => {
               const question = questionMap.get(entry.id);
@@ -405,6 +409,12 @@ export function RecordsClient({ questions }: Props) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+      <RecordsOverview
+        bookmarkCount={validBookmarks.length}
+        noteCount={validNotes.length}
+        historyCount={answerHistory.length}
+        reviewTargetCount={reviewTargetCount}
+      />
       <RecordsSearchInput value={searchQuery} onChange={setSearchQuery} />
       <TabsList className="grid h-11 w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1">
         <TabsTrigger
@@ -413,7 +423,7 @@ export function RecordsClient({ questions }: Props) {
         >
           <Bookmark className="h-4 w-4" strokeWidth={2.5} />
           ブックマーク
-          <RecordCountPill count={bookmarks.length} />
+          <RecordCountPill count={validBookmarks.length} />
         </TabsTrigger>
         <TabsTrigger
           value="notes"
@@ -421,7 +431,7 @@ export function RecordsClient({ questions }: Props) {
         >
           <FileText className="h-4 w-4" strokeWidth={2.5} />
           ノート
-          <RecordCountPill count={notes.length} />
+          <RecordCountPill count={validNotes.length} />
         </TabsTrigger>
         <TabsTrigger
           value="history"
@@ -440,10 +450,130 @@ export function RecordsClient({ questions }: Props) {
   );
 }
 
+function RecordsOverview({
+  bookmarkCount,
+  noteCount,
+  historyCount,
+  reviewTargetCount,
+}: {
+  bookmarkCount: number;
+  noteCount: number;
+  historyCount: number;
+  reviewTargetCount: number;
+}) {
+  return (
+    <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <RecordMetricCard
+        icon={<Bookmark className="h-4 w-4" strokeWidth={2.5} />}
+        label="ブックマーク"
+        value={bookmarkCount}
+        unit="問"
+      />
+      <RecordMetricCard
+        icon={<FileText className="h-4 w-4" strokeWidth={2.5} />}
+        label="ノート"
+        value={noteCount}
+        unit="問"
+      />
+      <RecordMetricCard
+        icon={<History className="h-4 w-4" strokeWidth={2.5} />}
+        label="履歴"
+        value={historyCount}
+        unit="件"
+      />
+      {reviewTargetCount > 0 ? (
+        <Link
+          href="/study/review"
+          className="choice-pressable flex min-h-[72px] items-center gap-2 rounded-[14px] border border-[var(--primary)]/35 bg-[var(--primary-soft)] px-3 py-2.5 text-[var(--primary-dark)] shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[var(--primary)] text-white">
+            <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-bold text-[var(--text-3)]">
+              復習待ち
+            </span>
+            <span className="block text-[18px] font-extrabold leading-tight tabular-nums text-[var(--text-1)]">
+              {formatRecordCount(reviewTargetCount)}
+              <span className="ml-0.5 text-[11px] font-bold text-[var(--text-3)]">
+                問
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="ml-auto h-4 w-4 shrink-0" strokeWidth={2.5} />
+        </Link>
+      ) : (
+        <RecordMetricCard
+          icon={<RotateCcw className="h-4 w-4" strokeWidth={2.5} />}
+          label="復習待ち"
+          value={0}
+          unit="問"
+          detail="今すぐ戻す問題なし"
+          muted
+        />
+      )}
+    </section>
+  );
+}
+
+function RecordMetricCard({
+  icon,
+  label,
+  value,
+  unit,
+  detail,
+  muted = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+  unit: string;
+  detail?: string;
+  muted?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-[72px] items-center gap-2 rounded-[14px] border px-3 py-2.5 shadow-sm",
+        muted
+          ? "border-border bg-[var(--bg-muted)]/45"
+          : "border-border bg-[var(--bg-card)]",
+      )}
+    >
+      <span
+        className={cn(
+          "grid h-8 w-8 shrink-0 place-items-center rounded-[10px]",
+          muted
+            ? "bg-[var(--bg-card)] text-[var(--text-3)]"
+            : "bg-[var(--primary-soft)] text-[var(--primary-dark)]",
+        )}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[11px] font-bold text-[var(--text-3)]">
+          {label}
+        </span>
+        <span className="block text-[18px] font-extrabold leading-tight tabular-nums text-[var(--text-1)]">
+          {formatRecordCount(value)}
+          <span className="ml-0.5 text-[11px] font-bold text-[var(--text-3)]">
+            {unit}
+          </span>
+        </span>
+        {detail ? (
+          <span className="mt-0.5 block truncate text-[10px] font-semibold text-[var(--text-3)]">
+            {detail}
+          </span>
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
 function RecordCountPill({ count }: { count: number }) {
   return (
     <span className="ml-1 rounded-full bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums text-[var(--text-3)]">
-      {count > 999 ? "999+" : count}
+      {formatRecordCount(count)}
     </span>
   );
 }
@@ -463,7 +593,7 @@ function BookmarkReviewActions({
       <RecordsActionLink
         href={`/study/bookmark/${activeCategory}`}
         label={`「${category.label}」を復習`}
-        detail={`${count}問`}
+        detail={`${formatRecordCount(count)}問`}
       />
     );
   }
@@ -480,7 +610,7 @@ function BookmarkReviewActions({
           key={category.id}
           href={`/study/bookmark/${category.id}`}
           label={`「${category.label}」を復習`}
-          detail={`${counts[category.id]}問`}
+          detail={`${formatRecordCount(counts[category.id])}問`}
           compact
         />
       ))}
@@ -1048,4 +1178,8 @@ function formatDateTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatRecordCount(count: number): string {
+  return new Intl.NumberFormat("ja-JP").format(count);
 }
