@@ -398,10 +398,10 @@ export function RecordsClient({ questions }: Props) {
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
       <RecordsSearchInput value={searchQuery} onChange={setSearchQuery} />
       <ReviewQueueCta count={reviewTargetCount} />
-      <TabsList className="grid h-[54px] w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1 sm:h-11">
+      <TabsList className="grid min-h-[68px] w-full grid-cols-3 items-stretch rounded-[16px] bg-[var(--bg-muted)] p-1.5 sm:min-h-0 sm:h-11 sm:items-center sm:rounded-[12px] sm:p-1">
         <TabsTrigger
           value="bookmarks"
-          className="h-full min-w-0 flex-col gap-0.5 rounded-[10px] px-1 py-1 text-[10px] leading-tight font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] sm:flex-row sm:gap-1.5 sm:text-[13px]"
+          className="!h-full min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-[12px] px-1 py-1.5 text-[11px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] data-active:shadow-none sm:flex-row sm:gap-1.5 sm:rounded-[10px] sm:py-0 sm:text-[13px]"
         >
           <span className="inline-flex min-w-0 items-center gap-1">
             <Bookmark className="h-4 w-4" strokeWidth={2.5} />
@@ -411,7 +411,7 @@ export function RecordsClient({ questions }: Props) {
         </TabsTrigger>
         <TabsTrigger
           value="notes"
-          className="h-full min-w-0 flex-col gap-0.5 rounded-[10px] px-1 py-1 text-[10px] leading-tight font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] sm:flex-row sm:gap-1.5 sm:text-[13px]"
+          className="!h-full min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-[12px] px-1 py-1.5 text-[11px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] data-active:shadow-none sm:flex-row sm:gap-1.5 sm:rounded-[10px] sm:py-0 sm:text-[13px]"
         >
           <span className="inline-flex min-w-0 items-center gap-1">
             <FileText className="h-4 w-4" strokeWidth={2.5} />
@@ -421,12 +421,13 @@ export function RecordsClient({ questions }: Props) {
         </TabsTrigger>
         <TabsTrigger
           value="history"
-          className="h-full min-w-0 flex-col gap-0.5 rounded-[10px] px-1 py-1 text-[10px] leading-tight font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] sm:flex-row sm:gap-1.5 sm:text-[13px]"
+          className="!h-full min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-[12px] px-1 py-1.5 text-[11px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] data-active:shadow-none sm:flex-row sm:gap-1.5 sm:rounded-[10px] sm:py-0 sm:text-[13px]"
         >
           <span className="inline-flex min-w-0 items-center gap-1">
             <History className="h-4 w-4" strokeWidth={2.5} />
             <span className="truncate">履歴</span>
           </span>
+          <span className="h-5 sm:hidden" aria-hidden />
         </TabsTrigger>
       </TabsList>
 
@@ -466,7 +467,7 @@ function ReviewQueueCta({ count }: { count: number }) {
 
 function RecordCountPill({ count }: { count: number }) {
   return (
-    <span className="rounded-full bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums text-[var(--text-3)] sm:ml-1">
+    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--bg-muted)] px-1.5 text-[10px] font-extrabold tabular-nums text-[var(--text-3)] sm:ml-1 sm:h-auto sm:min-w-0 sm:py-0.5">
       {formatRecordCount(count)}
     </span>
   );
