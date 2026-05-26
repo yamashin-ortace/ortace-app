@@ -409,13 +409,8 @@ export function RecordsClient({ questions }: Props) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-      <RecordsOverview
-        bookmarkCount={validBookmarks.length}
-        noteCount={validNotes.length}
-        historyCount={answerHistory.length}
-        reviewTargetCount={reviewTargetCount}
-      />
       <RecordsSearchInput value={searchQuery} onChange={setSearchQuery} />
+      <ReviewQueueCta count={reviewTargetCount} />
       <TabsList className="grid h-11 w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1">
         <TabsTrigger
           value="bookmarks"
@@ -439,7 +434,6 @@ export function RecordsClient({ questions }: Props) {
         >
           <History className="h-4 w-4" strokeWidth={2.5} />
           履歴
-          <RecordCountPill count={answerHistory.length} />
         </TabsTrigger>
       </TabsList>
 
@@ -450,123 +444,30 @@ export function RecordsClient({ questions }: Props) {
   );
 }
 
-function RecordsOverview({
-  bookmarkCount,
-  noteCount,
-  historyCount,
-  reviewTargetCount,
-}: {
-  bookmarkCount: number;
-  noteCount: number;
-  historyCount: number;
-  reviewTargetCount: number;
-}) {
-  return (
-    <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <RecordMetricCard
-        icon={<Bookmark className="h-4 w-4" strokeWidth={2.5} />}
-        label="ブックマーク"
-        value={bookmarkCount}
-        unit="問"
-      />
-      <RecordMetricCard
-        icon={<FileText className="h-4 w-4" strokeWidth={2.5} />}
-        label="ノート"
-        value={noteCount}
-        unit="問"
-      />
-      <RecordMetricCard
-        icon={<History className="h-4 w-4" strokeWidth={2.5} />}
-        label="履歴"
-        value={historyCount}
-        unit="件"
-      />
-      {reviewTargetCount > 0 ? (
-        <Link
-          href="/study/review"
-          className="choice-pressable flex min-h-[72px] items-center gap-2 rounded-[14px] border border-[var(--primary)]/35 bg-[var(--primary-soft)] px-3 py-2.5 text-[var(--primary-dark)] shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
-        >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[var(--primary)] text-white">
-            <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[11px] font-bold text-[var(--text-3)]">
-              復習待ち
-            </span>
-            <span className="block text-[18px] font-extrabold leading-tight tabular-nums text-[var(--text-1)]">
-              {formatRecordCount(reviewTargetCount)}
-              <span className="ml-0.5 text-[11px] font-bold text-[var(--text-3)]">
-                問
-              </span>
-            </span>
-          </span>
-          <ChevronRight className="ml-auto h-4 w-4 shrink-0" strokeWidth={2.5} />
-        </Link>
-      ) : (
-        <RecordMetricCard
-          icon={<RotateCcw className="h-4 w-4" strokeWidth={2.5} />}
-          label="復習待ち"
-          value={0}
-          unit="問"
-          detail="今すぐ戻す問題なし"
-          muted
-        />
-      )}
-    </section>
-  );
-}
+function ReviewQueueCta({ count }: { count: number }) {
+  if (count <= 0) return null;
 
-function RecordMetricCard({
-  icon,
-  label,
-  value,
-  unit,
-  detail,
-  muted = false,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number;
-  unit: string;
-  detail?: string;
-  muted?: boolean;
-}) {
   return (
-    <div
-      className={cn(
-        "flex min-h-[72px] items-center gap-2 rounded-[14px] border px-3 py-2.5 shadow-sm",
-        muted
-          ? "border-border bg-[var(--bg-muted)]/45"
-          : "border-border bg-[var(--bg-card)]",
-      )}
+    <Link
+      href="/study/review"
+      className="choice-pressable flex items-center gap-2 rounded-[12px] border border-[var(--primary)]/30 bg-[var(--primary-soft)] px-3 py-2 text-[var(--primary-dark)] shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_3px_10px_rgba(0,0,0,0.06)]"
     >
-      <span
-        className={cn(
-          "grid h-8 w-8 shrink-0 place-items-center rounded-[10px]",
-          muted
-            ? "bg-[var(--bg-card)] text-[var(--text-3)]"
-            : "bg-[var(--primary-soft)] text-[var(--primary-dark)]",
-        )}
-      >
-        {icon}
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[var(--primary)] text-white">
+        <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
       </span>
-      <span className="min-w-0">
-        <span className="block text-[11px] font-bold text-[var(--text-3)]">
-          {label}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12px] font-extrabold leading-tight text-[var(--text-1)]">
+          復習待ちの問題があります
         </span>
-        <span className="block text-[18px] font-extrabold leading-tight tabular-nums text-[var(--text-1)]">
-          {formatRecordCount(value)}
-          <span className="ml-0.5 text-[11px] font-bold text-[var(--text-3)]">
-            {unit}
-          </span>
+        <span className="block text-[11px] font-semibold text-[var(--text-3)]">
+          {formatRecordCount(count)}問を優先順に確認
         </span>
-        {detail ? (
-          <span className="mt-0.5 block truncate text-[10px] font-semibold text-[var(--text-3)]">
-            {detail}
-          </span>
-        ) : null}
       </span>
-    </div>
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--bg-card)] px-2.5 py-1 text-[11px] font-bold text-[var(--primary-dark)]">
+        復習する
+        <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+      </span>
+    </Link>
   );
 }
 
@@ -886,12 +787,12 @@ function FieldSummaryList({
   const scopeSummary = describeHistoryScope(scope);
 
   return (
-    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="mb-2 px-1">
-        <h3 className="text-[15px] font-bold text-[var(--text-1)]">
+    <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="mb-1.5 flex items-baseline justify-between gap-3 px-1">
+        <h3 className="text-[14px] font-bold text-[var(--text-1)]">
           分野別の成績
         </h3>
-        <p className="mt-0.5 text-[11px] text-[var(--text-3)]">
+        <p className="shrink-0 text-[10px] text-[var(--text-3)]">
           {scopeSummary}の正答率と解答数
         </p>
       </div>
@@ -907,57 +808,53 @@ function FieldSummaryList({
 function FieldSummaryRow({ summary }: { summary: FieldSummary }) {
   const accuracy = summary.accuracy;
   return (
-    <div className="px-1 py-2.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="min-w-0 flex-1 text-[13px] font-bold text-[var(--text-1)]">
+    <div className="px-1 py-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1">
+        <p className="min-w-0 truncate text-[12px] font-bold text-[var(--text-1)]">
           {summary.majorCategory}
         </p>
-        <p className="shrink-0 text-[11px] font-semibold text-[var(--text-3)]">
+        <p className="shrink-0 text-[10px] font-semibold text-[var(--text-3)]">
           正答率{" "}
-          <span className="text-[17px] font-extrabold tabular-nums text-[var(--primary-dark)]">
+          <span className="text-[15px] font-extrabold tabular-nums text-[var(--primary-dark)]">
             {accuracy === null ? "--" : accuracy}
           </span>
           %
         </p>
-      </div>
-      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
-        <div
-          className="h-full rounded-full bg-[var(--primary)] transition-[width]"
-          style={{ width: `${Math.max(0, Math.min(100, accuracy ?? 0))}%` }}
-        />
-      </div>
-      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--text-3)]">
-        <span>
-          解答{" "}
-          <span className="font-bold tabular-nums text-[var(--text-2)]">
-            {summary.total}
-          </span>
-          問
-        </span>
-        <span>
-          正解{" "}
-          <span className="font-bold tabular-nums text-[var(--text-2)]">
-            {summary.correct}
-          </span>
-          問
-        </span>
-        {summary.noAnswer > 0 ? (
+        <div className="col-span-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
+          <div
+            className="h-full rounded-full bg-[var(--primary)] transition-[width]"
+            style={{ width: `${Math.max(0, Math.min(100, accuracy ?? 0))}%` }}
+          />
+        </div>
+        <div className="min-w-0 text-[10px] text-[var(--text-3)]">
           <span>
-            正答なし{" "}
+            解答{" "}
             <span className="font-bold tabular-nums text-[var(--text-2)]">
-              {summary.noAnswer}
+              {formatRecordCount(summary.total)}
             </span>
-            問
           </span>
-        ) : null}
+          <span className="ml-2">
+            正解{" "}
+            <span className="font-bold tabular-nums text-[var(--text-2)]">
+              {formatRecordCount(summary.correct)}
+            </span>
+          </span>
+          {summary.noAnswer > 0 ? (
+            <span className="ml-2">
+              正答なし{" "}
+              <span className="font-bold tabular-nums text-[var(--text-2)]">
+                {formatRecordCount(summary.noAnswer)}
+              </span>
+            </span>
+          ) : null}
+        </div>
+        <Link
+          href={`/study/field/${encodeURIComponent(summary.majorCategory)}`}
+          className="justify-self-end rounded-full border border-border bg-[var(--bg-card)] px-2.5 py-1 text-[10px] font-bold text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
+        >
+          解く
+        </Link>
       </div>
-      <Link
-        href={`/study/field/${encodeURIComponent(summary.majorCategory)}`}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-[var(--bg-card)] px-3 py-1.5 text-[11px] font-bold text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-1)]"
-      >
-        この分野を解く
-        <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-      </Link>
     </div>
   );
 }
