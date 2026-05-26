@@ -58,6 +58,7 @@ type Props = {
 
 const SESSION_LABEL = { am: "午前", pm: "午後" } as const;
 const RECORDS_SCROLL_KEY = "ortace.records.scrollY";
+const RECORDS_HISTORY_DISPLAY_LIMIT = 500;
 const HISTORY_PAGE_SIZE = 50;
 type RecordsTab = "bookmarks" | "notes" | "history";
 type HistoryScope = "all" | "today" | "week" | "month";
@@ -153,7 +154,7 @@ export function RecordsClient({ questions }: Props) {
     [validNotes, matchesSearch],
   );
 
-  const displayedHistory = useMemo(() => {
+  const filteredHistory = useMemo(() => {
     const byScope =
       historyScope === "all"
         ? answerHistory
@@ -162,6 +163,11 @@ export function RecordsClient({ questions }: Props) {
       matchesSearch(entry.id, noteTextMap.get(entry.id) ?? ""),
     );
   }, [answerHistory, historyScope, matchesSearch, noteTextMap]);
+  const displayedHistory = useMemo(
+    () => filteredHistory.slice(0, RECORDS_HISTORY_DISPLAY_LIMIT),
+    [filteredHistory],
+  );
+  const isHistoryCapped = filteredHistory.length > displayedHistory.length;
   const fieldSummaries = useMemo(
     () => calculateFieldSummaries(displayedHistory),
     [displayedHistory],
@@ -360,7 +366,7 @@ export function RecordsClient({ questions }: Props) {
           ))}
         </div>
 
-        {displayedHistory.length === 0 ? (
+        {filteredHistory.length === 0 ? (
           <EmptyState
             title={
               searchQuery.trim()
@@ -375,7 +381,14 @@ export function RecordsClient({ questions }: Props) {
           />
         ) : (
           <>
-            <FieldSummaryList summaries={fieldSummaries} scope={historyScope} />
+            {isHistoryCapped ? (
+              <HistoryDisplayLimitNotice shown={displayedHistory.length} />
+            ) : null}
+            <FieldSummaryList
+              summaries={fieldSummaries}
+              scope={historyScope}
+              isCapped={isHistoryCapped}
+            />
             {visibleHistory.map((entry) => {
               const question = questionMap.get(entry.id);
               if (!question) return null;
@@ -441,6 +454,15 @@ export function RecordsClient({ questions }: Props) {
         {renderRecordsPanel(activeTab)}
       </div>
     </Tabs>
+  );
+}
+
+function HistoryDisplayLimitNotice({ shown }: { shown: number }) {
+  return (
+    <div className="rounded-[12px] border border-border bg-[var(--bg-muted)]/45 px-3 py-2 text-[11px] leading-relaxed text-[var(--text-3)]">
+      表示は直近{formatRecordCount(shown)}
+      件までに絞っています。古い履歴も学習データとして保持されます。
+    </div>
   );
 }
 
@@ -778,13 +800,17 @@ function AnswerHistoryCard({
 function FieldSummaryList({
   summaries,
   scope,
+  isCapped,
 }: {
   summaries: FieldSummary[];
   scope: HistoryScope;
+  isCapped: boolean;
 }) {
   if (summaries.length === 0) return null;
 
-  const scopeSummary = describeHistoryScope(scope);
+  const scopeSummary = isCapped
+    ? `表示中の直近${formatRecordCount(RECORDS_HISTORY_DISPLAY_LIMIT)}件`
+    : describeHistoryScope(scope);
 
   return (
     <section className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
