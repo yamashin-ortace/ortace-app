@@ -22,7 +22,7 @@ export function MockModeCard() {
           </span>
         </div>
         <span className="mt-0.5 text-[11px] font-medium leading-snug text-[var(--text-4)]">
-          12月中旬実装予定。いまは受験できません（仕様は説明ページで確認できます）
+          公開時期は調整中。いまは受験できません（仕様は説明ページで確認できます）
         </span>
       </div>
       <ChevronRight

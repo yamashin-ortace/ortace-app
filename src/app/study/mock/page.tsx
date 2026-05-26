@@ -10,7 +10,7 @@ export default function MockStartPage() {
           模試にチャレンジ
         </h1>
         <p className="text-[12px] text-[var(--text-4)]">
-          準備中（12月中旬ごろ公開予定）
+          準備中（公開時期は調整中）
         </p>
       </div>
 
@@ -21,7 +21,7 @@ export default function MockStartPage() {
             準備中
           </div>
           <h2 className="text-[20px] font-extrabold leading-tight tracking-tight text-[var(--text-1)]">
-            模試モードは12月中旬ごろ実装予定です。
+            模試モードは公開時期を調整中です。
           </h2>
           <p className="text-[13px] leading-relaxed text-[var(--text-2)]">
             国試直前の3ヶ月、もっとも欲しくなる
@@ -69,7 +69,7 @@ export default function MockStartPage() {
         className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[12px] border border-dashed border-[var(--text-4)]/55 bg-[var(--bg-muted)]/50 px-6 py-3.5 text-[14px] font-bold text-[var(--text-3)]"
       >
         <Sparkles className="h-4 w-4 text-[var(--text-4)]" strokeWidth={2.5} />
-        いまは受験できません（12月中旬ごろ公開予定）
+        いまは受験できません（公開時期は調整中）
       </button>
     </div>
   );
