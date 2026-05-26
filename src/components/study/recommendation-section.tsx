@@ -171,10 +171,10 @@ function RecommendStudyLink({
   badge?: number | null;
 }) {
   return (
-    <div className="flex min-h-[96px] items-start gap-1.5 rounded-[14px] border border-border bg-[var(--bg-card)] p-3 text-[var(--text-1)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-px hover:border-[var(--primary)]/35 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)]">
+    <div className="flex items-center gap-1.5 rounded-[14px] border border-border bg-[var(--bg-card)] p-3 text-[var(--text-1)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-px hover:border-[var(--primary)]/35 hover:shadow-[0_4px_14px_rgba(0,0,0,0.07)]">
       <Link
         href={href}
-        className="group flex min-w-0 flex-1 items-start gap-2.5"
+        className="group flex min-w-0 flex-1 items-center gap-2.5"
       >
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
           {icon}
@@ -195,7 +195,7 @@ function RecommendStudyLink({
           </span>
         </div>
         <ChevronRight
-          className="mt-2 h-4 w-4 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--primary-dark)]"
+          className="h-4 w-4 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--primary-dark)]"
           strokeWidth={2.5}
         />
       </Link>

@@ -14,8 +14,8 @@ type Props = {
 };
 
 /**
- * 学習タブで「テーマ別 3問チェック」を、AIテーマ分類ごとの正答率が低い順に最大5件表示する。
- * 各行タップで AIテーマクラスタごとの「3問だけ確認」へ遷移。
+ * 学習タブで「テーマ別 3問チェック」を、テーマごとの正答率が低い順に最大5件表示する。
+ * 各行タップでテーマごとの「3問だけ確認」へ遷移。
  * 苦手克服（20問の集中演習）に対して、こちらは「気になるテーマをサクッと3問」のミニ確認用。
  */
 export function WeakClusterSection({ clusters }: Props) {
@@ -51,7 +51,7 @@ export function WeakClusterSection({ clusters }: Props) {
       </h2>
       <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <p className="mb-2 px-1 text-[11px] text-[var(--text-3)]">
-          解答履歴をAIテーマ分類でまとめ、正答率が低めのテーマを並べました。タップで近い問題を3問だけサクッと確認できます。
+          解答履歴から、正答率が低めのテーマを並べました。タップすると近い問題を3問だけ確認できます。
         </p>
         <ul className="divide-y divide-border/70">
           {rows.map((row) => (
@@ -60,7 +60,7 @@ export function WeakClusterSection({ clusters }: Props) {
                 href={`/study/ai-theme/${encodeURIComponent(row.clusterId)}?count=3`}
                 className="group -mx-1 flex items-center gap-3 rounded-[10px] px-1 py-2.5 transition-colors duration-150 hover:bg-[var(--bg-muted)]/50"
               >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary-dark)]">
                   <Target className="h-4 w-4" strokeWidth={2.5} />
                 </span>
                 <div className="min-w-0 flex-1">

@@ -152,7 +152,7 @@ function ScoreOverview({
   const isAtPass = canJudgePassLine && diff >= 0;
 
   return (
-    <div className="flex items-end justify-between gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
       <div className="min-w-0">
         <p className="text-[11px] font-bold text-[var(--text-3)]">
           慎重推定正答率
@@ -172,7 +172,7 @@ function ScoreOverview({
         )}
       >
         <p className="text-[10px] font-bold text-[var(--text-3)]">
-          {canJudgePassLine ? "合格基準60%との差" : "参考ライン60%との差"}
+          {canJudgePassLine ? "合格目安との差" : "参考ラインとの差"}
         </p>
         <p
           className={cn(
@@ -182,6 +182,9 @@ function ScoreOverview({
         >
           {isAtPass ? "+" : ""}
           {diff}pt
+        </p>
+        <p className="mt-1 text-[10px] font-semibold text-[var(--text-3)]">
+          60% / {Math.round(maxScore * 0.6)}点
         </p>
       </div>
     </div>
@@ -208,12 +211,18 @@ function ScoreGauge({
   return (
     <div className="space-y-2">
       <div
-        className="relative pt-4 pb-2"
+        className="relative pt-6 pb-4"
         aria-label={`慎重推定正答率 ${scorePercent}%、合格基準 ${passPercent}%`}
       >
-        <div className="relative h-5 w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
+        <span
+          className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold text-[var(--primary-dark)]"
+          style={{ left: `${passRatio * 100}%` }}
+        >
+          合格目安 {passPercent}%
+        </span>
+        <div className="relative h-4 w-full rounded-full bg-[var(--bg-muted)]">
           <div
-            className="absolute top-0 right-0 h-full bg-[var(--primary-soft)]/90"
+            className="absolute top-0 right-0 h-full rounded-r-full bg-[var(--primary-soft)]/70"
             style={{ left: `${passRatio * 100}%` }}
           />
           <div
@@ -224,12 +233,12 @@ function ScoreGauge({
             style={{ width: `${ratio * 100}%` }}
           />
           <div
-            className="absolute top-1/2 h-9 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--text-1)] shadow-[0_0_0_2px_var(--bg-card)]"
+            className="absolute top-1/2 h-7 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--primary-dark)] shadow-[0_0_0_2px_var(--bg-card)]"
             style={{ left: `${passRatio * 100}%` }}
           />
           <div
             className={cn(
-              "absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[var(--bg-card)] shadow-[0_2px_7px_rgba(0,0,0,0.18)]",
+              "absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[var(--bg-card)] shadow-[0_2px_7px_rgba(0,0,0,0.18)]",
               isAtPass ? "bg-[var(--primary-dark)]" : "bg-[var(--primary)]",
             )}
             style={{ left: `${ratio * 100}%` }}
@@ -240,13 +249,10 @@ function ScoreGauge({
             style={{ left: `${ratio * 100}%` }}
           />
         </div>
-      </div>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center text-[10px] font-bold text-[var(--text-3)]">
-        <span>0%</span>
-        <span className="rounded-full bg-[var(--text-1)] px-2 py-0.5 text-white">
-          合格基準 {passPercent}%
-        </span>
-        <span className="text-right">100%</span>
+        <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] font-bold text-[var(--text-3)]">
+          <span>0%</span>
+          <span>100%</span>
+        </div>
       </div>
     </div>
   );

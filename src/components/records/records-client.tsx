@@ -108,10 +108,6 @@ export function RecordsClient({ questions }: Props) {
     for (const note of notes) map.set(note.id, note.text);
     return map;
   }, [notes]);
-  const bookmarkCountsByCategory = useMemo(
-    () => calculateBookmarkCounts(validBookmarks),
-    [validBookmarks],
-  );
   const reviewTargetCount = useMemo(
     () => getReviewTargetIds(answerHistory).size,
     [answerHistory],
@@ -258,11 +254,6 @@ export function RecordsClient({ questions }: Props) {
             ))}
           </div>
 
-          <BookmarkReviewActions
-            counts={bookmarkCountsByCategory}
-            activeCategory={categoryFilter}
-          />
-
           {validBookmarks.length === 0 ? (
             <EmptyState
               title="ブックマークはまだありません"
@@ -304,24 +295,12 @@ export function RecordsClient({ questions }: Props) {
           description="覚えておきたいことを書くと、ここから見返せます。"
         />
       ) : filteredNotes.length === 0 ? (
-        <>
-          <RecordsActionLink
-            href="/study/notes"
-            label="ノートした問題を見直す"
-            detail={`${formatRecordCount(validNotes.length)}問`}
-          />
-          <EmptyState
-            title="一致するノートはありません"
-            description="検索条件を変えてみてください。"
-          />
-        </>
+        <EmptyState
+          title="一致するノートはありません"
+          description="検索条件を変えてみてください。"
+        />
       ) : (
         <>
-          <RecordsActionLink
-            href="/study/notes"
-            label="ノートした問題を見直す"
-            detail={`${formatRecordCount(validNotes.length)}問`}
-          />
           {filteredNotes.map((item) => {
             const question = questionMap.get(item.id);
             if (!question) return null;
@@ -419,29 +398,35 @@ export function RecordsClient({ questions }: Props) {
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
       <RecordsSearchInput value={searchQuery} onChange={setSearchQuery} />
       <ReviewQueueCta count={reviewTargetCount} />
-      <TabsList className="grid h-11 w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1">
+      <TabsList className="grid h-[54px] w-full grid-cols-3 items-center rounded-[12px] bg-[var(--bg-muted)] p-1 sm:h-11">
         <TabsTrigger
           value="bookmarks"
-          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+          className="h-full min-w-0 flex-col gap-0.5 rounded-[10px] px-1 py-1 text-[10px] leading-tight font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] sm:flex-row sm:gap-1.5 sm:text-[13px]"
         >
-          <Bookmark className="h-4 w-4" strokeWidth={2.5} />
-          ブックマーク
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <Bookmark className="h-4 w-4" strokeWidth={2.5} />
+            <span className="truncate">ブックマーク</span>
+          </span>
           <RecordCountPill count={validBookmarks.length} />
         </TabsTrigger>
         <TabsTrigger
           value="notes"
-          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+          className="h-full min-w-0 flex-col gap-0.5 rounded-[10px] px-1 py-1 text-[10px] leading-tight font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] sm:flex-row sm:gap-1.5 sm:text-[13px]"
         >
-          <FileText className="h-4 w-4" strokeWidth={2.5} />
-          ノート
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <FileText className="h-4 w-4" strokeWidth={2.5} />
+            <span className="truncate">ノート</span>
+          </span>
           <RecordCountPill count={validNotes.length} />
         </TabsTrigger>
         <TabsTrigger
           value="history"
-          className="h-full rounded-[10px] py-0 text-[13px] leading-none font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)]"
+          className="h-full min-w-0 flex-col gap-0.5 rounded-[10px] px-1 py-1 text-[10px] leading-tight font-bold after:hidden data-active:bg-[var(--bg-card)] data-active:text-[var(--text-1)] sm:flex-row sm:gap-1.5 sm:text-[13px]"
         >
-          <History className="h-4 w-4" strokeWidth={2.5} />
-          履歴
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <History className="h-4 w-4" strokeWidth={2.5} />
+            <span className="truncate">履歴</span>
+          </span>
         </TabsTrigger>
       </TabsList>
 
@@ -481,84 +466,9 @@ function ReviewQueueCta({ count }: { count: number }) {
 
 function RecordCountPill({ count }: { count: number }) {
   return (
-    <span className="ml-1 rounded-full bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums text-[var(--text-3)]">
+    <span className="rounded-full bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums text-[var(--text-3)] sm:ml-1">
       {formatRecordCount(count)}
     </span>
-  );
-}
-
-function BookmarkReviewActions({
-  counts,
-  activeCategory,
-}: {
-  counts: Record<BookmarkCategory, number>;
-  activeCategory: BookmarkCategory | "all";
-}) {
-  if (activeCategory !== "all") {
-    const category = BOOKMARK_CATEGORIES.find((item) => item.id === activeCategory);
-    const count = counts[activeCategory] ?? 0;
-    if (!category || count === 0) return null;
-    return (
-      <RecordsActionLink
-        href={`/study/bookmark/${activeCategory}`}
-        label={`「${category.label}」を復習`}
-        detail={`${formatRecordCount(count)}問`}
-      />
-    );
-  }
-
-  const availableCategories = BOOKMARK_CATEGORIES.filter(
-    (category) => counts[category.id] > 0,
-  );
-  if (availableCategories.length === 0) return null;
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {availableCategories.map((category) => (
-        <RecordsActionLink
-          key={category.id}
-          href={`/study/bookmark/${category.id}`}
-          label={`「${category.label}」を復習`}
-          detail={`${formatRecordCount(counts[category.id])}問`}
-          compact
-        />
-      ))}
-    </div>
-  );
-}
-
-function RecordsActionLink({
-  href,
-  label,
-  detail,
-  compact = false,
-}: {
-  href: string;
-  label: string;
-  detail: string;
-  compact?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "choice-pressable flex items-center gap-3 rounded-[14px] border border-[var(--primary)]/30 bg-[var(--primary-soft)] px-3 text-[var(--primary-dark)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]",
-        compact ? "py-2.5" : "py-3",
-      )}
-    >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--primary)] text-white">
-        <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-extrabold text-[var(--text-1)]">
-          {label}
-        </span>
-        <span className="block text-[11px] font-semibold text-[var(--text-3)]">
-          {detail}
-        </span>
-      </span>
-      <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-    </Link>
   );
 }
 
@@ -983,20 +893,6 @@ function calculateFieldSummaries(entries: AnswerHistoryEntry[]): FieldSummary[] 
     if (b.total !== a.total) return b.total - a.total;
     return a.majorCategory.localeCompare(b.majorCategory, "ja");
   });
-}
-
-function calculateBookmarkCounts(
-  bookmarks: readonly { categories: readonly BookmarkCategory[] }[],
-): Record<BookmarkCategory, number> {
-  const counts = Object.fromEntries(
-    BOOKMARK_CATEGORIES.map((category) => [category.id, 0]),
-  ) as Record<BookmarkCategory, number>;
-  for (const bookmark of bookmarks) {
-    for (const category of bookmark.categories) {
-      counts[category] += 1;
-    }
-  }
-  return counts;
 }
 
 function isAnsweredToday(entry: AnswerHistoryEntry): boolean {

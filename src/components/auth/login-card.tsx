@@ -63,14 +63,23 @@ export function LoginCard({
   async function handleOAuth(providerKind: "google" | "line") {
     setError(null);
     setOauthPending(providerKind);
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: getOAuthProvider(providerKind),
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: getOAuthProvider(providerKind),
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) {
+        setOauthPending(null);
+        setError(error.message);
+      }
+    } catch (err) {
       setOauthPending(null);
-      setError(error.message);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "ログイン画面を開けませんでした。SafariまたはChromeで開き直してください。",
+      );
     }
   }
 
