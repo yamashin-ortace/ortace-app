@@ -42,7 +42,7 @@ describe("billing plans", () => {
     ).toBe("low");
   });
 
-  it("低学年プランは購入日から1年にする", () => {
+  it("基礎定着パスは購入日から1年にする", () => {
     expect(calculatePlanExpiresAt("low", new Date("2026-05-09T12:00:00.000Z"))).toBe(
       "2027-05-09T12:00:00.000Z",
     );

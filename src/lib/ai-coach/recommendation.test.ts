@@ -200,6 +200,42 @@ describe("AI coach recommendation", () => {
     expect(rec.buckets.review.length).toBeLessThanOrEqual(5);
   });
 
+  it("ホームで注目されるテーマを今日のおすすめに最大3問入れる", () => {
+    const questions = makeQuestions(25);
+    const now = new Date("2026-05-15T12:00:00+09:00");
+    const entries: AnswerHistoryEntry[] = [
+      makeEntry("56-1", {
+        result: "incorrect",
+        confidence: "high",
+        answeredAt: "2026-05-14T00:00:00.000Z",
+      }),
+      makeEntry("56-2", {
+        result: "incorrect",
+        confidence: "high",
+        answeredAt: "2026-05-14T01:00:00.000Z",
+      }),
+      makeEntry("56-3", {
+        result: "incorrect",
+        confidence: "mid",
+        answeredAt: "2026-05-14T02:00:00.000Z",
+      }),
+      makeEntry("56-4", {
+        result: "incorrect",
+        confidence: "guess",
+        answeredAt: "2026-05-14T03:00:00.000Z",
+      }),
+    ];
+
+    const rec = pickAiCoachRecommended(questions, entries, 20, { now });
+
+    expect(rec.buckets.focus).toHaveLength(3);
+    expect(rec.buckets.focus.map((q) => q.id)).toEqual(["56-2", "56-1", "56-4"]);
+    expect(rec.questions).toHaveLength(20);
+    expect(new Set(rec.questions.map((q) => q.id)).size).toBe(20);
+    expect(rec.buckets.unanswered.length).toBeLessThanOrEqual(5);
+    expect(rec.buckets.review.length).toBeLessThanOrEqual(5);
+  });
+
   it("テーマ名が少し違っても同じAIテーマクラスタなら反復ミスとして拾う", () => {
     const questions = [
       {

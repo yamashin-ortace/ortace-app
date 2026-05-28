@@ -39,7 +39,7 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
     <article
       aria-label={definition.name}
       className={cn(
-        "rounded-[14px] border bg-[var(--bg-card)] p-4 shadow-sm",
+        "h-full rounded-[14px] border bg-[var(--bg-card)] p-4 shadow-sm",
         highlighted
           ? "border-[var(--primary)] shadow-[0_4px_16px_var(--primary-shadow-soft)]"
           : "border-border",
@@ -50,49 +50,55 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
           <h2 className="text-[17px] font-bold text-[var(--text-1)]">
             {definition.name}
           </h2>
-          <p className="min-h-[42px] text-[12px] leading-relaxed text-[var(--text-3)]">
+          <p className="min-h-[60px] text-[12px] leading-relaxed text-[var(--text-3)]">
             {definition.description}
           </p>
 
-          {hasDurations && definition.durations ? (
-            <div
-              role="tablist"
-              aria-label="期間を選ぶ"
-              className="grid grid-cols-2 gap-1 rounded-[10px] border border-border bg-[var(--bg-muted)] p-1"
-            >
-              {definition.durations.map((duration) => {
-                const isActive = duration.id === selectedDurationId;
-                return (
-                  <button
-                    key={duration.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setSelectedDurationId(duration.id)}
-                    className={cn(
-                      "rounded-[8px] px-3 py-1.5 text-[12px] font-bold transition-colors",
-                      isActive
-                        ? "bg-[var(--bg-card)] text-[var(--text-1)] shadow-sm"
-                        : "text-[var(--text-3)]",
-                    )}
-                  >
-                    {duration.label}
-                  </button>
-                );
-              })}
+          <div className="min-h-[84px] rounded-[12px] border border-border bg-[var(--bg-muted)] px-3 py-2.5">
+            <div className="flex min-h-7 items-center gap-1.5">
+              {hasDurations && definition.durations ? (
+                <div
+                  role="tablist"
+                  aria-label="期間を選ぶ"
+                  className="inline-flex items-center gap-1.5"
+                >
+                  {definition.durations.map((duration) => {
+                    const isActive = duration.id === selectedDurationId;
+                    return (
+                      <button
+                        key={duration.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => setSelectedDurationId(duration.id)}
+                        className={cn(
+                          "inline-flex h-7 items-center rounded-[999px] px-2.5 text-[11px] font-bold transition-colors",
+                          isActive
+                            ? "bg-[var(--navy)] text-white shadow-sm"
+                            : "bg-[var(--bg-card)] text-[var(--text-3)] hover:bg-[var(--bg-base)]",
+                        )}
+                      >
+                        {duration.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : displayPeriodLabel ? (
+                <span className="inline-flex h-7 items-center rounded-[999px] bg-[var(--bg-card)] px-2.5 text-[11px] font-bold text-[var(--text-3)]">
+                  {displayPeriodLabel}
+                </span>
+              ) : null}
             </div>
-          ) : null}
-
-          <div>
-            <span className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
-              {displayPriceLabel}
-            </span>
-            {displayPeriodLabel ? (
-              <p className="text-[12px] font-medium text-[var(--text-3)]">
-                {hasDurations ? `${displayPeriodLabel}アクセス` : displayPeriodLabel}
-                {displayPerMonth ? ` ・ ${displayPerMonth}` : null}
-              </p>
-            ) : null}
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
+                {displayPriceLabel}
+              </span>
+              {displayPerMonth ? (
+                <span className="mb-1 inline-flex h-6 items-center rounded-[999px] bg-[var(--bg-card)] px-2 text-[11px] font-bold text-[var(--text-3)]">
+                  {displayPerMonth}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 

@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const activeDevices = await getActiveDevices(user.id).catch(() => null);
+  let activeDevices = await getActiveDevices(user.id).catch(() => null);
   if (!activeDevices) {
     return NextResponse.json(
       { error: "端末一覧の取得に失敗しました" },
@@ -131,12 +131,21 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    activeDevices = await getActiveDevices(user.id).catch(() => null);
+    if (!activeDevices) {
+      return NextResponse.json(
+        { error: "端末一覧の取得に失敗しました" },
+        { status: 500 },
+      );
+    }
   }
 
   return NextResponse.json({
     ok: true,
     maxDevices: MAX_ACTIVE_DEVICES,
     revokedDeviceCount: devicesToRevoke.length,
+    devices: activeDevices,
   });
 }
 
@@ -148,7 +157,7 @@ async function getActiveDevices(userId: string): Promise<ActiveDevice[]> {
     )
     .eq("user_id", userId)
     .is("revoked_at", null)
-    .order("last_seen_at", { ascending: true });
+    .order("last_seen_at", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to list active devices: ${error.message}`);

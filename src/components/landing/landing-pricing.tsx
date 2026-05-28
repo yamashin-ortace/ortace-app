@@ -10,84 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  PLAN_DEFINITIONS,
+  type PlanDefinition,
+} from "@/lib/billing/plans";
+import type { BillingPlan } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils";
 
-type DurationOption = {
-  id: string;
-  label: string;
-  price: string;
-  period: string;
-  perMonth?: string;
-};
-
-type LandingPlan = {
-  name: string;
-  description: string;
-  highlight: boolean;
-  bullets: readonly string[];
-  ctaLabel: string;
-  footnote: string | null;
-  /** 単一期間プラン用 */
-  price?: string;
-  period?: string;
-  /** 複数期間プラン用 */
-  durations?: DurationOption[];
-};
-
-const PLANS: readonly LandingPlan[] = [
-  {
-    name: "無料",
-    price: "¥0",
-    period: "",
-    description: "まずは試してフィット感を確認",
-    highlight: false,
-    bullets: [
-      "過去問 1,500問にアクセス",
-      "詳細解説（選択肢ごとの正誤理由）",
-      "AIコーチMiLu先生の今日のおすすめ20問",
-      "ブックマーク・ノート無制限",
-      "1日20問まで演習",
-    ],
-    ctaLabel: "無料ではじめる",
-    footnote: null,
-  },
-  {
-    name: "基礎定着パス",
-    description: "授業・日々の復習向け",
-    highlight: false,
-    durations: [
-      { id: "3m", label: "3ヶ月", price: "¥1,500", period: "/3ヶ月", perMonth: "月あたり¥500" },
-      { id: "1y", label: "1年", price: "¥4,800", period: "/1年", perMonth: "月あたり¥400" },
-    ],
-    bullets: [
-      "1日100問まで演習",
-      "詳細解説・苦手克服・思い込みチェック",
-      "ブックマーク・ノート無制限",
-      "端末間同期",
-    ],
-    ctaLabel: "無料ではじめる",
-    footnote:
-      "決済はログイン後にStripeの決済画面で行います。アカウント作成後にプラン選択画面で購入できます。買い切りなので、解約手続きは不要です。",
-  },
-  {
-    name: "国試対策パック",
-    price: "¥9,800",
-    period: "/受験年度",
-    description: "本気の総仕上げ・網羅に",
-    highlight: true,
-    bullets: [
-      "過去問1,500問の演習が無制限",
-      "オリジナル予想問題180問",
-      "75問模試（本番形式）",
-      "直近テーマ問題集",
-      "苦手克服の中分類深掘り",
-      "AIコーチMiLu先生の深掘り分析",
-    ],
-    ctaLabel: "無料ではじめる",
-    footnote:
-      "1回限りのお支払い（買い切り）。受験年度の3月末までご利用いただけます。早く始めるほど、1日あたりの負担は軽くなります。サブスクリプションではないので、解約手続きや延長課金はありません。",
-  },
-] as const;
+const PLAN_CARD_ORDER: readonly BillingPlan[] = ["free", "low", "exam"];
 
 const VALUE_CARDS = [
   {
@@ -161,84 +91,99 @@ export function LandingPricing() {
       </section>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {PLANS.map((plan) => (
-          <PlanCard key={plan.name} plan={plan} />
+        {PLAN_CARD_ORDER.map((planId) => (
+          <PlanCard key={planId} plan={PLAN_DEFINITIONS[planId]} />
         ))}
       </div>
     </div>
   );
 }
 
-function PlanCard({ plan }: { plan: LandingPlan }) {
+function PlanCard({ plan }: { plan: PlanDefinition }) {
   const hasDurations = (plan.durations?.length ?? 0) > 0;
   const [selectedDurationId, setSelectedDurationId] = useState<string>(
-    plan.durations?.[plan.durations.length - 1]?.id ?? "",
+    plan.defaultDurationId ?? plan.durations?.[plan.durations.length - 1]?.id ?? "",
   );
 
   const activeDuration = hasDurations
     ? plan.durations?.find((d) => d.id === selectedDurationId)
     : undefined;
 
-  const displayPrice = activeDuration?.price ?? plan.price ?? "";
-  const displayPeriod = activeDuration?.period ?? plan.period ?? "";
-  const displayPerMonth = activeDuration?.perMonth;
+  const displayPrice = activeDuration?.priceLabel ?? plan.priceLabel ?? "";
+  const displayPeriod = getLandingPeriodLabel(plan, activeDuration?.label);
+  const displayPerMonth = activeDuration?.perMonthLabel;
+  const isHighlighted = plan.id === "exam";
 
   return (
     <Card
       className={
-        plan.highlight
-          ? "border-[var(--primary)] shadow-[0_4px_16px_var(--primary-shadow-soft)] ring-1 ring-[var(--primary)]/25"
-          : ""
+        isHighlighted
+          ? "h-full border-[var(--primary)] shadow-[0_4px_16px_var(--primary-shadow-soft)] ring-1 ring-[var(--primary)]/25"
+          : "h-full"
       }
     >
       <CardHeader className="border-b border-border pb-4">
         <CardTitle className="text-[17px] font-bold text-[var(--text-1)]">
           {plan.name}
         </CardTitle>
-        <p className="text-[13px] text-[var(--text-3)]">{plan.description}</p>
+        <p className="min-h-[60px] text-[13px] leading-relaxed text-[var(--text-3)]">
+          {plan.description}
+        </p>
 
-        {hasDurations && plan.durations ? (
-          <div
-            role="tablist"
-            aria-label="期間を選ぶ"
-            className="mt-3 grid grid-cols-2 gap-1 rounded-[10px] border border-border bg-[var(--bg-muted)] p-1"
-          >
-            {plan.durations.map((duration) => {
-              const isActive = duration.id === selectedDurationId;
-              return (
-                <button
-                  key={duration.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setSelectedDurationId(duration.id)}
-                  className={cn(
-                    "rounded-[8px] px-3 py-1.5 text-[12px] font-bold transition-colors",
-                    isActive
-                      ? "bg-[var(--bg-card)] text-[var(--text-1)] shadow-sm"
-                      : "text-[var(--text-3)]",
-                  )}
-                >
-                  {duration.label}
-                </button>
-              );
-            })}
+        <div className="mt-3 min-h-[84px] rounded-[12px] border border-border bg-[var(--bg-muted)] px-3 py-2.5">
+          <div className="flex min-h-7 items-center gap-1.5">
+            {hasDurations && plan.durations ? (
+              <div
+                role="tablist"
+                aria-label="期間を選ぶ"
+                className="inline-flex items-center gap-1.5"
+              >
+                {plan.durations.map((duration) => {
+                  const isActive = duration.id === selectedDurationId;
+                  return (
+                    <button
+                      key={duration.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setSelectedDurationId(duration.id)}
+                      className={cn(
+                        "inline-flex h-7 items-center rounded-[999px] px-2.5 text-[11px] font-bold transition-colors",
+                        isActive
+                          ? "bg-[var(--navy)] text-white shadow-sm"
+                          : "bg-[var(--bg-card)] text-[var(--text-3)] hover:bg-[var(--bg-base)]",
+                      )}
+                    >
+                      {duration.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : displayPeriod ? (
+              <span className="inline-flex h-7 items-center rounded-[999px] bg-[var(--bg-card)] px-2.5 text-[11px] font-bold text-[var(--text-3)]">
+                {displayPeriod.replace(/^\//, "")}
+              </span>
+            ) : (
+              <span className="inline-flex h-7 items-center rounded-[999px] bg-[var(--bg-card)] px-2.5 text-[11px] font-bold text-[var(--text-3)]">
+                カード不要
+              </span>
+            )}
           </div>
-        ) : null}
-
-        <div className="flex items-baseline gap-0.5 pt-2">
-          <span className="text-[26px] font-extrabold tracking-tight text-[var(--text-1)]">
-            {displayPrice}
-          </span>
-          <span className="text-[13px] text-[var(--text-3)]">{displayPeriod}</span>
+          <div className="mt-2 flex items-end gap-2">
+            <span className="text-[26px] font-extrabold tracking-tight text-[var(--text-1)]">
+              {displayPrice}
+            </span>
+            {displayPerMonth ? (
+              <span className="mb-1 inline-flex h-6 items-center rounded-[999px] bg-[var(--bg-card)] px-2 text-[11px] font-bold text-[var(--text-3)]">
+                {displayPerMonth}
+              </span>
+            ) : null}
+          </div>
         </div>
-        {displayPerMonth ? (
-          <p className="text-[11px] text-[var(--text-4)]">{displayPerMonth}</p>
-        ) : null}
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="flex-1 pt-4">
         <ul className="space-y-2.5">
-          {plan.bullets.map((line) => (
+          {plan.featureLabels.map((line) => (
             <li key={line} className="flex gap-2 text-[13px] text-[var(--text-2)]">
               <Check
                 className="mt-0.5 size-4 shrink-0 text-[var(--success)]"
@@ -250,23 +195,36 @@ function PlanCard({ plan }: { plan: LandingPlan }) {
           ))}
         </ul>
       </CardContent>
-      <CardFooter className="flex flex-col gap-2 border-t bg-transparent pt-4">
+      <CardFooter className="mt-auto flex flex-col gap-2 border-t bg-transparent pt-4">
         <Link
           href="/login"
           className={
-            plan.highlight
+            isHighlighted
               ? "btn-pressable btn-primary-shadow inline-flex w-full items-center justify-center rounded-[12px] bg-[var(--primary)] py-3 text-center text-[14px] font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
               : "inline-flex w-full items-center justify-center rounded-[12px] border border-border bg-[var(--bg-muted)] py-3 text-center text-[14px] font-semibold text-[var(--text-1)] transition-colors hover:bg-[var(--primary-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
           }
         >
-          {plan.ctaLabel}
+          {getLandingCtaLabel(plan)}
         </Link>
-        {plan.footnote ? (
+        {plan.featureNote ? (
           <p className="text-[11px] leading-relaxed text-[var(--text-4)]">
-            {plan.footnote}
+            {plan.featureNote}
           </p>
         ) : null}
       </CardFooter>
     </Card>
   );
+}
+
+function getLandingPeriodLabel(
+  plan: PlanDefinition,
+  durationLabel?: string,
+): string {
+  if (durationLabel) return `/${durationLabel}`;
+  return plan.periodLabel ? `/${plan.periodLabel}` : "";
+}
+
+function getLandingCtaLabel(plan: PlanDefinition): string {
+  if (plan.id === "free") return "無料ではじめる";
+  return `${plan.name}を見る`;
 }

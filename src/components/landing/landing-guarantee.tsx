@@ -1,7 +1,7 @@
 import { ShieldCheck, PackageCheck, Repeat2 } from "lucide-react";
 
 /**
- * 合格サポート保証 + 7日返金保証 + 受験生プラン自動解約の安心訴求。
+ * 合格サポート保証 + 7日返金保証 + 国試対策パック自動解約の安心訴求。
  * 課金前の不安を取り除くためのセクション。Pricing と FAQ の間に置く。
  */
 const GUARANTEE_CARDS = [

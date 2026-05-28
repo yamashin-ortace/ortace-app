@@ -116,7 +116,7 @@ export function MockPlayer({
   if (!pickedQuestions) {
     return (
       <div className="py-12 text-center text-[13px] text-[var(--text-3)]">
-        模試の準備中…
+        模試を読み込んでいます…
       </div>
     );
   }
@@ -482,4 +482,3 @@ function FieldResultRow({
     </div>
   );
 }
-

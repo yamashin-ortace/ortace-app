@@ -5,7 +5,7 @@ import type { AnswerJudgement } from "@/lib/quiz";
 import { analyzeAiCoachSession } from "./session-analysis";
 
 describe("AI coach session analysis", () => {
-  it("急ぎすぎた誤答のテーマへ3問確認CTAを出す", () => {
+  it("短時間の誤答でも、できているテーマと確認ポイントを一緒に出す", () => {
     const questions = [
       question({
         id: "56-1",
@@ -28,7 +28,8 @@ describe("AI coach session analysis", () => {
 
     expect(analysis.status).toBe("ready");
     expect(analysis.clusterLabel).toBe("緑内障と視野変化");
-    expect(analysis.message).toContain("条件を拾う流れ");
+    expect(analysis.message).toContain("視力検査");
+    expect(analysis.message).toContain("条件をひとつ拾い直す");
     expect(analysis.actionHref).toContain(
       "/study/ai-theme/glaucoma-visual-field?count=3",
     );
@@ -108,7 +109,7 @@ describe("AI coach session analysis", () => {
     expect(analysis.message).toContain("2問");
   });
 
-  it("自信あり誤答と急ぎすぎ誤答が両方あれば複合メッセージを出す", () => {
+  it("自信あり誤答と短時間の誤答が両方あれば根拠として添える", () => {
     const questions = [
       question({
         id: "55-10",
@@ -135,10 +136,10 @@ describe("AI coach session analysis", () => {
     );
 
     expect(analysis.message).toContain("自信あり");
-    expect(analysis.message).toContain("急ぎ気味");
+    expect(analysis.message).toContain("短時間の誤答");
   });
 
-  it("誤答3問以上+自信あり+急ぎ気味なら重症複合メッセージ", () => {
+  it("誤答3問以上+自信あり+短時間なら、テーマの整理を促す", () => {
     const questions = Array.from({ length: 4 }, (_, i) =>
       question({
         id: `55-${100 + i}`,
@@ -166,9 +167,9 @@ describe("AI coach session analysis", () => {
       entries,
     );
 
-    expect(analysis.message).toContain("少し荒れています");
+    expect(analysis.message).toContain("誤答が重なっています");
     expect(analysis.message).toContain("自信あり");
-    expect(analysis.message).toContain("急ぎすぎ");
+    expect(analysis.message).toContain("短時間の誤答");
   });
 
   it("同じテーマで誤答が複数なら集中ミス文言を出す", () => {
@@ -199,7 +200,7 @@ describe("AI coach session analysis", () => {
     );
 
     expect(analysis.message).toContain("急性緑内障発作");
-    expect(analysis.message).toContain("続けて落としています");
+    expect(analysis.message).toContain("誤答が重なっています");
   });
 
   it("自信あり1問だけなら『1問』『軽く』のトーンで出す", () => {
@@ -226,7 +227,7 @@ describe("AI coach session analysis", () => {
     expect(analysis.message).toContain("軽く");
   });
 
-  it("正解だけで時間が長い問題が1問あれば『1問だけ時間』のトーン", () => {
+  it("正解だけで時間が長い問題が1問あれば迷いを残さないトーン", () => {
     const questions = [
       question({
         id: "55-400",
@@ -245,7 +246,7 @@ describe("AI coach session analysis", () => {
       entries,
     );
 
-    expect(analysis.message).toContain("1問だけ時間");
+    expect(analysis.message).toContain("少し迷った跡");
   });
 
   it("20問以上なら補足分析を複数出す", () => {

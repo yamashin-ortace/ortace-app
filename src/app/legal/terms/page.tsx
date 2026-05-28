@@ -79,7 +79,7 @@ export default function TermsPage() {
       </section>
 
       <section>
-        <h2 className="legal-h2">第7条（受験生プランの自動解約）</h2>
+        <h2 className="legal-h2">第7条（国試対策パックの自動解約）</h2>
         <ol className="legal-ol">
           <li>国試対策パック（受験年度プラン）は、ユーザーが登録時に指定した受験年度に基づき、当該年度の国家試験翌月をもって自動的に解約されます。</li>
           <li>運営者は試験約2週間前を目安に、ユーザーに対し自動解約予定の通知を送信するよう努めます。</li>

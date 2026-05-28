@@ -20,20 +20,23 @@ describe("buildHomeAiCoachComment", () => {
     expect(result.message).toContain("18問");
   });
 
-  it("直近1週間で自信あり誤答が3問以上なら思い込みチェック導線", () => {
+  it("直近1週間で自信あり誤答が3問以上なら注目テーマとして伝える", () => {
     const entries = [
       ...thirtyAnsweredAt(NOW, 10),
       entry({ id: "55-1", result: "incorrect", confidence: "high", answeredAt: daysAgo(NOW, 2) }),
       entry({ id: "55-2", result: "incorrect", confidence: "high", answeredAt: daysAgo(NOW, 3) }),
       entry({ id: "55-3", result: "incorrect", confidence: "high", answeredAt: daysAgo(NOW, 4) }),
     ];
-    const result = buildHomeAiCoachComment(entries, NOW);
-    expect(result.kind).toBe("high_confidence_miss");
+    const result = buildHomeAiCoachComment(entries, NOW, {
+      clusterLookup: lookupFor(entries, "neuro-ophthalmology", "神経眼科"),
+    });
+    expect(result.kind).toBe("focus_theme");
     expect(result.cta?.href).toBe("/study/misconception");
-    expect(result.message).toContain("3問");
+    expect(result.message).toContain("神経眼科");
+    expect(result.message).toContain("今日のおすすめ");
   });
 
-  it("直近1週間で急ぎ誤答が3問以上なら fast_miss", () => {
+  it("直近1週間で短時間の誤答が3問以上なら注目テーマとして伝える", () => {
     const entries = [
       ...thirtyAnsweredAt(NOW, 10),
       entry({
@@ -58,9 +61,12 @@ describe("buildHomeAiCoachComment", () => {
         answeredAt: daysAgo(NOW, 3),
       }),
     ];
-    const result = buildHomeAiCoachComment(entries, NOW);
-    expect(result.kind).toBe("fast_miss");
-    expect(result.message).toContain("急ぎ気味");
+    const result = buildHomeAiCoachComment(entries, NOW, {
+      clusterLookup: lookupFor(entries, "glaucoma-visual-field", "緑内障と視野変化"),
+    });
+    expect(result.kind).toBe("focus_theme");
+    expect(result.message).toContain("緑内障と視野変化");
+    expect(result.message).toContain("短い時間");
   });
 
   it("直近正答率が前週より上がっていれば accuracy_up", () => {
@@ -106,7 +112,7 @@ describe("buildHomeAiCoachComment", () => {
     });
     expect(result.kind).toBe("cluster_focus");
     expect(result.message).toContain("神経眼科");
-    expect(result.message).toContain("%");
+    expect(result.message).toContain("今日のおすすめ");
   });
 
   it("4象限で『時間をかけたのに誤答』が3問以上なら quadrant_focus", () => {
@@ -208,5 +214,17 @@ function entry(overrides: Partial<AnswerHistoryEntry> & { id: string }): AnswerH
     majorCategory: "視能検査・検査機器",
     confidence: overrides.confidence ?? null,
     durationMs: overrides.durationMs ?? null,
+  };
+}
+
+function lookupFor(
+  entries: readonly AnswerHistoryEntry[],
+  clusterId: string,
+  clusterLabel: string,
+) {
+  return {
+    byId: new Map(
+      entries.map((item) => [item.id, { id: clusterId, label: clusterLabel }]),
+    ),
   };
 }

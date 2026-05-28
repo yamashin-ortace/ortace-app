@@ -20,12 +20,17 @@ type ClusterSummary = {
   id: string;
   label: string;
   themes: Map<string, number>;
+  themesCorrect: Map<string, number>;
   themesIncorrect: Map<string, number>;
   total: number;
   correct: number;
   incorrect: number;
   fastIncorrect: number;
+  deliberateIncorrect: number;
   highConfidenceIncorrect: number;
+  uncertainIncorrect: number;
+  confidentCorrect: number;
+  uncertainCorrect: number;
   deliberateCorrect: number;
   score: number;
 };
@@ -48,12 +53,17 @@ export function analyzeAiCoachSession(
       id: cluster.id,
       label: cluster.label,
       themes: new Map<string, number>(),
+      themesCorrect: new Map<string, number>(),
       themesIncorrect: new Map<string, number>(),
       total: 0,
       correct: 0,
       incorrect: 0,
       fastIncorrect: 0,
+      deliberateIncorrect: 0,
       highConfidenceIncorrect: 0,
+      uncertainIncorrect: 0,
+      confidentCorrect: 0,
+      uncertainCorrect: 0,
       deliberateCorrect: 0,
       score: 0,
     };
@@ -72,24 +82,47 @@ export function analyzeAiCoachSession(
       summary.score += 100;
       if (duration === "fast") {
         summary.fastIncorrect += 1;
+        summary.score += 12;
+      }
+      if (duration === "deliberate") {
+        summary.deliberateIncorrect += 1;
         summary.score += 35;
       }
       if (entry?.confidence === "high") {
         summary.highConfidenceIncorrect += 1;
         summary.score += 45;
       }
+      if (entry?.confidence === "mid" || entry?.confidence === "guess") {
+        summary.uncertainIncorrect += 1;
+        summary.score += 15;
+      }
     } else {
       summary.correct += 1;
+      summary.themesCorrect.set(
+        themeLabel,
+        (summary.themesCorrect.get(themeLabel) ?? 0) + 1,
+      );
       summary.score += 8;
       if (duration === "deliberate") {
         summary.deliberateCorrect += 1;
-        summary.score += 30;
+        summary.score += 18;
+      }
+      if (entry?.confidence === "high") {
+        summary.confidentCorrect += 1;
+        summary.score += 10;
+      }
+      if (entry?.confidence === "mid" || entry?.confidence === "guess") {
+        summary.uncertainCorrect += 1;
+        summary.score += 16;
       }
     }
     summaries.set(cluster.id, summary);
   }
 
-  const selected = [...summaries.values()].sort(compareSummary)[0];
+  const ranked = [...summaries.values()]
+    .map(applyThemeConcentrationScore)
+    .sort(compareSummary);
+  const selected = ranked[0];
   if (!selected) {
     return {
       status: "collecting",
@@ -103,14 +136,13 @@ export function analyzeAiCoachSession(
     };
   }
 
-  const ranked = [...summaries.values()].sort(compareSummary);
   const questionIds = questions.map((question) => question.id).join(",");
   const focusTheme = getPrimaryTheme(selected);
   return {
     status: "ready",
     clusterId: selected.id,
     clusterLabel: selected.label,
-    message: buildAnalysisMessage(selected),
+    message: buildAnalysisMessage(selected, ranked),
     details: buildAnalysisDetails(ranked, questions.length),
     actionHref: buildActionHref(selected.id, questionIds, focusTheme),
     actionLabel: "このテーマを3問だけ確認",
@@ -124,69 +156,110 @@ function compareSummary(a: ClusterSummary, b: ClusterSummary): number {
   return a.label.localeCompare(b.label, "ja");
 }
 
-function buildAnalysisMessage(summary: ClusterSummary): string {
+function applyThemeConcentrationScore(summary: ClusterSummary): ClusterSummary {
+  const topIncorrectTheme = getTopIncorrectTheme(summary);
+  if (!topIncorrectTheme || topIncorrectTheme.count < 2) return summary;
+  return {
+    ...summary,
+    score: summary.score + (topIncorrectTheme.count - 1) * 30,
+  };
+}
+
+function buildAnalysisMessage(
+  summary: ClusterSummary,
+  ranked: readonly ClusterSummary[],
+): string {
+  if (summary.incorrect === 0) return buildFocusSentence(summary);
+
+  const strength = buildStrengthSentence(ranked, summary);
+  const focus = buildFocusSentence(summary);
+  return strength ? `${strength} ${focus}` : focus;
+}
+
+function buildStrengthSentence(
+  ranked: readonly ClusterSummary[],
+  focus: ClusterSummary,
+): string | null {
+  const strength = [...ranked]
+    .filter((summary) => summary.correct > 0)
+    .sort((a, b) => {
+      const aFocusPenalty = a.id === focus.id ? 1 : 0;
+      const bFocusPenalty = b.id === focus.id ? 1 : 0;
+      if (aFocusPenalty !== bFocusPenalty) return aFocusPenalty - bFocusPenalty;
+      if (a.incorrect !== b.incorrect) return a.incorrect - b.incorrect;
+      if (a.correct !== b.correct) return b.correct - a.correct;
+      if (a.confidentCorrect !== b.confidentCorrect) {
+        return b.confidentCorrect - a.confidentCorrect;
+      }
+      return a.label.localeCompare(b.label, "ja");
+    })[0];
+
+  if (!strength) return null;
+
+  const themePhrase = getThemePhrase(strength, "correct");
+  if (strength.incorrect === 0 && strength.correct >= 2) {
+    return `「${themePhrase}」は${strength.correct}問とも安定して取れています。`;
+  }
+  if (strength.confidentCorrect > 0) {
+    return `「${themePhrase}」は自信を持って正解できています。`;
+  }
+  if (strength.deliberateCorrect > 0) {
+    return `「${themePhrase}」は考える時間を使いながら正解まで届いています。`;
+  }
+  return `「${themePhrase}」は取れています。`;
+}
+
+function buildFocusSentence(summary: ClusterSummary): string {
   const themePhrase = getThemePhrase(summary);
   const clusterLabel = summary.label;
   const high = summary.highConfidenceIncorrect;
   const fast = summary.fastIncorrect;
+  const deliberateIncorrect = summary.deliberateIncorrect;
+  const uncertainIncorrect = summary.uncertainIncorrect;
   const wrong = summary.incorrect;
   const deliberate = summary.deliberateCorrect;
   const correct = summary.correct;
   const topIncorrectTheme = getTopIncorrectTheme(summary);
 
-  // 1. 重症複合: 誤答3問以上 + 自信あり + 急ぎ
-  if (wrong >= 3 && high > 0 && fast > 0) {
-    return `${clusterLabel}は今回少し荒れています。「${themePhrase}」で誤答${wrong}問（自信あり${high}・急ぎすぎ${fast}）。要点の取り違えと判断スピードの両方を、解説を見ながら整え直しておきましょう。`;
+  if (wrong >= 2 && topIncorrectTheme && topIncorrectTheme.count >= 2) {
+    const breakdown = buildIncorrectBreakdown(summary);
+    const suffix = breakdown ? `（${breakdown}）` : "";
+    return `${clusterLabel}では「${topIncorrectTheme.label}」の誤答が重なっています${suffix}。ここは用語や所見の結びつきをもう一度そろえると、次の類題で判断しやすくなりそうです。`;
   }
-  // 2. 自信×急ぎ複合（軽め）
-  if (high > 0 && fast > 0) {
-    return `${clusterLabel}では「${themePhrase}」で自信ありの誤答が${high}問、急ぎ気味の誤答が${fast}問。問題文の条件を拾う流れと、覚え違いがないかの確認を両方やっておきましょう。`;
-  }
-  // 3. 自信あり多発
   if (high >= 2) {
     const others = wrong - high;
     const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
-    return `${clusterLabel}で「${themePhrase}」を${high}問、自信ありで落としています${suffix}。覚え違いが連続しているサイン。解説で要点を1つずつ拾い直しておきましょう。`;
+    return `${clusterLabel}では「${themePhrase}」を${high}問、自信ありで外しています${suffix}。知識が抜けているというより、覚えている内容の一部が入れ替わっていないかを確認したいところです。`;
   }
-  // 4. 自信あり単発
   if (high === 1) {
     const others = wrong - high;
     const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
-    return `${clusterLabel}で「${themePhrase}」を1問、自信ありで落としています${suffix}。本番で危ない覚え違いになりやすいので、軽く解説で確認しておきましょう。`;
+    return `${clusterLabel}では「${themePhrase}」に自信ありの誤答が1問あります${suffix}。覚えたつもりの要点が少しずれていないか、軽く解説で根拠を確認しておきましょう。`;
   }
-  // 5. 急ぎ多発
-  if (fast >= 2) {
-    const others = wrong - fast;
-    const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
-    return `${clusterLabel}で「${themePhrase}」を${fast}問、急ぎ気味に誤答しています${suffix}。問題文を読むペースが少し速め。条件を拾う流れを整えるところから整えましょう。`;
+  if (deliberateIncorrect >= 2 || (deliberateIncorrect > 0 && wrong >= 2)) {
+    return `${clusterLabel}では「${themePhrase}」で考える時間を使っても誤答が残っています。暗記だけで押すより、どの条件を根拠に選ぶかを解説で整理しておきましょう。`;
   }
-  // 6. 急ぎ単発
-  if (fast === 1) {
-    const others = wrong - fast;
-    const suffix = others > 0 ? `（ほか誤答${others}問）` : "";
-    return `${clusterLabel}で「${themePhrase}」を1問、急ぎ気味に誤答しています${suffix}。ひと呼吸置いて条件を拾う流れを意識できれば取れた問題かも。軽く確認しておきましょう。`;
+  if (uncertainIncorrect >= 2) {
+    return `${clusterLabel}では「${themePhrase}」で迷いが出やすくなっています。まずは選択肢を切る根拠をひとつずつ言えるか、短く確認しておきましょう。`;
   }
-  // 7. 同テーマ集中ミス（誤答2問以上、上位テーマが2問以上）
-  if (wrong >= 2 && topIncorrectTheme && topIncorrectTheme.count >= 2) {
-    return `${clusterLabel}は「${topIncorrectTheme.label}」で${topIncorrectTheme.count}問続けて落としています。同じテーマで繰り返しつまずいているので、ピンポイントで解説と類題を見直しましょう。`;
-  }
-  // 8. 広く取りこぼし（誤答3問以上、テーマ分散）
   if (wrong >= 3) {
-    return `${clusterLabel}は今回「${themePhrase}」を中心に誤答${wrong}問と幅広く取りこぼしています。クラスタのベースを固め直す価値あり。3問だけ解いて土台を整えましょう。`;
+    return `${clusterLabel}では「${themePhrase}」を中心に誤答が${wrong}問あります。細かいミスというより、テーマ全体の土台を一度整えると伸びやすいところです。`;
   }
-  // 9. 誤答少数（1〜2問、その他条件には当てはまらない）
+  if (fast >= 2) {
+    return `${clusterLabel}では「${themePhrase}」で短い時間に選んだ誤答が目立ちます。速さそのものより、問題文の条件を拾ってから選択肢に入る流れを確認しましょう。`;
+  }
+  if (fast === 1) {
+    return `${clusterLabel}では「${themePhrase}」に確認したい誤答があります。短い時間で選んだ1問なので、条件をひとつ拾い直すだけで取り戻せる可能性があります。`;
+  }
   if (wrong > 0) {
-    return `${clusterLabel}で「${themePhrase}」を${wrong}問、確認したい誤答があります。似た問題を3問だけ解いて、判断の流れを軽く整理しておきましょう。`;
+    return `${clusterLabel}では「${themePhrase}」に確認したい誤答があります。似た問題を3問だけ解いて、判断の根拠を軽くそろえておきましょう。`;
   }
-  // 10. じっくり正解多数
   if (deliberate >= 2) {
-    return `「${themePhrase}」は${correct}問とも正解できていますが、${deliberate}問でやや時間をかけて判断しています。短い類題で流れを固めると、本番でも安定しそうです。`;
+    return `「${themePhrase}」は${correct}問とも正解できています。少し考える時間を使っているので、短い類題で判断の根拠を固めると本番でも安定しそうです。`;
   }
-  // 11. じっくり正解1問
   if (deliberate === 1) {
-    return `「${themePhrase}」は正解できていますが、1問だけ時間をかけて判断しています。軽く確認しておくと、迷いが残らず本番でも揺れにくくなります。`;
+    return `「${themePhrase}」は正解できています。少し迷った跡があるので、軽く類題で確認しておくと本番でも揺れにくくなります。`;
   }
-  // 12. 全問安定（じっくりもなし）
   return `「${themePhrase}」は${correct}問とも安定して取れています。類題を3問だけ解いて、得意テーマとしてそのまま固めておきましょう。`;
 }
 
@@ -216,7 +289,7 @@ function buildAnalysisDetails(
       return `${summary.label}: 「${themePhrase}」で確認したい誤答が${summary.incorrect}問${suffix}。`;
     }
     if (summary.deliberateCorrect > 0) {
-      return `${summary.label}: 「${themePhrase}」は正解${summary.correct}問中、${summary.deliberateCorrect}問でやや時間がかかっています。`;
+      return `${summary.label}: 「${themePhrase}」は正解${summary.correct}問中、${summary.deliberateCorrect}問で考える時間を使いながら取れています。`;
     }
     return `${summary.label}: 「${themePhrase}」は${summary.correct}問とも安定して正解できています。`;
   });
@@ -227,8 +300,14 @@ function buildIncorrectBreakdown(summary: ClusterSummary): string {
   if (summary.highConfidenceIncorrect > 0) {
     parts.push(`自信あり${summary.highConfidenceIncorrect}問`);
   }
+  if (summary.deliberateIncorrect > 0) {
+    parts.push(`時間を使った誤答${summary.deliberateIncorrect}問`);
+  }
+  if (summary.uncertainIncorrect > 0) {
+    parts.push(`迷いあり${summary.uncertainIncorrect}問`);
+  }
   if (summary.fastIncorrect > 0) {
-    parts.push(`急ぎすぎ${summary.fastIncorrect}問`);
+    parts.push(`短時間の誤答${summary.fastIncorrect}問`);
   }
   return parts.join("・");
 }
@@ -263,9 +342,16 @@ function getPrimaryTheme(summary: ClusterSummary): string {
   })[0]?.[0] ?? summary.label;
 }
 
-function getThemePhrase(summary: ClusterSummary): string {
+function getThemePhrase(
+  summary: ClusterSummary,
+  sourceType: "focus" | "correct" = "focus",
+): string {
   const source =
-    summary.themesIncorrect.size > 0 ? summary.themesIncorrect : summary.themes;
+    sourceType === "correct" && summary.themesCorrect.size > 0
+      ? summary.themesCorrect
+      : summary.themesIncorrect.size > 0
+        ? summary.themesIncorrect
+        : summary.themes;
   const themes = [...source.entries()]
     .sort((a, b) => {
       if (a[1] !== b[1]) return b[1] - a[1];

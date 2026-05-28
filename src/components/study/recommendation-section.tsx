@@ -18,9 +18,16 @@ import {
   getReviewTargetIds,
   getWeakFieldFromHistory,
 } from "@/lib/answer-history/status";
+import type { QuestionClusterLookup } from "@/lib/ai-coach/cluster-weakness";
+import { pickHomeAiCoachFocus } from "@/lib/ai-coach/home-focus";
 import { countMisconceptionCandidates } from "@/lib/ai-coach/recommendation";
 
-export function RecommendationSection() {
+type Props = {
+  /** ホームのMiLu先生アドバイスと同じ注目テーマ判定に使う問題ID→クラスタ辞書 */
+  clusters?: readonly { id: string; clusterId: string; clusterLabel: string }[];
+};
+
+export function RecommendationSection({ clusters }: Props) {
   const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
 
@@ -29,6 +36,18 @@ export function RecommendationSection() {
     setHydrated(true);
   }, []);
 
+  const lookup = useMemo<QuestionClusterLookup | undefined>(() => {
+    if (!clusters || clusters.length === 0) return undefined;
+    return {
+      byId: new Map(
+        clusters.map((item) => [
+          item.id,
+          { id: item.clusterId, label: item.clusterLabel },
+        ]),
+      ),
+    };
+  }, [clusters]);
+
   const stats = useMemo(() => {
     if (!hydrated) {
       return {
@@ -36,18 +55,21 @@ export function RecommendationSection() {
         weakLabel: "",
         weakStage: null as null | "confirmed" | "provisional",
         misconceptionCount: 0,
+        focusLabel: "",
       };
     }
     const reviewCount = getReviewTargetIds(entries).size;
     const weak = getWeakFieldFromHistory(entries);
     const misconceptionCount = countMisconceptionCandidates(entries);
+    const focus = lookup ? pickHomeAiCoachFocus(entries, lookup) : null;
     return {
       reviewCount,
       weakLabel: weak?.field ?? "",
       weakStage: weak?.stage === "confirmed" || weak?.stage === "provisional" ? weak.stage : null,
       misconceptionCount,
+      focusLabel: focus?.clusterLabel ?? "",
     };
-  }, [entries, hydrated]);
+  }, [entries, hydrated, lookup]);
 
   return (
     <section className="space-y-2">
@@ -59,7 +81,11 @@ export function RecommendationSection() {
           href="/study/today"
           icon={<Sparkles className="h-6 w-6" strokeWidth={2.5} />}
           title="今日のおすすめ"
-          subtitle="迷ったらここから。復習・弱点・思い込み・未着手を20問にまとめます。"
+          subtitle={
+            hydrated && stats.focusLabel
+              ? `今日は「${stats.focusLabel}」も入れて20問にまとめます。`
+              : "迷ったらここから。復習・弱点・思い込み・未着手を20問にまとめます。"
+          }
           trailing={<TodayRecommendedHowItWorksPopover />}
         />
         <div className="grid gap-2 sm:grid-cols-3">

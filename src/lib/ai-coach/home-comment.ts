@@ -1,10 +1,8 @@
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import { getLatestEntryByQuestionId } from "@/lib/answer-history/status";
 import { classifyAnswerDuration } from "./recommendation";
-import {
-  analyzeClusterWeakness,
-  type QuestionClusterLookup,
-} from "./cluster-weakness";
+import type { QuestionClusterLookup } from "./cluster-weakness";
+import { pickHomeAiCoachFocus, type HomeAiCoachFocus } from "./home-focus";
 
 export type HomeAiCoachComment = {
   kind:
@@ -12,6 +10,7 @@ export type HomeAiCoachComment = {
     | "collecting"
     | "high_confidence_miss"
     | "fast_miss"
+    | "focus_theme"
     | "cluster_focus"
     | "quadrant_focus"
     | "accuracy_up"
@@ -62,35 +61,18 @@ export function buildHomeAiCoachComment(
   const recent = filterWithinDays(entries, now, 7);
   const previous = filterBetweenDays(entries, now, 14, 7);
 
-  const recentHighIncorrect = countHighConfidenceIncorrect(recent, latest);
-  const recentFastIncorrect = countFastIncorrect(recent, latest);
-
-  if (recentHighIncorrect >= 3) {
-    return {
-      kind: "high_confidence_miss",
-      message: `直近1週間で自信ありの誤答が${recentHighIncorrect}問。本番で危ない覚え違いが残っているサインです。今日は思い込みチェックから始めて、要点を解説で拾い直しましょう。`,
-      cta: { href: "/study/misconception", label: "思い込みチェック" },
-    };
-  }
-
-  if (recentFastIncorrect >= 3) {
-    return {
-      kind: "fast_miss",
-      message: `直近1週間で急ぎ気味の誤答が${recentFastIncorrect}問あります。条件の取り違えが起きやすいので、今日は問題文を読むペースを意識しながら進めましょう。`,
-    };
-  }
-
-  // 弱点クラスタへの言及（具体テーマで定型文化を防ぐ）
   if (options.clusterLookup) {
-    const weakness = analyzeClusterWeakness(entries, options.clusterLookup, {
-      minJudged: 5,
-      topN: 1,
-    });
-    const top = weakness[0];
-    if (top && top.accuracy < 60) {
+    const focus = pickHomeAiCoachFocus(entries, options.clusterLookup, now);
+    if (focus) {
+      const strength = pickStableClusterLabel(recent, latest, options.clusterLookup, focus);
+      const cta =
+        focus.reason === "misconception"
+          ? { href: "/study/misconception", label: "思い込みチェック" }
+          : undefined;
       return {
-        kind: "cluster_focus",
-        message: `今のあなたが伸ばせる余地が大きいテーマは「${top.clusterLabel}」（正答率 ${top.accuracy}% / ${top.judged}問中${top.correct}問正解）。AIコーチMiLu先生が今日のおすすめに、このテーマを優先的に入れています。`,
+        kind: focus.reason === "weak_cluster" ? "cluster_focus" : "focus_theme",
+        message: buildFocusMessage(focus, strength),
+        cta,
       };
     }
   }
@@ -164,32 +146,49 @@ function filterBetweenDays(
   });
 }
 
-function countHighConfidenceIncorrect(
-  entries: readonly AnswerHistoryEntry[],
-  latest: Map<string, AnswerHistoryEntry>,
-): number {
-  let n = 0;
-  for (const entry of entries) {
-    if (entry.result !== "incorrect") continue;
-    if (entry.confidence !== "high") continue;
-    if (latest.get(entry.id) !== entry) continue;
-    n += 1;
+function buildFocusMessage(
+  focus: HomeAiCoachFocus,
+  stableClusterLabel: string | null,
+): string {
+  const strength = stableClusterLabel
+    ? `直近では「${stableClusterLabel}」は安定して取れています。`
+    : "";
+  const tail = `今日のおすすめには、「${focus.clusterLabel}」を確認できる問題を入れています。`;
+
+  switch (focus.reason) {
+    case "misconception":
+      return `${strength}「${focus.clusterLabel}」は自信ありで外した問題があり、覚えた内容の一部が入れ替わっていないか確認したいところです。${tail}`;
+    case "knowledge_gap":
+      return `${strength}「${focus.clusterLabel}」は考える時間を使っても誤答が残っています。どの条件を根拠に選ぶか、解説で整理しておきましょう。${tail}`;
+    case "condition_check":
+      return `${strength}「${focus.clusterLabel}」は短い時間で選んだ誤答がありました。速さよりも、問題文の条件を拾ってから選択肢に入る流れを確認しましょう。${tail}`;
+    case "weak_cluster":
+    default:
+      return `${strength}今のあなたが伸ばせる余地が大きいテーマは「${focus.clusterLabel}」です。${tail}`;
   }
-  return n;
 }
 
-function countFastIncorrect(
+function pickStableClusterLabel(
   entries: readonly AnswerHistoryEntry[],
   latest: Map<string, AnswerHistoryEntry>,
-): number {
-  let n = 0;
+  lookup: QuestionClusterLookup,
+  focus: HomeAiCoachFocus,
+): string | null {
+  const counts = new Map<string, { label: string; count: number }>();
   for (const entry of entries) {
-    if (entry.result !== "incorrect") continue;
-    if (classifyAnswerDuration(entry.durationMs) !== "fast") continue;
+    if (entry.result !== "correct") continue;
     if (latest.get(entry.id) !== entry) continue;
-    n += 1;
+    const cluster = lookup.byId.get(entry.id);
+    if (!cluster || cluster.id === focus.clusterId) continue;
+    const current = counts.get(cluster.id) ?? { label: cluster.label, count: 0 };
+    current.count += 1;
+    counts.set(cluster.id, current);
   }
-  return n;
+  const top = [...counts.values()].sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    return a.label.localeCompare(b.label, "ja");
+  })[0];
+  return top && top.count >= 2 ? top.label : null;
 }
 
 function calculateAccuracy(entries: readonly AnswerHistoryEntry[]): number | null {

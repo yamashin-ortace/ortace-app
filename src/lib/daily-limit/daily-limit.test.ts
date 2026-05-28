@@ -62,7 +62,7 @@ describe("daily-limit", () => {
     ).toEqual({ date: "2026-05-08", count: 20 });
   });
 
-  it("低学年プランは100問まで判定する", () => {
+  it("基礎定着パスは100問まで判定する", () => {
     expect(getDailyLimitForPlan("low")).toBe(100);
     expect(getDailyLimitRemaining({ date: "2026-05-08", count: 99 }, "low")).toBe(
       1,
@@ -75,7 +75,7 @@ describe("daily-limit", () => {
     );
   });
 
-  it("無料・低学年だけ上限判定し、国試対策パックは無制限にする", () => {
+  it("無料プラン・基礎定着パスだけ上限判定し、国試対策パックは無制限にする", () => {
     const reached = { date: "2026-05-08", count: 20 };
     expect(getDailyLimitRemaining(reached)).toBe(0);
     expect(isDailyLimitReached(reached, "free")).toBe(true);

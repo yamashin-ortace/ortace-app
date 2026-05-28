@@ -131,7 +131,7 @@ function LimitExplanationCard() {
         </div>
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <LimitCell label="無料" value="20問/日" />
+        <LimitCell label="無料プラン" value="20問/日" />
         <LimitCell label="基礎定着パス" value="100問/日" />
         <LimitCell
           label="国試対策パック"
@@ -234,18 +234,20 @@ function FreePlanCard({ currentPlan }: { currentPlan: BillingPlan }) {
         <h2 className="text-[17px] font-bold text-[var(--text-1)]">
           {definition.name}
         </h2>
-        <p className="min-h-[42px] text-[12px] leading-relaxed text-[var(--text-3)]">
+        <p className="min-h-[60px] text-[12px] leading-relaxed text-[var(--text-3)]">
           {definition.description}
         </p>
-        <div>
-          <span className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
-            {definition.priceLabel}
-          </span>
-          {definition.periodLabel ? (
-            <p className="text-[12px] font-medium text-[var(--text-3)]">
-              {definition.periodLabel}
-            </p>
-          ) : null}
+        <div className="min-h-[84px] rounded-[12px] border border-border bg-[var(--bg-muted)] px-3 py-2.5">
+          <div className="flex min-h-7 items-center">
+            <span className="inline-flex h-7 items-center rounded-[999px] bg-[var(--bg-card)] px-2.5 text-[11px] font-bold text-[var(--text-3)]">
+              カード不要
+            </span>
+          </div>
+          <div className="mt-2">
+            <span className="text-[28px] font-extrabold tracking-tight text-[var(--text-1)]">
+              {definition.priceLabel}
+            </span>
+          </div>
         </div>
       </div>
       <div className="flex-1 space-y-3">
@@ -283,7 +285,7 @@ function FreePlanShell({
   return (
     <article
       aria-label={title}
-      className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-sm"
+      className="h-full rounded-[14px] border border-border bg-[var(--bg-card)] p-4 shadow-sm"
     >
       <div className="flex h-full flex-col gap-4">{children}</div>
     </article>

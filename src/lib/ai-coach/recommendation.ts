@@ -7,20 +7,23 @@ import {
   getStagedWeakFields,
   getUntouchedQuestions,
 } from "@/lib/answer-history/status";
-import { getAiThemeKey } from "./theme-cluster";
+import { pickHomeAiCoachFocus } from "./home-focus";
+import { getAiThemeCluster, getAiThemeKey } from "./theme-cluster";
 
 export const AI_COACH_RECOMMENDATION_LIMIT = 20;
 export const AI_COACH_DATA_READINESS_THRESHOLD = 30;
 
 export const AI_COACH_TARGETS = {
+  focus: 3,
   review: 5,
-  weak: 5,
+  weak: 4,
   misconception: 3,
   unanswered: 5,
 } as const;
 
 export type AnswerDurationBucket = "fast" | "standard" | "deliberate";
 export type AiCoachBucket =
+  | "focus"
   | "review"
   | "weak"
   | "misconception"
@@ -31,6 +34,10 @@ export type AiCoachRecommendation = {
   questions: Question[];
   buckets: Record<AiCoachBucket, Question[]>;
   dataReadiness: "collecting" | "ready";
+};
+
+export type AiCoachRecommendationOptions = {
+  now?: Date;
 };
 
 export function classifyAnswerDuration(
@@ -46,6 +53,7 @@ export function pickAiCoachRecommended(
   questions: readonly Question[],
   entries: readonly AnswerHistoryEntry[],
   limit = AI_COACH_RECOMMENDATION_LIMIT,
+  options: AiCoachRecommendationOptions = {},
 ): AiCoachRecommendation {
   const scorableQuestions = questions.filter(isScorableQuestion);
   const cappedLimit = Math.max(0, Math.min(limit, AI_COACH_RECOMMENDATION_LIMIT));
@@ -54,6 +62,7 @@ export function pickAiCoachRecommended(
     scorableQuestions.map((question) => [question.id, question]),
   );
   const buckets: Record<AiCoachBucket, Question[]> = {
+    focus: [],
     review: [],
     weak: [],
     misconception: [],
@@ -73,6 +82,7 @@ export function pickAiCoachRecommended(
     }
   };
 
+  const focusPool = buildFocusPool(scorableQuestions, entries, latest, options.now);
   const reviewPool = getReviewQuestions(scorableQuestions, entries);
   const weakPool = buildWeakPool(scorableQuestions, entries, latest);
   const misconceptionPool = buildMisconceptionPool(
@@ -85,6 +95,7 @@ export function pickAiCoachRecommended(
     getUntouchedQuestions(scorableQuestions, entries),
   );
 
+  add("focus", focusPool, AI_COACH_TARGETS.focus);
   add("review", reviewPool, AI_COACH_TARGETS.review);
   add("weak", weakPool, AI_COACH_TARGETS.weak);
   add("misconception", misconceptionPool, AI_COACH_TARGETS.misconception);
@@ -93,6 +104,7 @@ export function pickAiCoachRecommended(
   const fillPool = [
     ...unansweredPool,
     ...reviewPool,
+    ...focusPool,
     ...weakPool,
     ...misconceptionPool,
     ...rankBySourceOrder(scorableQuestions),
@@ -142,6 +154,54 @@ export function pickMisconceptionQuestions(
     latest,
     questionById,
   ).slice(0, limit);
+}
+
+function buildFocusPool(
+  questions: readonly Question[],
+  entries: readonly AnswerHistoryEntry[],
+  latest: Map<string, AnswerHistoryEntry>,
+  now: Date = new Date(),
+): Question[] {
+  const clusterLookup = {
+    byId: new Map(
+      questions.map((question) => {
+        const cluster = getAiThemeCluster(question);
+        return [question.id, { id: cluster.id, label: cluster.label }] as const;
+      }),
+    ),
+  };
+  const focus = pickHomeAiCoachFocus(entries, clusterLookup, now);
+  if (!focus) return [];
+
+  return [...questions]
+    .map((question) => {
+      const cluster = getAiThemeCluster(question);
+      if (cluster.id !== focus.clusterId) return { question, score: 0 };
+
+      const entry = latest.get(question.id);
+      if (!entry) return { question, score: 80 };
+      if (entry.result === "no_answer") return { question, score: 70 };
+      if (entry.result === "correct") return { question, score: 0 };
+
+      const durationBucket = classifyAnswerDuration(entry.durationMs);
+      let score = 150;
+      if (entry.confidence === "high") score += 50;
+      if (entry.confidence === "mid" || entry.confidence === "guess") score += 15;
+      if (durationBucket === "deliberate") score += 35;
+      if (durationBucket === "fast") score += 10;
+      return { question, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => {
+      if (a.score !== b.score) return b.score - a.score;
+      const aEntry = latest.get(a.question.id);
+      const bEntry = latest.get(b.question.id);
+      const aAnsweredAt = aEntry?.answeredAt ?? "";
+      const bAnsweredAt = bEntry?.answeredAt ?? "";
+      if (aAnsweredAt !== bAnsweredAt) return bAnsweredAt.localeCompare(aAnsweredAt);
+      return compareQuestionSource(a.question, b.question);
+    })
+    .map((item) => item.question);
 }
 
 function buildWeakPool(

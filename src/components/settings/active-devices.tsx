@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoaderCircle, LogOut, MonitorSmartphone, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  DEVICE_FINGERPRINT_STORAGE_KEY,
   MAX_ACTIVE_DEVICES,
   createDeviceFingerprint,
+  getDeviceFingerprintPayload,
+  getDeviceLabel,
   type ActiveDevice,
 } from "@/lib/auth/device-limit";
 
@@ -13,26 +16,66 @@ type Props = {
   devices: ActiveDevice[];
 };
 
+type RegisterDeviceResponse = {
+  error?: string;
+  devices?: ActiveDevice[];
+};
+
 export function ActiveDevices({ devices }: Props) {
   const [items, setItems] = useState(devices);
   const [currentFingerprint, setCurrentFingerprint] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(true);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    createDeviceFingerprint()
-      .then((fingerprint) => {
-        if (active) setCurrentFingerprint(fingerprint);
-      })
-      .catch(() => {
-        if (active) setCurrentFingerprint(null);
+  const syncCurrentDevice = useCallback(async () => {
+    try {
+      const fingerprint = await createDeviceFingerprint();
+      const payload = getDeviceFingerprintPayload();
+      setCurrentFingerprint(fingerprint);
+
+      const response = await fetch("/api/devices/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deviceFingerprint: fingerprint,
+          userAgent: payload.userAgent,
+          deviceLabel: getDeviceLabel(payload.userAgent),
+        }),
       });
+      const data = (await response.json().catch(() => null)) as
+        | RegisterDeviceResponse
+        | null;
+
+      if (!response.ok) {
+        throw new Error(data?.error ?? "端末情報を登録できませんでした");
+      }
+
+      window.localStorage.setItem(DEVICE_FINGERPRINT_STORAGE_KEY, fingerprint);
+
+      if (data?.devices) {
+        setItems(data.devices);
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "端末情報を登録できませんでした",
+      );
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void syncCurrentDevice();
+    }, 0);
 
     return () => {
-      active = false;
+      window.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [syncCurrentDevice]);
 
   const activeCountLabel = useMemo(
     () => `${items.length}/${MAX_ACTIVE_DEVICES}端末`,
@@ -88,7 +131,9 @@ export function ActiveDevices({ devices }: Props) {
 
       {items.length === 0 ? (
         <p className="rounded-[12px] border border-border bg-[var(--bg-muted)] px-3 py-3 text-[12px] leading-relaxed text-[var(--text-3)]">
-          端末情報を登録中です。少し待ってからページを更新してください。
+          {isSyncing
+            ? "端末情報を確認しています。"
+            : "端末情報を表示できませんでした。少し待ってからページを更新してください。"}
         </p>
       ) : (
         <div className="overflow-hidden rounded-[12px] border border-border">
