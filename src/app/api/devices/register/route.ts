@@ -48,6 +48,12 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existingError) {
+    console.error("[devices/register] failed to find existing device", {
+      code: existingError.code,
+      message: existingError.message,
+      details: existingError.details,
+      hint: existingError.hint,
+    });
     return NextResponse.json(
       { error: "端末情報の確認に失敗しました" },
       { status: 500 },
@@ -77,6 +83,12 @@ export async function POST(request: Request) {
       .eq("id", existingDevice.id);
 
     if (error) {
+      console.error("[devices/register] failed to update device", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
         { error: "端末情報の更新に失敗しました" },
         { status: 500 },
@@ -92,6 +104,12 @@ export async function POST(request: Request) {
     });
 
     if (error) {
+      console.error("[devices/register] failed to insert device", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
         { error: "端末情報の登録に失敗しました" },
         { status: 500 },
@@ -126,6 +144,12 @@ export async function POST(request: Request) {
       );
 
     if (error) {
+      console.error("[devices/register] failed to revoke old devices", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
         { error: "古い端末の切断に失敗しました" },
         { status: 500 },
@@ -160,6 +184,12 @@ async function getActiveDevices(userId: string): Promise<ActiveDevice[]> {
     .order("last_seen_at", { ascending: false });
 
   if (error) {
+    console.error("[devices/register] failed to list active devices", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
     throw new Error(`Failed to list active devices: ${error.message}`);
   }
 

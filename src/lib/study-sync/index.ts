@@ -398,8 +398,8 @@ export async function syncAnswerHistoryWithDatabase(
 
   const supabase = createSupabaseBrowserClient();
   const localStore = parseAnswerHistoryStore(serializeAnswerHistoryStore(local));
-  const localRows = localStore.entries.map((entry) =>
-    answerHistoryEntryToRow(userId, entry),
+  const localRows = dedupeAnswerHistoryRows(
+    localStore.entries.map((entry) => answerHistoryEntryToRow(userId, entry)),
   );
 
   // 50件ずつチャンク化して push。チャンク失敗時は単発upsertにフォールバックして、
@@ -479,6 +479,23 @@ export async function syncAnswerHistoryWithDatabase(
 }
 
 const UPSERT_CHUNK_SIZE = 50;
+
+function dedupeAnswerHistoryRows(
+  rows: readonly AnswerHistoryInsert[],
+): AnswerHistoryInsert[] {
+  const rowsByKey = new Map<string, AnswerHistoryInsert>();
+  for (const row of rows) {
+    const key = row.entry_key;
+    const current = rowsByKey.get(key);
+    if (
+      !current ||
+      String(row.answered_at).localeCompare(String(current.answered_at)) >= 0
+    ) {
+      rowsByKey.set(key, row);
+    }
+  }
+  return [...rowsByKey.values()];
+}
 
 export async function pushAnswerHistoryEntryToDatabase(
   entry: AnswerHistoryEntry,

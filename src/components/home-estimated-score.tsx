@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Popover } from "@base-ui/react/popover";
-import { ArrowRight, Award, Info, TrendingUp } from "lucide-react";
+import { ArrowRight, Info, TrendingUp } from "lucide-react";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import {
   calculateEstimatedScore,
@@ -15,6 +15,15 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   questions: Question[];
+};
+
+type ScoreReliabilityStage = {
+  label: string;
+  level: number;
+  totalLevels: number;
+  description: string;
+  nextHint: string | null;
+  isStable: boolean;
 };
 
 export function HomeEstimatedScore({ questions }: Props) {
@@ -39,42 +48,24 @@ export function HomeEstimatedScore({ questions }: Props) {
     hydrated && estimated
       ? Math.round((estimated.passLineScore / estimated.maxScore) * 100)
       : null;
+  const scoreStage = estimated ? getScoreReliabilityStage(estimated) : null;
 
   return (
     <section>
       <div className="flex flex-col gap-3 rounded-[16px] border border-border bg-[var(--bg-card)] p-4 text-[var(--text-1)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="flex items-start gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
-            <Award className="h-6 w-6" strokeWidth={2.5} />
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[11px] font-semibold text-[var(--text-3)]">
-              現在地スコア（慎重推定）
-            </span>
-            <span className="mt-0.5 text-[24px] font-extrabold leading-none tracking-tight text-[var(--text-1)]">
-              {hydrated && estimated ? (
-                <>
-                  {estimated.score}
-                  <span className="ml-1 text-[14px] font-bold text-[var(--text-3)]">
-                    /{estimated.maxScore}点
-                  </span>
-                </>
-              ) : (
-                <span className="text-[14px] text-[var(--text-3)]">計算中…</span>
-              )}
-            </span>
-          </div>
-          <EstimatedScoreInfo />
-        </div>
-
         {hydrated && estimated ? (
           <>
-            <ScoreOverview
+            <ScoreSummary
               score={estimated.score}
               maxScore={estimated.maxScore}
               estimatedRate={estimatedRate}
               passLineRate={passLineRate}
               canJudgePassLine={estimated.canJudgePassLine}
+              scoreStage={scoreStage}
+              totalJudged={estimated.totalJudged}
+              targetTotalJudged={estimated.targetTotalJudged}
+              readyFieldCount={estimated.readyFieldCount}
+              totalFieldCount={estimated.totalFieldCount}
             />
             <ScoreGauge
               score={estimated.score}
@@ -83,7 +74,11 @@ export function HomeEstimatedScore({ questions }: Props) {
               canJudgePassLine={estimated.canJudgePassLine}
             />
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-[var(--text-2)]">
-              {estimated.canJudgePassLine && estimated.score >= estimated.passLineScore ? (
+              {scoreStage?.nextHint ? (
+                <span className="font-semibold text-[var(--text-2)]">
+                  {scoreStage.nextHint}
+                </span>
+              ) : estimated.canJudgePassLine && estimated.score >= estimated.passLineScore ? (
                 <span className="inline-flex items-center gap-1 font-bold text-[var(--primary-dark)]">
                   <TrendingUp className="h-3 w-3" strokeWidth={2.5} />
                   慎重推定で合格基準圏内
@@ -97,17 +92,6 @@ export function HomeEstimatedScore({ questions }: Props) {
                     : `次のステージまであと${estimated.nextStageRemaining}問`}
                 </span>
               )}
-              {estimated.insufficientFields.length > 0 ? (
-                <span className="text-[var(--text-3)]">
-                  データ不足の分野 {estimated.insufficientFields.length}
-                </span>
-              ) : null}
-              <span className="text-[var(--text-3)]">
-                解答数 {estimated.totalJudged}/{estimated.targetTotalJudged}問
-              </span>
-              <span className="text-[var(--text-3)]">
-                分野網羅 {estimated.readyFieldCount}/{estimated.totalFieldCount}
-              </span>
             </div>
             {!estimated.canJudgePassLine ? (
               <div className="rounded-[12px] bg-[var(--bg-muted)] px-3 py-2 text-[11px] leading-relaxed text-[var(--text-2)]">
@@ -128,67 +112,164 @@ export function HomeEstimatedScore({ questions }: Props) {
               </div>
             ) : null}
           </>
-        ) : null}
+        ) : (
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-[var(--text-3)]">
+                現在地スコア
+              </p>
+              <p className="mt-2 text-[14px] font-semibold text-[var(--text-3)]">
+                計算中…
+              </p>
+            </div>
+            <EstimatedScoreInfo />
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function ScoreOverview({
+function ScoreSummary({
   score,
   maxScore,
   estimatedRate,
   passLineRate,
   canJudgePassLine,
+  scoreStage,
+  totalJudged,
+  targetTotalJudged,
+  readyFieldCount,
+  totalFieldCount,
 }: {
   score: number;
   maxScore: number;
   estimatedRate: number | null;
   passLineRate: number | null;
   canJudgePassLine: boolean;
+  scoreStage: ScoreReliabilityStage | null;
+  totalJudged: number;
+  targetTotalJudged: number;
+  readyFieldCount: number;
+  totalFieldCount: number;
 }) {
   if (estimatedRate === null || passLineRate === null) return null;
   const diff = estimatedRate - passLineRate;
   const isAtPass = canJudgePassLine && diff >= 0;
+  const lineLabel = canJudgePassLine ? "合格目安" : "参考ライン";
+  const diffText =
+    diff >= 0 ? `${lineLabel}+${diff}pt` : `${lineLabel}まで${Math.abs(diff)}pt`;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold text-[var(--text-3)]">
-          慎重推定正答率
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold text-[var(--text-3)]">
+          現在地スコア
         </p>
-        <p className="mt-0.5 text-[38px] font-extrabold leading-none tracking-tight text-[var(--text-1)]">
-          {estimatedRate}
-          <span className="text-[18px] font-black text-[var(--text-2)]">%</span>
-        </p>
-        <p className="mt-1 text-[11px] font-semibold text-[var(--text-3)]">
-          {score}/{maxScore}点換算
+        <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+          <span className="inline-flex items-baseline gap-1 leading-none">
+            <span className="text-[42px] font-extrabold tracking-tight text-[var(--text-1)] tabular-nums">
+              {score}
+            </span>
+            <span className="text-[18px] font-black text-[var(--text-2)]">
+              /{maxScore}点
+            </span>
+          </span>
+          <span className="mb-1 text-[15px] font-extrabold leading-none text-[var(--text-2)] tabular-nums">
+            （{estimatedRate}%）
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {scoreStage ? (
+            <span
+              className={cn(
+                "rounded-full px-2 py-1 text-[12px] font-extrabold",
+                scoreStage.isStable
+                  ? "bg-[var(--primary-soft)] text-[var(--primary-dark)]"
+                  : "bg-[var(--bg-muted)] text-[var(--text-2)]",
+              )}
+            >
+              信頼度 {scoreStage.level}/{scoreStage.totalLevels}・
+              {scoreStage.label}
+            </span>
+          ) : null}
+          <span
+            className={cn(
+              "rounded-full px-2 py-1 text-[12px] font-extrabold",
+              isAtPass
+                ? "bg-[var(--primary-soft)] text-[var(--primary-dark)]"
+                : "bg-[var(--bg-muted)] text-[var(--text-2)]",
+            )}
+          >
+            {diffText}
+          </span>
+        </div>
+        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[var(--text-3)]">
+          解答数 {totalJudged}/{targetTotalJudged}問・分野網羅{" "}
+          {readyFieldCount}/{totalFieldCount}
         </p>
       </div>
-      <div
-        className={cn(
-          "shrink-0 rounded-[12px] px-3 py-2 text-right",
-          isAtPass ? "bg-[var(--primary-soft)]" : "bg-[var(--bg-muted)]",
-        )}
-      >
-        <p className="text-[10px] font-bold text-[var(--text-3)]">
-          {canJudgePassLine ? "合格目安との差" : "参考ラインとの差"}
-        </p>
-        <p
-          className={cn(
-            "mt-0.5 text-[18px] font-extrabold leading-none tabular-nums",
-            isAtPass ? "text-[var(--primary-dark)]" : "text-[var(--text-1)]",
-          )}
-        >
-          {isAtPass ? "+" : ""}
-          {diff}pt
-        </p>
-        <p className="mt-1 text-[10px] font-semibold text-[var(--text-3)]">
-          60% / {Math.round(maxScore * 0.6)}点
-        </p>
-      </div>
+      <EstimatedScoreInfo />
     </div>
   );
+}
+
+function getScoreReliabilityStage(
+  estimated: EstimatedScore,
+): ScoreReliabilityStage {
+  const totalLevels = 5;
+  if (estimated.readiness === "collecting") {
+    return {
+      label: "データ収集中",
+      level: 1,
+      totalLevels,
+      description: "まだ分野のデータを集めている段階です。",
+      nextHint: `仮推定まであと${estimated.nextStageRemaining}問`,
+      isStable: false,
+    };
+  }
+
+  if (estimated.canJudgePassLine) {
+    return {
+      label: "安定推定",
+      level: 5,
+      totalLevels,
+      description: "日々の現在地として最も信頼しやすい段階です。",
+      nextHint: null,
+      isStable: true,
+    };
+  }
+
+  if (estimated.totalJudged >= 500 && estimated.readinessCoverage >= 50) {
+    return {
+      label: "実力推定",
+      level: 4,
+      totalLevels,
+      description: "実力の傾向がかなり見えてきた段階です。",
+      nextHint: `安定推定には解答数と分野網羅をさらに増やします`,
+      isStable: false,
+    };
+  }
+
+  if (estimated.totalJudged >= 100 && estimated.readinessCoverage >= 25) {
+    return {
+      label: "参考推定",
+      level: 3,
+      totalLevels,
+      description: "弱点や得点傾向を参考にしやすくなった段階です。",
+      nextHint: "実力推定には500問以上と分野網羅50%以上が目安です",
+      isStable: false,
+    };
+  }
+
+  return {
+    label: "仮推定",
+    level: 2,
+    totalLevels,
+    description: "全分野の最低データから控えめに出した初期値です。",
+    nextHint: "参考推定には100問以上と分野網羅25%以上が目安です",
+    isStable: false,
+  };
 }
 
 function ScoreGauge({
@@ -294,29 +375,26 @@ function EstimatedScoreInfo() {
             </p>
             <div className="mt-2 space-y-2">
               <p>
-                同じ問題を複数回解いた場合は、各問題の最新解答だけを使います。
-                その分野別正答率を本試験の出題数で加重平均し、150点満点に換算しています（
-                <strong className="font-bold text-[var(--text-1)]">3問未満</strong>
-                の分野は除外）。
+                最新の解答だけを使って分野別の正答率を出し、本試験の出題バランスで
+                <strong className="font-bold text-[var(--text-1)]">150点満点</strong>
+                に換算しています。正解が増えると上がり、不正解が増えると下がります。
               </p>
               <p>
-                ただし分野ごとの目標到達前は、未到達分を50%として扱い、
-                偶然の高得点を抑えるように補正します。
-              </p>
-              <p>
-                合格判定に近い目安として使うには、全体で
-                <strong className="font-bold text-[var(--text-1)]">1000問以上</strong>
-                解くだけでなく、9分野を偏りなく進める必要があります。
-                各分野で収録問題の
-                <strong className="font-bold text-[var(--text-1)]">約70%</strong>
-                に届くまでは、学習途中の参考スコアとして表示します。
-              </p>
-              <p>
-                バーの線は厚生労働省の合格発表に基づく
+                信頼度は5段階です：
                 <strong className="font-bold text-[var(--text-1)]">
-                  正答率約60%
+                  データ収集中 → 仮推定 → 参考推定 → 実力推定 → 安定推定
                 </strong>
-                の基準です。試験の分野別出題数は過去問からの推定値です。
+                。一番信頼できるのは、十分な解答数と分野網羅に届いた
+                <strong className="font-bold text-[var(--text-1)]">安定推定</strong>
+                です。
+              </p>
+              <p>
+                解き始めは、足りない分を
+                <strong className="font-bold text-[var(--text-1)]">50%</strong>
+                として混ぜて控えめに補正します。解答数と分野の網羅が増えるほど
+                実力に近い目安になります。バーの線は
+                <strong className="font-bold text-[var(--text-1)]">60% / 90点</strong>
+                の参考ラインです。
               </p>
             </div>
           </Popover.Popup>

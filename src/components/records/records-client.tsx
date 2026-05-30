@@ -726,7 +726,6 @@ function FieldSummaryList({
 
 function FieldSummaryRow({ summary }: { summary: FieldSummary }) {
   const accuracy = summary.accuracy;
-  const incorrect = Math.max(0, summary.judged - summary.correct);
   return (
     <div className="px-1 py-2">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1">
@@ -734,18 +733,14 @@ function FieldSummaryRow({ summary }: { summary: FieldSummary }) {
           <p className="truncate text-[12px] font-bold text-[var(--text-1)]">
             {summary.majorCategory}
           </p>
-          <p className="mt-0.5 truncate text-[10px] text-[var(--text-3)]">
-            不正解 {formatRecordCount(incorrect)}
-            {summary.noAnswer > 0
-              ? ` / 正答なし ${formatRecordCount(summary.noAnswer)}`
-              : ""}
-          </p>
         </div>
         <p className="shrink-0 text-right text-[11px] font-bold text-[var(--text-3)]">
+          <span className="mr-1 text-[10px] text-[var(--text-3)]">正解</span>
           <span className="text-[16px] font-extrabold tabular-nums text-[var(--text-1)]">
             {formatRecordCount(summary.correct)}
           </span>
           <span className="mx-0.5 text-[11px] text-[var(--text-3)]">/</span>
+          <span className="mr-1 text-[10px] text-[var(--text-3)]">解答</span>
           <span className="tabular-nums text-[var(--text-2)]">
             {formatRecordCount(summary.total)}
           </span>

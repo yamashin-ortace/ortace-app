@@ -20,7 +20,10 @@ import {
   syncAnswerHistoryWithDatabase,
 } from "@/lib/study-sync";
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
-import { notifyLifetimeAnswerCountUpdated } from "@/lib/study-goal/lifetime-answer-count";
+import {
+  incrementLifetimeAnswerCount,
+  notifyLifetimeAnswerCountUpdated,
+} from "@/lib/study-goal/lifetime-answer-count";
 
 export function useAnswerHistory() {
   useEnsureAnswerHistorySynced();
@@ -33,13 +36,14 @@ export function useAnswerHistory() {
       durationMs?: number | null;
     }) => {
       const now = new Date();
-      const next = recordAnswerHistory(readAnswerHistoryStore(), {
+      const current = readAnswerHistoryStore();
+      incrementLifetimeAnswerCount();
+      const next = recordAnswerHistory(current, {
         ...params,
         now,
       });
       writeAnswerHistoryStore(next);
       notifyAnswerHistoryUpdated();
-      notifyLifetimeAnswerCountUpdated();
       const recorded = next.entries.find(
         (entry) =>
           entry.id === params.question.id &&
@@ -110,6 +114,7 @@ async function runAnswerHistorySync() {
   if (!merged) return;
   writeAnswerHistoryStore(merged);
   notifyAnswerHistoryUpdated();
+  notifyLifetimeAnswerCountUpdated();
 }
 
 function useEnsureAnswerHistorySynced() {

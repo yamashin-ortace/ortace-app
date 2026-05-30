@@ -2,6 +2,7 @@ import { DailyLimitBanner } from "@/components/study/daily-limit-banner";
 import { ContinueQuizCard } from "@/components/study/continue-quiz-card";
 import { FilterModeCard } from "@/components/study/filter-mode-card";
 import { MockModeCard } from "@/components/study/mock-mode-card";
+import { OriginalQuestionPreviewCard } from "@/components/study/original-question-preview-card";
 import { RandomModeCard } from "@/components/study/random-mode-card";
 import { RecommendationSection } from "@/components/study/recommendation-section";
 import { RoundCard } from "@/components/study/round-card";
@@ -60,6 +61,13 @@ export default async function StudyPage() {
             <RoundCard key={round} round={round} />
           ))}
         />
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
+          オリジナル問題
+        </h2>
+        <OriginalQuestionPreviewCard />
       </section>
 
       <section className="space-y-2">

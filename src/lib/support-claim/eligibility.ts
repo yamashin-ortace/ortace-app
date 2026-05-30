@@ -2,6 +2,7 @@ import type {
   AnswerHistoryRow,
   ProfilesRow,
 } from "@/lib/supabase/database.types";
+import { countLearningDaysFromAnsweredAts } from "@/lib/support-claim/learning-days";
 
 export const SUPPORT_CLAIM_REQUIRED_LEARNING_DAYS = 20;
 export const SUPPORT_CLAIM_LEARNING_WINDOW_DAYS = 90;
@@ -84,15 +85,11 @@ export function countLearningDays(
   now = new Date(),
   windowDays = SUPPORT_CLAIM_LEARNING_WINDOW_DAYS,
 ): number {
-  const start = getLearningWindowStart(now, windowDays).getTime();
-  const days = new Set<string>();
-  for (const row of rows) {
-    const answeredAt = new Date(row.answered_at);
-    const time = answeredAt.getTime();
-    if (!Number.isFinite(time) || time < start || time > now.getTime()) continue;
-    days.add(formatTokyoDate(answeredAt));
-  }
-  return days.size;
+  return countLearningDaysFromAnsweredAts(
+    rows.map((row) => row.answered_at),
+    now,
+    windowDays,
+  );
 }
 
 export function calculateSupportClaimExtensionEndsAt(
@@ -131,13 +128,4 @@ function getSupportClaimDeadlineState(
     isOpen: now.getTime() <= end.getTime(),
     label: `${deadline} 23:59まで`,
   };
-}
-
-function formatTokyoDate(date: Date): string {
-  return new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
 }

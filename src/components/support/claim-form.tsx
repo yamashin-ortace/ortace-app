@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { SupportClaimStatus } from "@/lib/supabase/database.types";
 import type { SupportClaimEligibility } from "@/lib/support-claim/eligibility";
@@ -16,6 +17,7 @@ import {
   getSupportClaimContentType,
   validateSupportClaimFile,
 } from "@/lib/support-claim/evidence";
+import { countLearningDaysFromAnsweredAts } from "@/lib/support-claim/learning-days";
 
 type ClaimSummary = {
   id: string;
@@ -40,6 +42,27 @@ const STATUS_LABELS: Record<SupportClaimStatus, string> = {
 export function ClaimForm({ userId, eligibility, claims }: Props) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const { entries } = useAnswerHistoryList();
+  const answeredAts = useMemo(
+    () => entries.map((entry) => entry.answeredAt),
+    [entries],
+  );
+  const effectiveEligibility = useMemo(() => {
+    const localLearningDays = countLearningDaysFromAnsweredAts(answeredAts);
+    if (localLearningDays <= eligibility.learningDays) return eligibility;
+    const reasons =
+      localLearningDays >= eligibility.requiredLearningDays
+        ? eligibility.reasons.filter(
+            (reason) => !reason.startsWith("直近3ヶ月の学習日数が"),
+          )
+        : eligibility.reasons;
+    return {
+      ...eligibility,
+      learningDays: localLearningDays,
+      reasons,
+      eligible: reasons.length === 0,
+    };
+  }, [answeredAts, eligibility]);
   const [file, setFile] = useState<File | null>(null);
   const [comment, setComment] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -52,7 +75,7 @@ export function ClaimForm({ userId, eligibility, claims }: Props) {
     setError(null);
     setSuccess(false);
 
-    if (!eligibility.eligible) {
+    if (!effectiveEligibility.eligible) {
       setError("現在この申請は対象外です。");
       return;
     }
@@ -96,6 +119,7 @@ export function ClaimForm({ userId, eligibility, claims }: Props) {
           evidencePath,
           userComment: comment,
           agreed: true,
+          clientAnsweredAts: answeredAts,
         }),
       });
       const data = (await response.json().catch(() => null)) as
@@ -120,13 +144,13 @@ export function ClaimForm({ userId, eligibility, claims }: Props) {
     <div className="space-y-4">
       <ClaimHistory claims={claims} />
 
-      {!eligibility.eligible ? (
+      {!effectiveEligibility.eligible ? (
         <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-4 py-4">
           <p className="text-[14px] font-bold text-[var(--text-1)]">
             現在は申請対象外です
           </p>
           <ul className="mt-2 space-y-1 text-[12px] leading-relaxed text-[var(--text-2)]">
-            {eligibility.reasons.map((reason) => (
+            {effectiveEligibility.reasons.map((reason) => (
               <li key={reason}>・{reason}</li>
             ))}
           </ul>
@@ -142,10 +166,10 @@ export function ClaimForm({ userId, eligibility, claims }: Props) {
             </span>
             <div className="min-w-0">
               <p className="text-[14px] font-bold text-[var(--text-1)]">
-                {eligibility.examYear}年度 合格サポート保証
+                {effectiveEligibility.examYear}年度 合格サポート保証
               </p>
               <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-2)]">
-                申請期限: {eligibility.deadlineLabel}。確認結果は3営業日以内にメールでお知らせします。
+                申請期限: {effectiveEligibility.deadlineLabel}。確認結果は3営業日以内にメールでお知らせします。
               </p>
             </div>
           </div>

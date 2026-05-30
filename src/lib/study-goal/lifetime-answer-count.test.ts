@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { ANSWER_HISTORY_STORAGE_KEY } from "@/lib/answer-history";
 import {
   countLifetimeAnswersFromHistoryRaw,
+  incrementLifetimeAnswerCount,
   LIFETIME_ANSWER_COUNT_KEY,
+  notifyLifetimeAnswerCountUpdated,
   readLifetimeAnswerCount,
 } from "./lifetime-answer-count";
 
@@ -33,12 +35,12 @@ const historyRaw = JSON.stringify({
 });
 
 describe("lifetime-answer-count", () => {
-  it("累計解答数は同期済み answer_history の entries 件数から導出する", () => {
+  it("履歴件数を累計カウンタの下限として使う", () => {
     expect(countLifetimeAnswersFromHistoryRaw(historyRaw)).toBe(2);
     expect(countLifetimeAnswersFromHistoryRaw("{invalid")).toBe(0);
   });
 
-  it("旧 localStorage カウンタより answer_history を優先する", () => {
+  it("履歴が上限未満なら、不自然に大きい累計カウンタを履歴件数に戻す", () => {
     const storage = new Map<string, string>([
       [ANSWER_HISTORY_STORAGE_KEY, historyRaw],
       [LIFETIME_ANSWER_COUNT_KEY, "999"],
@@ -52,15 +54,72 @@ describe("lifetime-answer-count", () => {
             storage.set(key, value);
           },
         },
+        dispatchEvent: () => true,
       },
     });
 
     expect(readLifetimeAnswerCount()).toBe(2);
-    expect(storage.get(LIFETIME_ANSWER_COUNT_KEY)).toBe("999");
+    expect(storage.get(LIFETIME_ANSWER_COUNT_KEY)).toBe("2");
 
     Object.defineProperty(globalThis, "window", {
       configurable: true,
       value: undefined,
     });
   });
+
+  it("履歴上限とは別に累計カウンタを増やす", () => {
+    const storage = new Map<string, string>([
+      [ANSWER_HISTORY_STORAGE_KEY, historyRaw],
+      [LIFETIME_ANSWER_COUNT_KEY, "2"],
+    ]);
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        localStorage: {
+          getItem: (key: string) => storage.get(key) ?? null,
+          setItem: (key: string, value: string) => {
+            storage.set(key, value);
+          },
+        },
+        dispatchEvent: () => true,
+      },
+    });
+
+    expect(incrementLifetimeAnswerCount()).toBe(3);
+    expect(storage.get(LIFETIME_ANSWER_COUNT_KEY)).toBe("3");
+    expect(readLifetimeAnswerCount()).toBe(3);
+
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
+  it("同期後は履歴件数までカウンタを底上げする", () => {
+    const storage = new Map<string, string>([
+      [ANSWER_HISTORY_STORAGE_KEY, historyRaw],
+      [LIFETIME_ANSWER_COUNT_KEY, "1"],
+    ]);
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        localStorage: {
+          getItem: (key: string) => storage.get(key) ?? null,
+          setItem: (key: string, value: string) => {
+            storage.set(key, value);
+          },
+        },
+        dispatchEvent: () => true,
+      },
+    });
+
+    expect(notifyLifetimeAnswerCountUpdated()).toBe(2);
+    expect(storage.get(LIFETIME_ANSWER_COUNT_KEY)).toBe("2");
+
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
 });

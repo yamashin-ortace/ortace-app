@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Target } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import {
   analyzeClusterWeakness,
   type QuestionClusterLookup,
 } from "@/lib/ai-coach/cluster-weakness";
+import { cn } from "@/lib/utils";
 
 type Props = {
   clusters: readonly { id: string; clusterId: string; clusterLabel: string }[];
@@ -51,18 +52,16 @@ export function WeakClusterSection({ clusters }: Props) {
       </h2>
       <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <p className="mb-2 px-1 text-[11px] text-[var(--text-3)]">
-          解答履歴から、正答率が低めのテーマを並べました。タップすると近い問題を3問だけ確認できます。
+          解答履歴から、今確認したいテーマを優先度順に並べました。タップすると近い問題を3問だけ確認できます。
         </p>
         <ul className="divide-y divide-border/70">
-          {rows.map((row) => (
+          {rows.map((row, index) => (
             <li key={row.clusterId}>
               <Link
                 href={`/study/ai-theme/${encodeURIComponent(row.clusterId)}?count=3`}
                 className="group -mx-1 flex items-center gap-3 rounded-[10px] px-1 py-2.5 transition-colors duration-150 hover:bg-[var(--bg-muted)]/50"
               >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary-dark)]">
-                  <Target className="h-4 w-4" strokeWidth={2.5} />
-                </span>
+                <RankBadge rank={index + 1} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-bold text-[var(--text-1)]">
                     {row.clusterLabel}
@@ -98,5 +97,21 @@ export function WeakClusterSection({ clusters }: Props) {
         </ul>
       </div>
     </section>
+  );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  return (
+    <span
+      className={cn(
+        "grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border text-[13px] font-extrabold tabular-nums",
+        rank === 1
+          ? "border-[var(--primary)]/30 bg-[var(--primary-soft)] text-[var(--primary-dark)]"
+          : "border-border bg-[var(--bg-muted)] text-[var(--text-2)]",
+      )}
+      aria-label={`優先度${rank}位`}
+    >
+      {rank}
+    </span>
   );
 }
