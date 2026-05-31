@@ -82,21 +82,7 @@ export function LandingGuarantee() {
       </div>
 
       <p className="text-center text-[11px] text-[var(--text-3)] md:text-left">
-        各保証の詳細は
-        <a
-          href="/legal/terms"
-          className="ml-1 text-[var(--primary-dark)] underline underline-offset-2 hover:text-[var(--primary)]"
-        >
-          利用規約
-        </a>
-        ・
-        <a
-          href="/legal/tokushoho"
-          className="text-[var(--primary-dark)] underline underline-offset-2 hover:text-[var(--primary)]"
-        >
-          特定商取引法に基づく表記
-        </a>
-        をご覧ください。
+        各保証には適用条件があります。詳細はページ下部をご確認ください。
       </p>
     </section>
   );

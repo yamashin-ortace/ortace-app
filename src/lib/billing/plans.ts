@@ -83,7 +83,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
         fallbackPriceId: "price_1TaoHiFUkpvTvQkQ3uHmAiW6",
       },
     ],
-    defaultDurationId: "1y",
+    defaultDurationId: "3m",
     featureLabels: [
       "無料プランの内容すべて",
       "1日100問まで",
@@ -106,9 +106,9 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
     featureLabels: [
       "基礎定着パスの内容すべて",
       "過去問演習が無制限",
-      "オリジナル予想問題180問",
+      "オリジナル予想問題180問（順次公開）",
       "75問模試（12月1日公開）",
-      "直近テーマ問題集",
+      "直近テーマ問題集（順次公開）",
       "苦手克服の中分類深掘り・順番付き出題",
       "AIコーチMiLu先生の分析コメント",
     ],

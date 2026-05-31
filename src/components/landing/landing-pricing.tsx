@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Library, RotateCcw, Smartphone } from "lucide-react";
+import { Check } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -19,24 +19,6 @@ import { cn } from "@/lib/utils";
 
 const PLAN_CARD_ORDER: readonly BillingPlan[] = ["free", "low", "exam"];
 
-const VALUE_CARDS = [
-  {
-    icon: Library,
-    headline: "書籍を何冊も、持ち歩かなくていい",
-    sub: "第47〜56回・1,500問がスマホに",
-  },
-  {
-    icon: RotateCcw,
-    headline: "模試前の確認も、弱点から戻れる",
-    sub: "ノート・ブックマーク・苦手から再演習",
-  },
-  {
-    icon: Smartphone,
-    headline: "演習も、記録も、復習も、スマホ1台で",
-    sub: "通学・実習の合間でも続けられる",
-  },
-] as const;
-
 export function LandingPricing() {
   return (
     <div className="space-y-8 py-14">
@@ -52,43 +34,9 @@ export function LandingPricing() {
         </p>
       </div>
 
-      <section className="relative overflow-hidden rounded-[16px] border border-[#9ee8e0]/45 bg-[var(--bg-card)] p-5 shadow-[0_18px_44px_rgba(44,62,93,0.08)] md:p-6">
-        <div className="absolute -right-16 -top-20 size-56 rounded-full bg-[#d8fff6]/50 blur-3xl" />
-        <div className="relative grid gap-5 md:grid-cols-[0.95fr_1.05fr] md:items-center">
-          <div className="space-y-2">
-            <p className="text-[12px] font-extrabold tracking-[0.12em] text-[#16717c]">
-              COST VALUE
-            </p>
-            <h3 className="text-[21px] font-extrabold leading-[1.4] text-[var(--text-1)] md:text-[25px]">
-              過去問も、記録も、復習も。
-              <br />
-              まずはスマホ1台にまとめる。
-            </h3>
-            <p className="text-[13px] leading-[1.9] text-[var(--text-3)] md:text-[14px]">
-              過去問書籍を複数年分そろえたり、模試を受けたりすると、対策費は数万円になることも（※当社調べ）。
-              ORT ACEなら、第47〜56回・10年分の過去問1,500問を、演習・記録・復習までひとつにまとめられます。
-            </p>
-          </div>
-          <div className="grid gap-2.5 sm:grid-cols-3">
-            {VALUE_CARDS.map(({ icon: Icon, headline, sub }) => (
-              <div
-                key={headline}
-                className="flex flex-col gap-2 rounded-[14px] border border-border bg-[var(--bg-base)] p-4 shadow-[0_10px_24px_rgba(44,62,93,0.06)]"
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-[#e8f7f5] text-[#16717c]">
-                  <Icon className="size-5" strokeWidth={2.4} aria-hidden />
-                </span>
-                <p className="text-[13.5px] font-extrabold leading-[1.5] text-[var(--text-1)]">
-                  {headline}
-                </p>
-                <p className="text-[11px] leading-relaxed text-[var(--text-3)]">
-                  {sub}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <p className="rounded-[14px] border border-[#9ee8e0]/45 bg-[var(--bg-card)] px-4 py-3 text-[13px] font-bold leading-relaxed text-[var(--text-2)] shadow-[0_12px_28px_rgba(44,62,93,0.06)]">
+        第47〜56回・10年分の過去問1,500問を、演習・記録・復習までスマホ1台に。
+      </p>
 
       <div className="grid gap-4 md:grid-cols-3">
         {PLAN_CARD_ORDER.map((planId) => (

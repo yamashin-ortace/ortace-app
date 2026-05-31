@@ -75,7 +75,7 @@ export function LandingHero() {
               <ArrowRight className="size-4" strokeWidth={2.5} aria-hidden />
             </Link>
             <p className="rounded-[10px] bg-white/58 px-3 py-2 text-center text-[12px] font-medium leading-relaxed text-[var(--text-2)] shadow-[0_8px_24px_rgba(255,255,255,0.42)] backdrop-blur-sm sm:max-w-[230px] sm:text-left">
-              登録3分・カード不要。まずは10問だけ解いてみる。
+              まずは無料で。登録3分・カード不要。10問だけ解いてみる。
             </p>
           </div>
           <div className="mt-7">

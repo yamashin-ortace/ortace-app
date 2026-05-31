@@ -6,38 +6,23 @@ import Image from "next/image";
 const SCREENS = [
   {
     src: "/landing/app-screens/v2/home-overview.jpg",
-    alt: "ホーム画面：今日のおすすめ、復習、ダッシュボードが表示されている画面",
-    caption: "ホーム",
-  },
-  {
-    src: "/landing/app-screens/v2/study-menu.jpg",
-    alt: "学習画面：今日のおすすめ、復習、未着手、苦手克服、思い込みチェックが並ぶ画面",
-    caption: "学習メニュー",
-  },
-  {
-    src: "/landing/app-screens/v2/ai-question-before.jpg",
-    alt: "AIコーチMiLu先生 今日のおすすめで過去問を解く画面",
-    caption: "問題演習",
-  },
-  {
-    src: "/landing/app-screens/v2/ai-question-correct.jpg",
-    alt: "正解後に解説と選択肢が表示される画面",
-    caption: "正解と解説",
-  },
-  {
-    src: "/landing/app-screens/v2/ai-question-incorrect.jpg",
-    alt: "不正解後に正答と解説が表示される画面",
-    caption: "間違い直し",
+    alt: "ホーム画面：AIコーチMiLu先生の提案と今日のおすすめ、復習が表示されている画面",
+    caption: "今日の提案",
   },
   {
     src: "/landing/app-screens/v2/ai-result-analysis.jpg",
-    alt: "AIコーチMiLu先生が解答結果を分析して次の確認テーマを提案する画面",
-    caption: "AI分析",
+    alt: "演習結果画面：AIコーチMiLu先生が次に確認したいテーマを分析している画面",
+    caption: "解答後のAI分析",
   },
   {
-    src: "/landing/app-screens/v2/records-notes.jpg",
-    alt: "記録画面：ノートに残した問題を見返す画面",
-    caption: "記録ノート",
+    src: "/landing/app-screens/v2/weak-analysis.jpg",
+    alt: "苦手克服画面：中分類ごとの正答率と反復ミスを分析している画面",
+    caption: "苦手の深掘り",
+  },
+  {
+    src: "/landing/app-screens/v2/records-bookmarks.jpg",
+    alt: "記録画面：タグを付けて保存した問題を見返せる画面",
+    caption: "残して見返す",
   },
 ] as const;
 

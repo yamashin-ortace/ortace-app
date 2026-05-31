@@ -33,12 +33,12 @@ export function LandingFinalCta() {
           id="landing-final-cta-heading"
           className="text-[28px] font-extrabold leading-[1.32] text-[var(--text-1)] md:text-[36px]"
         >
-          今日の10問から、
+          まずは無料で、今日の10問から。
           <br className="sm:hidden" />
           国試までの道を、一緒に。
         </h2>
         <p className="mx-auto max-w-[560px] text-[14px] leading-[1.9] text-[var(--text-2)] md:text-[15px]">
-          無料プランでも、AIコーチMiLu先生は今日のおすすめ20問を選んでくれます。
+          10問だけ解いて終えても大丈夫。無料プランでも、AIコーチMiLu先生が今日のおすすめ20問を用意します。
           登録3分・カード不要。続けるかどうかは、解いてみてから決めてください。
         </p>
         <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">

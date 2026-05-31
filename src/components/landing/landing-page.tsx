@@ -6,7 +6,6 @@ import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingGuarantee } from "@/components/landing/landing-guarantee";
 import { LandingFaq } from "@/components/landing/landing-faq";
 import { LandingFinalCta } from "@/components/landing/landing-final-cta";
-import { LandingForParents } from "@/components/landing/landing-for-parents";
 import { LandingFooter } from "@/components/landing/landing-footer";
 
 export function LandingPage() {
@@ -33,7 +32,6 @@ export function LandingPage() {
       <LandingMotionSection>
         <LandingFinalCta />
       </LandingMotionSection>
-      <LandingForParents />
       <LandingFooter />
     </div>
   );
