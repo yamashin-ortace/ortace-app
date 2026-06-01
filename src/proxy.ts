@@ -1,4 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  createAdminBasicAuthChallenge,
+  hasValidAdminBasicAuth,
+} from "@/lib/admin/basic-auth";
 import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware";
 
 /** 未ログインでも閲覧可（LP・ログイン・法務ページ・問い合わせ） */
@@ -22,6 +26,14 @@ const ONBOARDED_COOKIE_OPTIONS = {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (
+    pathname.startsWith("/admin") &&
+    !hasValidAdminBasicAuth(request.headers.get("authorization"))
+  ) {
+    return createAdminBasicAuthChallenge();
+  }
+
   const { supabase, response } = createSupabaseMiddlewareClient(request);
 
   // セッションを最新化（refresh）

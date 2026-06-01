@@ -1,6 +1,10 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isAdminUserId } from "@/lib/admin/access";
+import {
+  createAdminBasicAuthChallenge,
+  hasValidAdminBasicAuth,
+} from "@/lib/admin/basic-auth";
 import { createSupabaseAdminClient } from "@/lib/billing/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -13,6 +17,10 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, { params }: RouteContext) {
+  if (!hasValidAdminBasicAuth(request.headers.get("authorization"))) {
+    return createAdminBasicAuthChallenge();
+  }
+
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
   const {
