@@ -240,8 +240,10 @@ function ProfileTile({
 }
 
 function getPlanStatusLabel(status: BillingPlanStatus | undefined): string {
+  if (status === "trialing") return "無料トライアル中";
   if (status === "payment_failed") return "支払い確認が必要です";
   if (status === "expired") return "期限切れ";
+  if (status === "canceled") return "キャンセル済み";
   return "利用中";
 }
 

@@ -36,7 +36,7 @@ export default async function StudyPage() {
 
       <DailyLimitBanner plan={plan} />
       <ContinueQuizCard />
-      <RecommendationSection clusters={clusters} />
+      <RecommendationSection clusters={clusters} questions={questions} plan={plan} />
 
       <section className="space-y-2">
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">

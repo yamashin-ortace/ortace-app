@@ -28,6 +28,7 @@ describe("pickOrderedWeakQuestions", () => {
           categoryKey: createMidCategoryKey(questions[0]),
           majorCategory: questions[0].majorCategory,
           minorCategory: questions[0].minorCategory,
+          status: "weak",
           judged: 5,
           correct: 1,
           incorrect: 4,
@@ -44,17 +45,99 @@ describe("pickOrderedWeakQuestions", () => {
 
     expect(picked.map((item) => item.id)).toEqual([
       "56-1",
-      "56-2",
       "56-3",
+      "56-6",
       "56-5",
       "56-4",
     ]);
+  });
+
+  it("前回正解できた問題は苦手克服から外し、未着手問題だけを出す", () => {
+    const questions = [
+      question("56-1", 1),
+      question("56-2", 2),
+      question("56-3", 3),
+      question("56-4", 4),
+    ];
+    const entries: AnswerHistoryEntry[] = [
+      entry(questions[0], 1, { result: "correct" }),
+      entry(questions[1], 2, { result: "correct" }),
+    ];
+
+    const picked = pickOrderedWeakQuestions(
+      questions,
+      entries,
+      [weakRow(questions[0])],
+      3,
+    );
+
+    expect(picked.map((item) => item.id)).toEqual(["56-3", "56-4"]);
+  });
+
+  it("過去の自信あり誤答を正解できたら、誤答枠から外す", () => {
+    const questions = [
+      question("56-1", 1),
+      question("56-2", 2),
+      question("56-3", 3),
+      question("56-4", 4),
+    ];
+    const entries: AnswerHistoryEntry[] = [
+      entry(questions[0], 1, { result: "incorrect", confidence: "high" }),
+      entry(questions[0], 4, { result: "correct" }),
+      entry(questions[1], 2, { result: "incorrect", confidence: "high" }),
+    ];
+
+    const picked = pickOrderedWeakQuestions(
+      questions,
+      entries,
+      [weakRow(questions[0])],
+      4,
+    );
+
+    expect(picked.map((item) => item.id)).toEqual(["56-3", "56-4", "56-2"]);
+  });
+
+  it("直前の集中演習で扱った問題はクールダウン中に出さない", () => {
+    const questions = [
+      question("56-1", 1),
+      question("56-2", 2),
+      question("56-3", 3),
+      question("56-4", 4),
+    ];
+
+    const picked = pickOrderedWeakQuestions(
+      questions,
+      [],
+      [weakRow(questions[0])],
+      4,
+      { excludedQuestionIds: new Set(["56-1", "56-2"]) },
+    );
+
+    expect(picked.map((item) => item.id)).toEqual(["56-3", "56-4"]);
   });
 
   it("対象中分類がない場合は空配列を返す", () => {
     expect(pickOrderedWeakQuestions([], [], [], 20)).toEqual([]);
   });
 });
+
+function weakRow(question: Question) {
+  return {
+    categoryKey: createMidCategoryKey(question),
+    majorCategory: question.majorCategory,
+    minorCategory: question.minorCategory,
+    status: "weak" as const,
+    judged: 5,
+    correct: 1,
+    incorrect: 4,
+    accuracy: 20,
+    highConfidenceMisses: 0,
+    slowAnswers: 0,
+    slowMisses: 0,
+    repeatedMisses: 0,
+    latestHighConfidenceMissQuestionIds: [],
+  };
+}
 
 function question(id: string, displayNumber: number): Question {
   return {

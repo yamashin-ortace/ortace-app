@@ -60,7 +60,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
   low: {
     id: "low",
     name: "基礎定着パス",
-    description: "今年度の受験を迎えない1〜3年生向け。授業理解と日々の復習を積み上げるパスです。",
+    description: "受験年度を迎える前の学生向け。授業理解と日々の復習を積み上げるパスです。",
     checkoutLabel: "基礎定着パスを購入",
     dailyLimit: 100,
     durations: [
@@ -70,8 +70,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
         label: "3ヶ月",
         priceLabel: "¥1,500",
         perMonthLabel: "¥500/月",
-        priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_LOW_3M_PASS",
-        fallbackPriceId: "price_1TaoHeFUkpvTvQkQVLaX7zOn",
+        priceEnvKey: "STRIPE_PRICE_LOW_3M_SUBSCRIPTION",
       },
       {
         id: "1y",
@@ -79,8 +78,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
         label: "1年",
         priceLabel: "¥4,800",
         perMonthLabel: "¥400/月",
-        priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_LOW_YEAR_PASS",
-        fallbackPriceId: "price_1TaoHiFUkpvTvQkQ3uHmAiW6",
+        priceEnvKey: "STRIPE_PRICE_LOW_YEAR_SUBSCRIPTION",
       },
     ],
     defaultDurationId: "3m",
@@ -89,7 +87,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
       "1日100問まで",
       "苦手克服・思い込みチェック",
       "端末間同期",
-      "14日無料トライアル",
+      "初回14日無料トライアル",
       "3ヶ月・1年から選択",
     ],
   },
@@ -101,16 +99,16 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
     description: "今年度受験する方向け。合格点まで仕上げるための総仕上げパックです。",
     checkoutLabel: "国試対策パックを購入",
     dailyLimit: null,
-    priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_EXAM_YEAR_PASS",
-    fallbackPriceId: "price_1TUwmrFUkpvTvQkQy8InMoBp",
+    priceEnvKey: "STRIPE_PRICE_EXAM_YEAR_SUBSCRIPTION",
     featureLabels: [
       "基礎定着パスの内容すべて",
       "過去問演習が無制限",
       "オリジナル予想問題180問（順次公開）",
       "75問模試（12月1日公開）",
       "直近テーマ問題集（順次公開）",
-      "苦手克服の中分類深掘り・順番付き出題",
-      "AIコーチMiLu先生の分析コメント",
+      "AIコーチMiLu先生の弱点深掘り分析",
+      "分析に沿った克服順で出題",
+      "初回14日無料トライアル",
     ],
   },
 };
@@ -151,6 +149,7 @@ export function getEffectivePlan({
   expiresAt,
   trialEndsAt,
   trialUsedAt,
+  trialPlan,
   now = new Date(),
 }: {
   plan: BillingPlan;
@@ -158,13 +157,16 @@ export function getEffectivePlan({
   expiresAt: string | null;
   trialEndsAt?: string | null;
   trialUsedAt?: string | null;
+  trialPlan?: BillingPlan | null;
   now?: Date;
 }): BillingPlan {
   if (plan !== "free" && status === "active" && expiresAt) {
     if (new Date(expiresAt).getTime() > now.getTime()) return plan;
   }
 
-  if (isTrialActiveForPlan(trialEndsAt, trialUsedAt, now)) return "low";
+  if (isTrialActiveForPlan(trialEndsAt, trialUsedAt, now)) {
+    return trialPlan && isPaidPlan(trialPlan) ? trialPlan : "low";
+  }
   return "free";
 }
 
@@ -176,6 +178,7 @@ export function getEffectivePlanForProfile(
     | "plan_expires_at"
     | "trial_ends_at"
     | "trial_used_at"
+    | "trial_plan"
   >,
   now = new Date(),
 ): BillingPlan {
@@ -185,6 +188,7 @@ export function getEffectivePlanForProfile(
     expiresAt: profile.plan_expires_at,
     trialEndsAt: profile.trial_ends_at,
     trialUsedAt: profile.trial_used_at,
+    trialPlan: profile.trial_plan,
     now,
   });
 }

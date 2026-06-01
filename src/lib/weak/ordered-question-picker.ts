@@ -1,24 +1,27 @@
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import { getLatestEntryByQuestionId } from "@/lib/answer-history/status";
 import type { Question } from "@/lib/questions";
-import { shuffle } from "@/lib/quiz";
 import {
   createMidCategoryKey,
   type MidCategoryWeaknessRow,
 } from "./mid-category-analysis";
 
 const BASIC_QUESTIONS_PER_CATEGORY = 3;
+export const MAX_FOCUSED_WEAK_QUESTION_COUNT = 7;
 
 export function pickOrderedWeakQuestions(
   questions: readonly Question[],
   entries: readonly AnswerHistoryEntry[],
   rows: readonly MidCategoryWeaknessRow[],
   limit: number,
+  options: {
+    excludedQuestionIds?: ReadonlySet<string>;
+  } = {},
 ): Question[] {
   if (limit <= 0 || rows.length === 0) return [];
 
   const latest = getLatestEntryByQuestionId(entries);
-  const highConfidenceMissIds = getHighConfidenceMissIds(entries);
+  const highConfidenceMissIds = getLatestHighConfidenceMissIds(latest);
   const selected: Question[] = [];
   const seen = new Set<string>();
   const rowKeySet = new Set(rows.map((row) => row.categoryKey));
@@ -38,13 +41,16 @@ export function pickOrderedWeakQuestions(
   };
 
   for (const row of rows) {
-    const categoryQuestions = questionsByCategory.get(row.categoryKey) ?? [];
-    const basicPool = categoryQuestions.filter(
-      (question) =>
-        !highConfidenceMissIds.has(question.id) &&
-        latest.get(question.id)?.result !== "incorrect",
+    const categoryQuestions = (questionsByCategory.get(row.categoryKey) ?? []).filter(
+      (question) => !options.excludedQuestionIds?.has(question.id),
     );
-    add(rankBySourceOrder(basicPool), BASIC_QUESTIONS_PER_CATEGORY);
+    const freshPool = rankBySourceOrder(
+      categoryQuestions.filter((question) => {
+        const result = latest.get(question.id)?.result;
+        return result === undefined || result === "no_answer";
+      }),
+    );
+    add(freshPool, BASIC_QUESTIONS_PER_CATEGORY);
 
     const highConfidenceMissPool = categoryQuestions
       .filter((question) => highConfidenceMissIds.has(question.id))
@@ -56,18 +62,31 @@ export function pickOrderedWeakQuestions(
       });
     add(highConfidenceMissPool);
 
-    const similarPool = shuffle(categoryQuestions);
-    add(similarPool);
+    const otherMissPool = categoryQuestions
+      .filter(
+        (question) =>
+          latest.get(question.id)?.result === "incorrect" &&
+          !highConfidenceMissIds.has(question.id),
+      )
+      .sort((a, b) => {
+        const aAnsweredAt = latest.get(a.id)?.answeredAt ?? "";
+        const bAnsweredAt = latest.get(b.id)?.answeredAt ?? "";
+        if (aAnsweredAt !== bAnsweredAt) return aAnsweredAt.localeCompare(bAnsweredAt);
+        return compareQuestionSource(a, b);
+      });
+    add(otherMissPool);
+
+    add(freshPool);
   }
 
   return selected;
 }
 
-function getHighConfidenceMissIds(
-  entries: readonly AnswerHistoryEntry[],
+function getLatestHighConfidenceMissIds(
+  latest: ReadonlyMap<string, AnswerHistoryEntry>,
 ): Set<string> {
   const ids = new Set<string>();
-  for (const entry of entries) {
+  for (const entry of latest.values()) {
     if (entry.result === "incorrect" && entry.confidence === "high") {
       ids.add(entry.id);
     }

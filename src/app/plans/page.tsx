@@ -7,15 +7,13 @@ import {
   CreditCard,
   Crown,
   FileText,
-  Smartphone,
-  Store,
   TimerReset,
 } from "lucide-react";
 import { PaidPlanCard } from "@/components/billing/paid-plan-card";
+import { BillingPortalButton } from "@/components/billing/billing-portal-button";
 import {
   PAID_PLANS,
   PLAN_DEFINITIONS,
-  getEffectivePlan,
   getEffectivePlanForProfile,
 } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
@@ -38,13 +36,7 @@ export default async function PlansPage({ searchParams }: Props) {
   const session = await getSessionContext();
   const { checkout } = await searchParams;
   const profile = session?.profile;
-  const currentPlan = profile
-    ? getEffectivePlan({
-        plan: profile.plan,
-        status: profile.plan_status,
-        expiresAt: profile.plan_expires_at,
-      })
-    : "free";
+  const currentPlan = profile ? getEffectivePlanForProfile(profile) : "free";
   const learningPlan = profile ? getEffectivePlanForProfile(profile) : "free";
 
   return (
@@ -62,12 +54,17 @@ export default async function PlansPage({ searchParams }: Props) {
       </div>
 
       {checkout === "success" ? (
-        <StatusNotice tone="success" title="決済を受け付けました">
-          カード・PayPayなど即時決済の場合は、まもなくプランが反映されます。コンビニ払いは支払い完了後に反映されます。
+        <StatusNotice
+          tone="success"
+          title={session?.trial?.isActive ? "14日無料トライアルを開始しました" : "お支払い手続きが完了しました"}
+        >
+          {session?.trial?.isActive
+            ? "無料期間中にキャンセルした場合、料金は発生しません。継続する場合は15日目に選択したプランの料金が自動で決済されます。"
+            : "選択したプランをご利用いただけます。利用期限後の自動更新はありません。"}
         </StatusNotice>
       ) : null}
       {checkout === "cancel" ? (
-        <StatusNotice tone="muted" title="決済をキャンセルしました">
+        <StatusNotice tone="muted" title="お申し込みをキャンセルしました">
           プランは変更されていません。必要になったタイミングでいつでも再開できます。
         </StatusNotice>
       ) : null}
@@ -101,15 +98,25 @@ export default async function PlansPage({ searchParams }: Props) {
           使える支払い方法
         </h2>
         <div className="mt-3 grid gap-2 text-[13px] text-[var(--text-2)] sm:grid-cols-2">
-          <PaymentMethod icon={<CreditCard />} label="クレジットカード・カード分割" />
-          <PaymentMethod icon={<Smartphone />} label="PayPay" />
-          <PaymentMethod icon={<Store />} label="コンビニ払い" />
+          <PaymentMethod icon={<CreditCard />} label="クレジットカード" />
           <PaymentMethod icon={<FileText />} label="Apple Pay / Google Pay" />
         </div>
         <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-4)]">
-          Apple Pay / Google Pay とカード分割は、利用端末・ブラウザ・カード会社の条件により表示が変わります。
+          Apple Pay / Google Pay は、利用端末・ブラウザの条件により表示が変わります。初回14日無料トライアル後の自動課金に対応する支払い方法を表示します。
         </p>
       </section>
+
+      {profile?.stripe_customer_id ? (
+        <section className="space-y-2 rounded-[14px] border border-border bg-[var(--bg-card)] p-4">
+          <h2 className="text-[15px] font-bold text-[var(--text-1)]">
+            プラン管理
+          </h2>
+          <p className="text-[12px] leading-relaxed text-[var(--text-3)]">
+            無料期間中のキャンセル、支払い方法の変更、請求履歴の確認はStripeの管理画面で行えます。
+          </p>
+          <BillingPortalButton />
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -176,7 +183,7 @@ function CurrentPlanCard({
 }) {
   const definition = PLAN_DEFINITIONS[plan];
   const isExpiredPaidPlan = rawPlan !== "free" && plan === "free";
-  const isTrialActive = Boolean(trial?.isActive && plan === "low");
+  const isTrialActive = Boolean(trial?.isActive && plan !== "free");
 
   return (
     <section className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4">
@@ -216,7 +223,7 @@ function getCurrentPlanDescription({
   trial: TrialState | null;
 }): string {
   if (isTrialActive && trial?.isActive) {
-    return `あと${trial.remainingDays}日、1日100問まで利用できます。`;
+    return `あと${trial.remainingDays}日、選択したプランの機能を利用できます。`;
   }
   if (isExpiredPaidPlan) {
     return "以前の有料プランは期限切れです。必要な場合は再購入できます。";

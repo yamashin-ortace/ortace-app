@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Check, LoaderCircle } from "lucide-react";
+import { Check } from "lucide-react";
 import { CheckoutButton } from "@/components/billing/checkout-button";
+import { TrialBadge } from "@/components/billing/trial-badge";
 import { PLAN_DEFINITIONS, type PaidPlan } from "@/lib/billing/plans";
 import type { TrialState } from "@/lib/billing/trial";
 import type { BillingPlan } from "@/lib/supabase/database.types";
@@ -47,6 +47,9 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
     >
       <div className="flex h-full flex-col gap-4">
         <div className="space-y-2">
+          <div className="flex min-h-7 justify-end">
+            {!trial?.hasUsed ? <TrialBadge /> : null}
+          </div>
           <h2 className="text-[17px] font-bold text-[var(--text-1)]">
             {definition.name}
           </h2>
@@ -122,10 +125,6 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
         </div>
 
         <div className="space-y-2 pt-2">
-          {plan === "low" ? (
-            <TrialStartArea isLoggedIn={isLoggedIn} trial={trial} />
-          ) : null}
-
           {isLoggedIn ? (
             <CheckoutButton
               plan={plan}
@@ -133,7 +132,11 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
               disabled={isCurrent}
               className={cn(!highlighted && "bg-[var(--navy)]")}
             >
-              {isCurrent ? "現在のプランです" : definition.checkoutLabel}
+              {isCurrent
+                ? "現在のプランです"
+                : trial?.hasUsed
+                  ? definition.checkoutLabel
+                  : "初回14日無料で試す"}
             </CheckoutButton>
           ) : (
             <Link
@@ -149,100 +152,5 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
         </div>
       </div>
     </article>
-  );
-}
-
-function TrialStartArea({
-  isLoggedIn,
-  trial,
-}: {
-  isLoggedIn: boolean;
-  trial?: TrialState | null;
-}) {
-  if (trial?.isActive) {
-    return (
-      <p className="rounded-[10px] border border-[var(--primary)] bg-[var(--primary-soft)] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[var(--text-1)]">
-        14日無料トライアル中です。あと{trial.remainingDays}日使えます。
-      </p>
-    );
-  }
-
-  if (trial?.hasUsed) {
-    return (
-      <p className="rounded-[10px] border border-border bg-[var(--bg-muted)] px-3 py-2 text-[11px] leading-relaxed text-[var(--text-3)]">
-        14日無料トライアルは利用済みです。必要な期間を選んで購入できます。
-      </p>
-    );
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <Link
-        href="/login"
-        className="inline-flex h-11 w-full items-center justify-center rounded-[12px] border border-[var(--primary)] bg-[var(--primary-soft)] px-4 text-[13px] font-bold text-[var(--primary-dark)]"
-      >
-        ログインして14日無料で試す
-      </Link>
-    );
-  }
-
-  if (trial?.canStart) {
-    return <TrialStartButton />;
-  }
-
-  if (trial?.canStartBase && !trial.authProviderAllowed) {
-    return (
-      <p className="rounded-[10px] border border-border bg-[var(--bg-muted)] px-3 py-2 text-[11px] leading-relaxed text-[var(--text-3)]">
-        14日無料トライアルはGoogleまたはLINEログインのアカウント限定です。
-      </p>
-    );
-  }
-
-  return null;
-}
-
-function TrialStartButton() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleClick() {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/trial/start", { method: "POST" });
-      const data = (await response.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-
-      if (!response.ok) {
-        throw new Error(data?.error ?? "トライアルを開始できませんでした");
-      }
-
-      router.refresh();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "トライアルを開始できませんでした");
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={isLoading}
-        className="btn-pressable inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--primary)] bg-[var(--primary-soft)] px-4 text-[13px] font-bold text-[var(--primary-dark)] transition-colors disabled:opacity-60"
-      >
-        {isLoading ? (
-          <LoaderCircle className="h-4 w-4 animate-spin" strokeWidth={2.5} />
-        ) : null}
-        14日無料で試す
-      </button>
-      {error ? (
-        <p className="text-[12px] leading-relaxed text-destructive">{error}</p>
-      ) : null}
-    </div>
   );
 }

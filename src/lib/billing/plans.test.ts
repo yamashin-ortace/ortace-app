@@ -42,8 +42,25 @@ describe("billing plans", () => {
     ).toBe("low");
   });
 
-  it("基礎定着パスは購入日から1年にする", () => {
+  it("国試対策パックのトライアル中は国試対策機能を開放する", () => {
+    expect(
+      getEffectivePlan({
+        plan: "free",
+        status: "trialing",
+        expiresAt: null,
+        trialEndsAt: "2026-05-23T00:00:00.000Z",
+        trialUsedAt: "2026-05-09T00:00:00.000Z",
+        trialPlan: "exam",
+        now: new Date("2026-05-10T00:00:00.000Z"),
+      }),
+    ).toBe("exam");
+  });
+
+  it("基礎定着パスは既定で3ヶ月、選択時は1年にする", () => {
     expect(calculatePlanExpiresAt("low", new Date("2026-05-09T12:00:00.000Z"))).toBe(
+      "2026-08-09T12:00:00.000Z",
+    );
+    expect(calculatePlanExpiresAt("low", new Date("2026-05-09T12:00:00.000Z"), "1y")).toBe(
       "2027-05-09T12:00:00.000Z",
     );
   });

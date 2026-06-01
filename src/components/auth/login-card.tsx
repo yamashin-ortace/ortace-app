@@ -41,7 +41,9 @@ export function LoginCard({
   const [emailMode, setEmailMode] = useState<EmailMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(initialError ?? null);
+  const [error, setError] = useState<string | null>(
+    initialError ? translateOAuthError(initialError) : null,
+  );
   const [info, setInfo] = useState<string | null>(
     initialSent === "magic"
       ? "ログイン用リンクをメールで送信しました。受信トレイをご確認ください。"
@@ -322,4 +324,24 @@ function validatePassword(pw: string): string | null {
     return "パスワードは英字と数字を両方含めてください。";
   }
   return null;
+}
+
+function translateOAuthError(message: string): string {
+  const normalized = message.toLowerCase();
+
+  if (normalized === "missing_code") {
+    return "ログインを完了できませんでした。もう一度お試しください。";
+  }
+  if (normalized === "access_denied") {
+    return "ログインがキャンセルされました。";
+  }
+  if (
+    normalized === "server_error" ||
+    normalized === "unexpected_failure" ||
+    normalized === "oauth_callback_error"
+  ) {
+    return "ログイン処理でエラーが発生しました。時間をおいてもう一度お試しください。";
+  }
+
+  return message;
 }

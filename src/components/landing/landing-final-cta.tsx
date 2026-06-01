@@ -51,7 +51,7 @@ export function LandingFinalCta() {
           </Link>
         </div>
         <p className="text-[11px] text-[var(--text-3)]">
-          7日返金保証つき・合格サポート保証つき・国試対策パックは買い切り型
+          有料プランは初回14日無料・期間終了後の自動更新なし
         </p>
       </div>
     </section>

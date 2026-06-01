@@ -24,8 +24,17 @@ import {
   pickMisconceptionQuestions,
 } from "@/lib/ai-coach/recommendation";
 import { WeakAiComment } from "@/components/study/weak-ai-comment";
-import { analyzeMidCategoryWeakness } from "@/lib/weak/mid-category-analysis";
-import { pickOrderedWeakQuestions } from "@/lib/weak/ordered-question-picker";
+import {
+  analyzeMidCategoryWeakness,
+  pickRotatedWeaknessRow,
+  type MidCategoryWeaknessRow,
+} from "@/lib/weak/mid-category-analysis";
+import {
+  MAX_FOCUSED_WEAK_QUESTION_COUNT,
+  pickOrderedWeakQuestions,
+} from "@/lib/weak/ordered-question-picker";
+import { getCoolingQuestionIds } from "@/lib/weak/practice-state";
+import { useWeakPracticeState } from "@/lib/weak/use-weak-practice-state";
 import { shuffle } from "@/lib/quiz";
 
 export type RecommendedMode =
@@ -65,31 +74,65 @@ export function RecommendedPlayClient({
   plan,
 }: Props) {
   const { entries } = useAnswerHistoryList();
+  const { state: weakPracticeState, recordSession: recordWeakPracticeSession } =
+    useWeakPracticeState();
   const searchParams = useSearchParams();
   const limit = parseCountFromSearchParams(
     searchParams.get("count"),
     defaultLimit,
   );
   const [frozenPool, setFrozenPool] = useState<Question[] | null>(null);
+  const [selectedExamWeakCategoryKey, setSelectedExamWeakCategoryKey] =
+    useState<string | null>(null);
+  const [examWeakPool, setExamWeakPool] = useState<Question[] | null>(null);
+  const [activeExamWeakRow, setActiveExamWeakRow] =
+    useState<MidCategoryWeaknessRow | null>(null);
+  const isExamWeakMode = mode === "weak" && plan === "exam";
 
   useEffect(() => {
+    if (isExamWeakMode) return;
     if (frozenPool !== null) return;
     const pool = pickPoolByMode(mode, questions, entries, MAX_LIMIT, plan);
     const ordered = orderPoolForMode(mode, pool, plan);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- ハイドレーション後にプールを確定する
     setFrozenPool(ordered.slice(0, MAX_LIMIT));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回マウント時のみ pool を凍結する
-  }, []);
+  }, [isExamWeakMode]);
 
-  const sessionQuestions = frozenPool
-    ? frozenPool.slice(0, Math.min(limit, frozenPool.length))
-    : null;
   const examWeakAnalysis =
-    mode === "weak" && plan === "exam"
-      ? analyzeMidCategoryWeakness(questions, entries)
+    isExamWeakMode
+      ? analyzeMidCategoryWeakness(questions, entries, {
+          practiceState: weakPracticeState,
+        })
+      : null;
+  const selectedExamWeakRow = examWeakAnalysis
+    ? pickRotatedWeaknessRow(
+        examWeakAnalysis.rows,
+        weakPracticeState.lastPracticedCategoryKey,
+        selectedExamWeakCategoryKey,
+      )
+    : null;
+  const focusedExamWeakPool = selectedExamWeakRow
+    ? pickOrderedWeakQuestions(
+        questions.filter(isScorableQuestion),
+        entries,
+        [selectedExamWeakRow],
+        MAX_FOCUSED_WEAK_QUESTION_COUNT,
+        {
+          excludedQuestionIds: getCoolingQuestionIds(
+            weakPracticeState,
+            selectedExamWeakRow.categoryKey,
+          ),
+        },
+      )
+    : [];
+  const sessionQuestions = isExamWeakMode
+    ? examWeakPool
+    : frozenPool
+      ? frozenPool.slice(0, Math.min(limit, frozenPool.length))
       : null;
 
-  if (sessionQuestions === null) {
+  if (!isExamWeakMode && sessionQuestions === null) {
     return (
       <div className="py-12 text-center text-[13px] text-[var(--text-3)]">
         読み込み中…
@@ -105,22 +148,23 @@ export function RecommendedPlayClient({
     return <WeakAiComment analysis={examWeakAnalysis} />;
   }
 
-  if (sessionQuestions.length === 0) {
-    return <EmptyState title={emptyTitle} message={emptyMessage} />;
+  if (examWeakAnalysis && examWeakPool === null && selectedExamWeakRow) {
+    return (
+      <WeakAiComment
+        analysis={examWeakAnalysis}
+        selectedCategoryKey={selectedExamWeakRow.categoryKey}
+        practiceQuestionCount={focusedExamWeakPool.length}
+        onSelectCategory={setSelectedExamWeakCategoryKey}
+        onStart={() => {
+          setExamWeakPool(focusedExamWeakPool);
+          setActiveExamWeakRow(selectedExamWeakRow);
+        }}
+      />
+    );
   }
 
-  if (examWeakAnalysis) {
-    return (
-      <div className="space-y-4">
-        <WeakAiComment analysis={examWeakAnalysis} />
-        <QuizPlayer
-          questions={sessionQuestions}
-          mode="random"
-          plan={plan}
-          resumeLabel={resumeLabel}
-        />
-      </div>
-    );
+  if (!sessionQuestions || sessionQuestions.length === 0) {
+    return <EmptyState title={emptyTitle} message={emptyMessage} />;
   }
 
   return (
@@ -128,7 +172,37 @@ export function RecommendedPlayClient({
       questions={sessionQuestions}
       mode="random"
       plan={plan}
-      resumeLabel={resumeLabel}
+      resumeLabel={
+        activeExamWeakRow
+          ? `${activeExamWeakRow.minorCategory} 苦手克服`
+          : resumeLabel
+      }
+      saveProgress={!isExamWeakMode}
+      resultBackHref={isExamWeakMode ? "/study/weak" : undefined}
+      resultBackLabel={isExamWeakMode ? "ほかの苦手テーマを見る" : undefined}
+      onResultBack={
+        isExamWeakMode
+          ? () => {
+              setExamWeakPool(null);
+              setActiveExamWeakRow(null);
+            }
+          : undefined
+      }
+      onSessionComplete={
+        isExamWeakMode && activeExamWeakRow
+          ? ({ questions: completedQuestions, judgements }) => {
+              recordWeakPracticeSession({
+                categoryKey: activeExamWeakRow.categoryKey,
+                questionIds: completedQuestions.map((question) => question.id),
+                correctCount: completedQuestions.filter(
+                  (question) => judgements[question.id] === "correct",
+                ).length,
+              });
+            }
+          : undefined
+      }
+      showAiCoachResultAnalysis={!isExamWeakMode}
+      weakPracticeTheme={activeExamWeakRow?.minorCategory}
     />
   );
 }

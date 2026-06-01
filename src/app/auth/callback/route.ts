@@ -36,15 +36,25 @@ export async function GET(request: NextRequest) {
       revalidatePath("/", "layout");
       return response;
     }
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error.message)}`,
-    );
+    return redirectToLoginWithError(origin, error.message);
   }
 
-  return NextResponse.redirect(`${origin}/login?error=missing_code`);
+  return redirectToLoginWithError(
+    origin,
+    searchParams.get("error_description") ??
+      searchParams.get("error_code") ??
+      searchParams.get("error") ??
+      "missing_code",
+  );
 }
 
 function normalizeNextPath(value: string | null): string {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
   return value;
+}
+
+function redirectToLoginWithError(origin: string, error: string) {
+  const url = new URL("/login", origin);
+  url.searchParams.set("error", error);
+  return NextResponse.redirect(url);
 }

@@ -18,17 +18,17 @@ export function TrialBanner({ trial }: Props) {
         />
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-bold text-[var(--text-1)]">
-            基礎定着パスの14日無料トライアル中です
+            有料プランの14日無料トライアル中です
           </p>
           <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-2)]">
-            あと{trial.remainingDays}日、1日100問まで演習できます。
+            あと{trial.remainingDays}日、選択したプランの機能を利用できます。無料期間中にキャンセルした場合、料金は発生しません。
           </p>
         </div>
         <Link
           href="/plans"
           className="shrink-0 rounded-[10px] bg-[var(--primary)] px-3 py-2 text-[12px] font-bold text-white"
         >
-          継続する
+          プラン管理
         </Link>
       </section>
     );
@@ -45,7 +45,7 @@ export function TrialBanner({ trial }: Props) {
           14日無料トライアルが終了しました
         </p>
         <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-2)]">
-          続ける場合は基礎定着パスを購入すると、1日100問まで演習できます。
+          無料プランへ戻りました。続ける場合は、必要なプランを選んで再度お申し込みください。
         </p>
       </div>
       <Link

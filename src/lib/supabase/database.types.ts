@@ -10,7 +10,12 @@
 export type Grade = "1年" | "2年" | "3年" | "4年" | "受験生";
 export type Goal = "基礎固め" | "苦手克服" | "本番対策";
 export type BillingPlan = "free" | "low" | "exam";
-export type BillingPlanStatus = "active" | "expired" | "payment_failed";
+export type BillingPlanStatus =
+  | "active"
+  | "trialing"
+  | "expired"
+  | "payment_failed"
+  | "canceled";
 export type SupportClaimStatus = "pending" | "approved" | "rejected";
 export type Json =
   | string
@@ -31,10 +36,15 @@ export type ProfilesRow = {
   stripe_customer_id: string | null;
   stripe_checkout_session_id: string | null;
   stripe_payment_intent_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_subscription_status: string | null;
+  stripe_subscription_cancel_at: string | null;
+  stripe_first_invoice_paid_at: string | null;
   plan_updated_at: string;
   trial_started_at: string | null;
   trial_ends_at: string | null;
   trial_used_at: string | null;
+  trial_plan: BillingPlan | null;
   support_claim_used_at: string | null;
   created_at: string;
   updated_at: string;
@@ -51,10 +61,15 @@ export type ProfilesInsert = {
   stripe_customer_id?: string | null;
   stripe_checkout_session_id?: string | null;
   stripe_payment_intent_id?: string | null;
+  stripe_subscription_id?: string | null;
+  stripe_subscription_status?: string | null;
+  stripe_subscription_cancel_at?: string | null;
+  stripe_first_invoice_paid_at?: string | null;
   plan_updated_at?: string;
   trial_started_at?: string | null;
   trial_ends_at?: string | null;
   trial_used_at?: string | null;
+  trial_plan?: BillingPlan | null;
   support_claim_used_at?: string | null;
 };
 
@@ -68,10 +83,15 @@ export type ProfilesUpdate = {
   stripe_customer_id?: string | null;
   stripe_checkout_session_id?: string | null;
   stripe_payment_intent_id?: string | null;
+  stripe_subscription_id?: string | null;
+  stripe_subscription_status?: string | null;
+  stripe_subscription_cancel_at?: string | null;
+  stripe_first_invoice_paid_at?: string | null;
   plan_updated_at?: string;
   trial_started_at?: string | null;
   trial_ends_at?: string | null;
   trial_used_at?: string | null;
+  trial_plan?: BillingPlan | null;
   support_claim_used_at?: string | null;
 };
 

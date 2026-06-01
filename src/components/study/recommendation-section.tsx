@@ -21,14 +21,24 @@ import {
 import type { QuestionClusterLookup } from "@/lib/ai-coach/cluster-weakness";
 import { pickHomeAiCoachFocus } from "@/lib/ai-coach/home-focus";
 import { countMisconceptionCandidates } from "@/lib/ai-coach/recommendation";
+import type { PlanType } from "@/lib/daily-limit";
+import type { Question } from "@/lib/questions";
+import {
+  analyzeMidCategoryWeakness,
+  pickRotatedWeaknessRow,
+} from "@/lib/weak/mid-category-analysis";
+import { useWeakPracticeState } from "@/lib/weak/use-weak-practice-state";
 
 type Props = {
   /** ホームのMiLu先生アドバイスと同じ注目テーマ判定に使う問題ID→クラスタ辞書 */
   clusters?: readonly { id: string; clusterId: string; clusterLabel: string }[];
+  questions: Question[];
+  plan: PlanType;
 };
 
-export function RecommendationSection({ clusters }: Props) {
+export function RecommendationSection({ clusters, questions, plan }: Props) {
   const { entries } = useAnswerHistoryList();
+  const { state: weakPracticeState } = useWeakPracticeState();
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -60,16 +70,41 @@ export function RecommendationSection({ clusters }: Props) {
     }
     const reviewCount = getReviewTargetIds(entries).size;
     const weak = getWeakFieldFromHistory(entries);
+    const examWeakAnalysis =
+      plan === "exam"
+        ? analyzeMidCategoryWeakness(questions, entries, {
+            practiceState: weakPracticeState,
+          })
+        : null;
+    const examWeak = examWeakAnalysis
+      ? pickRotatedWeaknessRow(
+          examWeakAnalysis.rows,
+          weakPracticeState.lastPracticedCategoryKey,
+        )
+      : null;
     const misconceptionCount = countMisconceptionCandidates(entries);
     const focus = lookup ? pickHomeAiCoachFocus(entries, lookup) : null;
     return {
       reviewCount,
-      weakLabel: weak?.field ?? "",
-      weakStage: weak?.stage === "confirmed" || weak?.stage === "provisional" ? weak.stage : null,
+      weakLabel: examWeak?.minorCategory ?? weak?.field ?? "",
+      weakStage:
+        plan === "exam"
+          ? null
+          : weak?.stage === "confirmed" || weak?.stage === "provisional"
+            ? weak.stage
+            : null,
+      weakSubtitle:
+        plan === "exam" && examWeakAnalysis
+          ? examWeak
+            ? `${examWeak.minorCategory}を集中補修`
+            : examWeakAnalysis.readiness === "collecting"
+              ? "分析に必要な履歴を収集中"
+              : "明確な苦手テーマはありません"
+          : "",
       misconceptionCount,
       focusLabel: focus?.clusterLabel ?? "",
     };
-  }, [entries, hydrated, lookup]);
+  }, [entries, hydrated, lookup, plan, questions, weakPracticeState]);
 
   return (
     <section className="space-y-2">
@@ -108,11 +143,12 @@ export function RecommendationSection({ clusters }: Props) {
             title="苦手克服"
             subtitle={
               hydrated
-                ? stats.weakLabel
-                  ? stats.weakStage === "provisional"
-                    ? `暫定：${stats.weakLabel}`
-                    : stats.weakLabel
-                  : "正答率の低い分野を補強"
+                ? stats.weakSubtitle ||
+                  (stats.weakLabel
+                    ? stats.weakStage === "provisional"
+                      ? `暫定：${stats.weakLabel}`
+                      : stats.weakLabel
+                    : "正答率の低い分野を補強")
                 : "計算中…"
             }
             trailing={<WeakFieldHowItWorksPopover />}

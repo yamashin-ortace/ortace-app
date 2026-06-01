@@ -23,18 +23,18 @@ export default async function WeakPage() {
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
           {isExamPlan
-            ? "中分類別に苦手を見つけ、基礎→自信あり誤答→類題の順で出題"
+            ? "苦手なテーマを見つけ、基礎→自信あり誤答→類題の順で出題"
             : "確定苦手（10問以上）と暫定苦手（5問以上）の3分野からランダム出題"}
         </p>
       </div>
 
-      <QuestionCountSelector defaultCount={20} />
+      {isExamPlan ? null : <QuestionCountSelector defaultCount={20} />}
 
       <DataReadinessHint
         threshold={isExamPlan ? 30 : 15}
         benefitMessage={
           isExamPlan
-            ? "中分類ごとの苦手判定とMiLu先生コメントの精度が上がります。"
+            ? "テーマごとの苦手判定とMiLu先生コメントの精度が上がります。"
             : "苦手分野の判定がぐっと精度を増します。"
         }
       />
@@ -46,12 +46,12 @@ export default async function WeakPage() {
         resumeLabel="苦手克服"
         emptyTitle={
           isExamPlan
-            ? "中分類の判定にはデータが足りません"
+            ? "苦手テーマの判定にはデータが足りません"
             : "苦手分野の判定にはデータが足りません"
         }
         emptyMessage={
           isExamPlan
-            ? "もっと解くと、中分類別の正答率からおすすめできるようになります。"
+            ? "もっと解くと、テーマ別の正答率からおすすめできるようになります。"
             : "少し問題を解くと、正答率の低い分野からおすすめできるようになります。"
         }
         plan={plan}

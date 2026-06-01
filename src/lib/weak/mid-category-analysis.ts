@@ -2,16 +2,24 @@ import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import { getLatestEntryByQuestionId } from "@/lib/answer-history/status";
 import { classifyAnswerDuration } from "@/lib/ai-coach/recommendation";
 import type { Question } from "@/lib/questions";
+import type { WeakPracticeState } from "./practice-state";
 
 export const EXAM_WEAK_DATA_READINESS_THRESHOLD = 30;
 export const MID_CATEGORY_MIN_JUDGED = 3;
 export const MID_CATEGORY_TOP_N = 3;
 export const MID_CATEGORY_RECENT_ENTRY_LIMIT = 300;
+export const WEAK_RECENT_ENTRY_LIMIT = 5;
+export const WEAK_RECENT_INCORRECT_STREAK = 3;
+export const WEAK_RECENT_MAX_CORRECT = 2;
+export const WATCH_RECENT_CORRECT = 3;
+
+export type MidCategoryWeaknessStatus = "weak" | "watch";
 
 export type MidCategoryWeaknessRow = {
   categoryKey: string;
   majorCategory: string;
   minorCategory: string;
+  status: MidCategoryWeaknessStatus;
   judged: number;
   correct: number;
   incorrect: number;
@@ -27,7 +35,10 @@ export type MidCategoryWeaknessAnalysis = {
   readiness: "collecting" | "ready";
   judgedCount: number;
   requiredCount: number;
+  /** 明確な失点傾向があるテーマ。苦手克服の演習対象にする。 */
   rows: MidCategoryWeaknessRow[];
+  /** 苦手とは断定しないが、今後の学習で意識したいテーマ。 */
+  watchRows: MidCategoryWeaknessRow[];
 };
 
 type MidCategoryAnalysisOptions = {
@@ -35,18 +46,13 @@ type MidCategoryAnalysisOptions = {
   topN?: number;
   requiredCount?: number;
   recentEntryLimit?: number;
+  practiceState?: WeakPracticeState;
 };
 
 type MidCategoryBucket = {
   majorCategory: string;
   minorCategory: string;
-  judged: number;
-  correct: number;
-  incorrect: number;
-  highConfidenceMisses: number;
-  slowAnswers: number;
-  slowMisses: number;
-  latestHighConfidenceMissQuestionIds: string[];
+  entries: AnswerHistoryEntry[];
 };
 
 export function analyzeMidCategoryWeakness(
@@ -80,54 +86,66 @@ export function analyzeMidCategoryWeakness(
     const bucket = buckets.get(categoryKey) ?? {
       majorCategory: question.majorCategory,
       minorCategory: normalizeMinorCategory(question),
-      judged: 0,
-      correct: 0,
-      incorrect: 0,
-      highConfidenceMisses: 0,
-      slowAnswers: 0,
-      slowMisses: 0,
-      latestHighConfidenceMissQuestionIds: [],
+      entries: [],
     };
 
-    bucket.judged += 1;
-    if (entry.result === "correct") {
-      bucket.correct += 1;
-    } else {
-      bucket.incorrect += 1;
-      if (entry.confidence === "high") {
-        bucket.highConfidenceMisses += 1;
-        bucket.latestHighConfidenceMissQuestionIds.push(entry.id);
-      }
-      if (classifyAnswerDuration(entry.durationMs) === "deliberate") {
-        bucket.slowMisses += 1;
-      }
-    }
-    if (classifyAnswerDuration(entry.durationMs) === "deliberate") {
-      bucket.slowAnswers += 1;
-    }
+    bucket.entries.push(entry);
     buckets.set(categoryKey, bucket);
   }
 
   const readiness = judgedCount >= requiredCount ? "ready" : "collecting";
   const rows = [...buckets.entries()]
-    .filter(([, bucket]) => bucket.judged >= minJudged)
-    .map(([categoryKey, bucket]): MidCategoryWeaknessRow => {
+    .filter(([, bucket]) => bucket.entries.length >= minJudged)
+    .map(([categoryKey, bucket]) => {
+      const recent = getRecentJudgedEntries(bucket.entries);
+      const correct = recent.filter((entry) => entry.result === "correct").length;
+      const incorrect = recent.filter((entry) => entry.result === "incorrect").length;
+      const highConfidenceMisses = recent.filter(
+        (entry) => entry.result === "incorrect" && entry.confidence === "high",
+      ).length;
+      const slowAnswers = recent.filter(
+        (entry) => classifyAnswerDuration(entry.durationMs) === "deliberate",
+      ).length;
+      const slowMisses = recent.filter(
+        (entry) =>
+          entry.result === "incorrect" &&
+          classifyAnswerDuration(entry.durationMs) === "deliberate",
+      ).length;
       const historicalMisses = historicalMissesByCategory.get(categoryKey) ?? 0;
-      return {
+      const row = {
         categoryKey,
         majorCategory: bucket.majorCategory,
         minorCategory: bucket.minorCategory,
-        judged: bucket.judged,
-        correct: bucket.correct,
-        incorrect: bucket.incorrect,
-        accuracy: Math.round((bucket.correct / bucket.judged) * 100),
-        highConfidenceMisses: bucket.highConfidenceMisses,
-        slowAnswers: bucket.slowAnswers,
-        slowMisses: bucket.slowMisses,
-        repeatedMisses: Math.max(0, historicalMisses - bucket.incorrect),
-        latestHighConfidenceMissQuestionIds: bucket.latestHighConfidenceMissQuestionIds,
+        judged: recent.length,
+        correct,
+        incorrect,
+        accuracy: Math.round((correct / recent.length) * 100),
+        highConfidenceMisses,
+        slowAnswers,
+        slowMisses,
+        repeatedMisses: Math.max(0, historicalMisses - incorrect),
+        latestHighConfidenceMissQuestionIds: recent
+          .filter(
+            (entry) =>
+              entry.result === "incorrect" && entry.confidence === "high",
+          )
+          .map((entry) => entry.id),
       };
+      const status = classifyWeaknessStatus(
+        row,
+        recent,
+        bucket.entries,
+        options.practiceState,
+      );
+      return status ? { ...row, status } : null;
     })
+    .filter((row): row is MidCategoryWeaknessRow => row !== null);
+  const weakRows = rows
+    .filter((row) => row.status === "weak")
+    .sort(compareWeaknessRows)
+    .slice(0, topN);
+  const watchRows = rows
+    .filter((row) => row.status === "watch")
     .sort(compareWeaknessRows)
     .slice(0, topN);
 
@@ -135,12 +153,27 @@ export function analyzeMidCategoryWeakness(
     readiness,
     judgedCount,
     requiredCount,
-    rows: readiness === "ready" ? rows : [],
+    rows: readiness === "ready" ? weakRows : [],
+    watchRows: readiness === "ready" ? watchRows : [],
   };
 }
 
 export function createMidCategoryKey(question: Question): string {
   return `${question.majorCategory}\u0000${normalizeMinorCategory(question)}`;
+}
+
+export function pickRotatedWeaknessRow(
+  rows: readonly MidCategoryWeaknessRow[],
+  lastPracticedCategoryKey: string | null,
+  selectedCategoryKey?: string | null,
+): MidCategoryWeaknessRow | null {
+  const selected = rows.find((row) => row.categoryKey === selectedCategoryKey);
+  if (selected) return selected;
+  return (
+    rows.find((row) => row.categoryKey !== lastPracticedCategoryKey) ??
+    rows[0] ??
+    null
+  );
 }
 
 function normalizeMinorCategory(question: Question): string {
@@ -177,10 +210,81 @@ function compareWeaknessRows(
   b: MidCategoryWeaknessRow,
 ): number {
   if (a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;
+  if (a.repeatedMisses !== b.repeatedMisses) {
+    return b.repeatedMisses - a.repeatedMisses;
+  }
   if (a.highConfidenceMisses !== b.highConfidenceMisses) {
     return b.highConfidenceMisses - a.highConfidenceMisses;
   }
   if (a.slowAnswers !== b.slowAnswers) return b.slowAnswers - a.slowAnswers;
   if (a.judged !== b.judged) return b.judged - a.judged;
   return a.minorCategory.localeCompare(b.minorCategory, "ja");
+}
+
+function classifyWeaknessStatus(
+  row: Omit<MidCategoryWeaknessRow, "status">,
+  recent: readonly AnswerHistoryEntry[],
+  categoryEntries: readonly AnswerHistoryEntry[],
+  practiceState?: WeakPracticeState,
+): MidCategoryWeaknessStatus | null {
+  const recentFive = recent.slice(0, WEAK_RECENT_ENTRY_LIMIT);
+  const recentThree = recent.slice(0, WEAK_RECENT_INCORRECT_STREAK);
+  const hasFiveQuestionWeakness =
+    recentFive.length >= WEAK_RECENT_ENTRY_LIMIT &&
+    recentFive.filter((entry) => entry.result === "correct").length <=
+      WEAK_RECENT_MAX_CORRECT;
+  const hasThreeMissStreak =
+    recentThree.length >= WEAK_RECENT_INCORRECT_STREAK &&
+    recentThree.every((entry) => entry.result === "incorrect");
+  const hasReenteredWeakness =
+    hasFiveQuestionWeakness || hasThreeMissStreak;
+  const practiceRecord = practiceState?.themes[row.categoryKey];
+
+  if (hasReenteredWeakness && !isSuppressedByObservation(practiceRecord, categoryEntries)) {
+    return "weak";
+  }
+
+  const isStable =
+    recentFive.length >= WEAK_RECENT_ENTRY_LIMIT &&
+    recentFive.filter((entry) => entry.result === "correct").length >= 4;
+  if (isStable) return null;
+
+  const isWatch =
+    (recentFive.length >= WEAK_RECENT_ENTRY_LIMIT &&
+      recentFive.filter((entry) => entry.result === "correct").length ===
+        WATCH_RECENT_CORRECT) ||
+    row.highConfidenceMisses > 0 ||
+    row.repeatedMisses > 0 ||
+    Boolean(practiceRecord?.observing);
+  if (isWatch) return "watch";
+  return null;
+}
+
+function getRecentJudgedEntries(
+  entries: readonly AnswerHistoryEntry[],
+): AnswerHistoryEntry[] {
+  return [...entries]
+    .filter((entry) => entry.result !== "no_answer")
+    .sort((a, b) => b.answeredAt.localeCompare(a.answeredAt))
+    .slice(0, WEAK_RECENT_ENTRY_LIMIT);
+}
+
+function isSuppressedByObservation(
+  record: WeakPracticeState["themes"][string] | undefined,
+  categoryEntries: readonly AnswerHistoryEntry[],
+): boolean {
+  if (!record?.observing) return false;
+  const followUp = getRecentJudgedEntries(
+    categoryEntries.filter((entry) => entry.answeredAt > record.practicedAt),
+  );
+  const recentFive = followUp.slice(0, WEAK_RECENT_ENTRY_LIMIT);
+  const recentThree = followUp.slice(0, WEAK_RECENT_INCORRECT_STREAK);
+  const hasFiveQuestionWeakness =
+    recentFive.length >= WEAK_RECENT_ENTRY_LIMIT &&
+    recentFive.filter((entry) => entry.result === "correct").length <=
+      WEAK_RECENT_MAX_CORRECT;
+  const hasThreeMissStreak =
+    recentThree.length >= WEAK_RECENT_INCORRECT_STREAK &&
+    recentThree.every((entry) => entry.result === "incorrect");
+  return !hasFiveQuestionWeakness && !hasThreeMissStreak;
 }

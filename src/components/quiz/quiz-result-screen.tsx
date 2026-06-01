@@ -8,6 +8,7 @@ import {
   ChevronUp,
   CircleSlash,
   Home,
+  Lightbulb,
   LoaderCircle,
   RefreshCcw,
   RotateCw,
@@ -28,7 +29,11 @@ type Props = {
   /** 結果画面下部の戻り先リンク。既定は学習タブ */
   backHref?: string;
   backLabel?: string;
+  /** 指定時は下部の戻る操作をリンクではなくボタンとして扱う */
+  onBack?: () => void;
   showAiCoachAnalysis?: boolean;
+  /** 苦手克服の集中演習で、専用フィードバックを表示するテーマ名 */
+  weakPracticeTheme?: string;
 };
 
 export function QuizResultScreen({
@@ -38,7 +43,9 @@ export function QuizResultScreen({
   onRestart,
   backHref = "/study",
   backLabel = "学習タブへ戻る",
+  onBack,
   showAiCoachAnalysis = true,
+  weakPracticeTheme,
 }: Props) {
   const [reviewOpen, setReviewOpen] = useState(true);
   const [showToast, setShowToast] = useState(true);
@@ -145,6 +152,10 @@ export function QuizResultScreen({
         </div>
       </div>
 
+      {weakPracticeTheme ? (
+        <WeakPracticeOutcome theme={weakPracticeTheme} ratio={ratio} />
+      ) : null}
+
       {showAiCoachAnalysis ? (
         <AiCoachResultAnalysis
           questions={questions}
@@ -190,15 +201,84 @@ export function QuizResultScreen({
       </section>
 
       <div>
-        <Link
-          href={backHref}
-          className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-6 py-3 text-[14px] font-semibold text-[var(--text-1)] transition-colors hover:bg-[var(--bg-muted)]"
-        >
-          <Home className="h-4 w-4" strokeWidth={2.5} />
-          {backLabel}
-        </Link>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-6 py-3 text-[14px] font-semibold text-[var(--text-1)] transition-colors hover:bg-[var(--bg-muted)]"
+          >
+            <Home className="h-4 w-4" strokeWidth={2.5} />
+            {backLabel}
+          </button>
+        ) : (
+          <Link
+            href={backHref}
+            className="flex w-full items-center justify-center gap-2 rounded-[12px] border border-border bg-[var(--bg-card)] px-6 py-3 text-[14px] font-semibold text-[var(--text-1)] transition-colors hover:bg-[var(--bg-muted)]"
+          >
+            <Home className="h-4 w-4" strokeWidth={2.5} />
+            {backLabel}
+          </Link>
+        )}
       </div>
     </div>
+  );
+}
+
+function WeakPracticeOutcome({ theme, ratio }: { theme: string; ratio: number }) {
+  const outcome =
+    ratio >= 80
+      ? {
+          title: "克服に近づきました",
+          message:
+            "今回の演習では安定して正解できました。数日後に類題でもう一度確認できると、さらに安心です。",
+          colorClass:
+            "border-[#76B991]/45 bg-[#EFF9F3] dark:border-[#76B991]/30 dark:bg-[#163124]",
+          iconClass:
+            "bg-[#CDEBD8] text-[#287148] dark:bg-[#28543A] dark:text-[#BCE9CC]",
+          icon: CheckCircle2,
+        }
+      : ratio >= 60
+        ? {
+            title: "もう一度確認しましょう",
+            message:
+              "理解は進んでいますが、まだ迷いやすい部分があります。間違えた問題の解説を読み、復習キューで確認しましょう。",
+            colorClass:
+              "border-[#F0B45C]/55 bg-[#FFF6E5] dark:border-[#F0B45C]/35 dark:bg-[#3A2A12]",
+            iconClass:
+              "bg-[#F0B45C]/35 text-[#8A5A18] dark:text-[#FFD58A]",
+            icon: Lightbulb,
+          }
+        : {
+            title: "基礎から戻りましょう",
+            message:
+              "このテーマは、基礎事項から整理すると伸びやすい状態です。今回の解説と間違えた問題を丁寧に見直しましょう。",
+            colorClass:
+              "border-[#E68A8A]/50 bg-[#FFF1F1] dark:border-[#E68A8A]/30 dark:bg-[#3B1D1D]",
+            iconClass:
+              "bg-[#F7CDCD] text-[#9B1E1E] dark:bg-[#5A2B2B] dark:text-[#F8BABA]",
+            icon: RefreshCcw,
+          };
+  const Icon = outcome.icon;
+
+  return (
+    <section className={`rounded-[14px] border px-4 py-4 ${outcome.colorClass}`}>
+      <div className="flex gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ${outcome.iconClass}`}>
+          <Icon className="h-[18px] w-[18px]" strokeWidth={2.5} />
+        </span>
+        <div className="min-w-0 space-y-1">
+          <p className="text-[11px] font-bold text-[var(--text-3)]">
+            苦手克服: {theme}
+          </p>
+          <p className="text-[15px] font-extrabold text-[var(--text-1)]">
+            {outcome.title}
+          </p>
+          <p className="text-[12px] leading-relaxed text-[var(--text-2)]">
+            {outcome.message}
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 

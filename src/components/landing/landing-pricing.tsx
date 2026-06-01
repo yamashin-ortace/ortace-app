@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { TrialBadge } from "@/components/billing/trial-badge";
 import {
   Card,
   CardContent,
@@ -61,16 +62,20 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
   const displayPeriod = getLandingPeriodLabel(plan, activeDuration?.label);
   const displayPerMonth = activeDuration?.perMonthLabel;
   const isHighlighted = plan.id === "exam";
+  const hasTrial = plan.id !== "free";
 
   return (
     <Card
-      className={
-        isHighlighted
-          ? "h-full border-[var(--primary)] shadow-[0_4px_16px_var(--primary-shadow-soft)] ring-1 ring-[var(--primary)]/25"
-          : "h-full"
-      }
+      className={cn(
+        "relative h-full",
+        isHighlighted &&
+          "border-[var(--primary)] shadow-[0_4px_16px_var(--primary-shadow-soft)] ring-1 ring-[var(--primary)]/25",
+      )}
     >
       <CardHeader className="border-b border-border pb-4">
+        <div className="flex min-h-7 justify-end">
+          {hasTrial ? <TrialBadge /> : null}
+        </div>
         <CardTitle className="text-[17px] font-bold text-[var(--text-1)]">
           {plan.name}
         </CardTitle>
@@ -146,11 +151,7 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
       <CardFooter className="mt-auto flex flex-col gap-2 border-t bg-transparent pt-4">
         <Link
           href="/login"
-          className={
-            isHighlighted
-              ? "btn-pressable btn-primary-shadow inline-flex w-full items-center justify-center rounded-[12px] bg-[var(--primary)] py-3 text-center text-[14px] font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
-              : "inline-flex w-full items-center justify-center rounded-[12px] border border-border bg-[var(--bg-muted)] py-3 text-center text-[14px] font-semibold text-[var(--text-1)] transition-colors hover:bg-[var(--primary-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
-          }
+          className={getLandingCtaClassName(plan)}
         >
           {getLandingCtaLabel(plan)}
         </Link>
@@ -162,6 +163,19 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
       </CardFooter>
     </Card>
   );
+}
+
+function getLandingCtaClassName(plan: PlanDefinition): string {
+  const base =
+    "inline-flex w-full items-center justify-center rounded-[12px] py-3 text-center text-[14px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2";
+
+  if (plan.id === "exam") {
+    return `${base} btn-pressable btn-primary-shadow bg-[var(--primary)] text-white`;
+  }
+  if (plan.id === "low") {
+    return `${base} btn-pressable bg-[var(--navy)] text-white`;
+  }
+  return `${base} border border-border bg-[var(--bg-muted)] text-[var(--text-1)] hover:bg-[var(--primary-soft)]`;
 }
 
 function getLandingPeriodLabel(

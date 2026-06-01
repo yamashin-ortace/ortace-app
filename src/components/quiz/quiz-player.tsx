@@ -48,14 +48,18 @@ type Props = {
    */
   bypassDailyLimit?: boolean;
   /** セッションを最終画面まで終えたタイミング（未回答強制終了でも呼ばれる） */
-  onSessionComplete?: () => void;
+  onSessionComplete?: (summary: QuizSessionSummary) => void;
   /** 結果画面で「もう一度」ボタンを隠す（初回診断など、再挑戦の概念がない導線で使う） */
   hideRestartOnResult?: boolean;
   /** 結果画面下部の戻り先リンク。既定は「学習タブへ戻る」（/study） */
   resultBackHref?: string;
   resultBackLabel?: string;
+  /** 結果画面下部の戻る操作をリンクではなく、その場の状態切り替えで扱う場合に使う。 */
+  onResultBack?: () => void;
   /** 結果画面のAIコーチ分析カードを表示するか。AIテーマ3問確認では再分析ループ防止のためOFFにする。 */
   showAiCoachResultAnalysis?: boolean;
+  /** 苦手克服の集中演習で、結果画面に専用フィードバックを表示するテーマ名 */
+  weakPracticeTheme?: string;
   /**
    * 単問モード（記録ページからブックマーク・ノート・履歴の1問を解く導線）。
    * 結果画面に飛ばず、フッターの「戻る／次へ」で前後の問題に直接遷移する。
@@ -81,6 +85,11 @@ type QuestionState = {
   judgement?: AnswerJudgement;
 };
 
+export type QuizSessionSummary = {
+  questions: Question[];
+  judgements: Record<string, AnswerJudgement>;
+};
+
 export function QuizPlayer({
   questions,
   mode = "round",
@@ -93,7 +102,9 @@ export function QuizPlayer({
   hideRestartOnResult = false,
   resultBackHref,
   resultBackLabel,
+  onResultBack,
   showAiCoachResultAnalysis = true,
+  weakPracticeTheme,
   singleMode = false,
   prevQuestionHref = null,
   nextQuestionHref = null,
@@ -305,8 +316,15 @@ export function QuizPlayer({
     }
     if (sessionCompleteOnceRef.current) return;
     sessionCompleteOnceRef.current = true;
-    onSessionComplete?.();
-  }, [isFinished, onSessionComplete]);
+    onSessionComplete?.({
+      questions,
+      judgements: Object.fromEntries(
+        Object.entries(states)
+          .filter(([, state]) => state.judgement !== undefined)
+          .map(([id, state]) => [id, state.judgement as AnswerJudgement]),
+      ),
+    });
+  }, [isFinished, onSessionComplete, questions, states]);
 
   useEffect(() => {
     if (!isAnswered || currentState.judgement === undefined) return;
@@ -385,7 +403,9 @@ export function QuizPlayer({
         onRestart={hideRestartOnResult ? undefined : handleRestart}
         backHref={resultBackHref}
         backLabel={resultBackLabel}
+        onBack={onResultBack}
         showAiCoachAnalysis={showAiCoachResultAnalysis}
+        weakPracticeTheme={weakPracticeTheme}
       />
     );
   }
