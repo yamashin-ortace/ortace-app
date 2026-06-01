@@ -15,6 +15,8 @@ npm run build
 
 既知脆弱性が検出された場合は、依存関係を更新し、監査とテストを再実行してから公開する。
 
+GitHub Actions の `Monthly security scan` は、毎月1日 03:00 JST に依存関係監査と OWASP ZAP Baseline Scan を実行する。ZAP は公開サイトを短時間クロールし、受動検査の結果を GitHub Issue に記録する。必要に応じて Actions 画面から手動実行する。
+
 ## Administrator access
 
 アプリ内管理画面を有効化する前に、Production 環境へ次を登録する。
