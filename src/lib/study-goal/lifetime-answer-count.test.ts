@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { ANSWER_HISTORY_STORAGE_KEY } from "@/lib/answer-history";
+import { createAccountStorageKey } from "@/lib/auth/account-storage";
 import {
   countLifetimeAnswersFromHistoryRaw,
   incrementLifetimeAnswerCount,
@@ -34,7 +35,24 @@ const historyRaw = JSON.stringify({
   ],
 });
 
+const USER_ID = "test-user";
+const scopedHistoryKey = createAccountStorageKey(
+  ANSWER_HISTORY_STORAGE_KEY,
+  USER_ID,
+);
+const scopedLifetimeCountKey = createAccountStorageKey(
+  LIFETIME_ANSWER_COUNT_KEY,
+  USER_ID,
+);
+
 describe("lifetime-answer-count", () => {
+  afterEach(() => {
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
   it("履歴件数を累計カウンタの下限として使う", () => {
     expect(countLifetimeAnswersFromHistoryRaw(historyRaw)).toBe(2);
     expect(countLifetimeAnswersFromHistoryRaw("{invalid")).toBe(0);
@@ -42,12 +60,13 @@ describe("lifetime-answer-count", () => {
 
   it("履歴が上限未満なら、不自然に大きい累計カウンタを履歴件数に戻す", () => {
     const storage = new Map<string, string>([
-      [ANSWER_HISTORY_STORAGE_KEY, historyRaw],
-      [LIFETIME_ANSWER_COUNT_KEY, "999"],
+      [scopedHistoryKey, historyRaw],
+      [scopedLifetimeCountKey, "999"],
     ]);
     Object.defineProperty(globalThis, "window", {
       configurable: true,
       value: {
+        __ORTACE_ACCOUNT_USER_ID__: USER_ID,
         localStorage: {
           getItem: (key: string) => storage.get(key) ?? null,
           setItem: (key: string, value: string) => {
@@ -59,22 +78,18 @@ describe("lifetime-answer-count", () => {
     });
 
     expect(readLifetimeAnswerCount()).toBe(2);
-    expect(storage.get(LIFETIME_ANSWER_COUNT_KEY)).toBe("2");
-
-    Object.defineProperty(globalThis, "window", {
-      configurable: true,
-      value: undefined,
-    });
+    expect(storage.get(scopedLifetimeCountKey)).toBe("2");
   });
 
   it("履歴上限とは別に累計カウンタを増やす", () => {
     const storage = new Map<string, string>([
-      [ANSWER_HISTORY_STORAGE_KEY, historyRaw],
-      [LIFETIME_ANSWER_COUNT_KEY, "2"],
+      [scopedHistoryKey, historyRaw],
+      [scopedLifetimeCountKey, "2"],
     ]);
     Object.defineProperty(globalThis, "window", {
       configurable: true,
       value: {
+        __ORTACE_ACCOUNT_USER_ID__: USER_ID,
         localStorage: {
           getItem: (key: string) => storage.get(key) ?? null,
           setItem: (key: string, value: string) => {
@@ -86,23 +101,19 @@ describe("lifetime-answer-count", () => {
     });
 
     expect(incrementLifetimeAnswerCount()).toBe(3);
-    expect(storage.get(LIFETIME_ANSWER_COUNT_KEY)).toBe("3");
+    expect(storage.get(scopedLifetimeCountKey)).toBe("3");
     expect(readLifetimeAnswerCount()).toBe(3);
-
-    Object.defineProperty(globalThis, "window", {
-      configurable: true,
-      value: undefined,
-    });
   });
 
   it("同期後は履歴件数までカウンタを底上げする", () => {
     const storage = new Map<string, string>([
-      [ANSWER_HISTORY_STORAGE_KEY, historyRaw],
-      [LIFETIME_ANSWER_COUNT_KEY, "1"],
+      [scopedHistoryKey, historyRaw],
+      [scopedLifetimeCountKey, "1"],
     ]);
     Object.defineProperty(globalThis, "window", {
       configurable: true,
       value: {
+        __ORTACE_ACCOUNT_USER_ID__: USER_ID,
         localStorage: {
           getItem: (key: string) => storage.get(key) ?? null,
           setItem: (key: string, value: string) => {
@@ -114,12 +125,6 @@ describe("lifetime-answer-count", () => {
     });
 
     expect(notifyLifetimeAnswerCountUpdated()).toBe(2);
-    expect(storage.get(LIFETIME_ANSWER_COUNT_KEY)).toBe("2");
-
-    Object.defineProperty(globalThis, "window", {
-      configurable: true,
-      value: undefined,
-    });
+    expect(storage.get(scopedLifetimeCountKey)).toBe("2");
   });
-
 });

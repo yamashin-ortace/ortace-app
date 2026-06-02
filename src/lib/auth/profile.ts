@@ -8,6 +8,7 @@ import {
   type TrialState,
 } from "@/lib/billing/trial";
 import type { ProfilesRow } from "@/lib/supabase/database.types";
+import { hasCompletedOnboarding } from "@/lib/auth/onboarding-profile";
 
 export type SessionContext = {
   userId: string;
@@ -54,8 +55,8 @@ export const getSessionContext = cache(
 
 /**
  * オンボーディング完了済みかどうか。
- * nickname/grade/goal がすべて埋まっていれば完了とみなす。
+ * 新規利用者は nickname/exam_timing、既存利用者は旧回答が埋まっていれば完了とみなす。
  */
 export function isOnboarded(profile: ProfilesRow | null): boolean {
-  return Boolean(profile?.nickname && profile?.grade && profile?.goal);
+  return hasCompletedOnboarding(profile);
 }

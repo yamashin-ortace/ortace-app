@@ -22,6 +22,10 @@ import {
   syncDailyLimitWithDatabase,
 } from "@/lib/study-sync";
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
+import {
+  getAccountStorageKey,
+  isCurrentAccountStorageKey,
+} from "@/lib/auth/account-storage";
 
 const DAILY_LIMIT_UPDATED_EVENT = "ortace:daily-limit-updated";
 
@@ -112,14 +116,20 @@ function subscribeDailyLimit(onStoreChange: () => void): () => void {
     }
   };
 
-  window.addEventListener("storage", onStoreChange);
+  const handleStorage = (event: StorageEvent) => {
+    if (isCurrentAccountStorageKey(event.key, DAILY_LIMIT_STORAGE_KEY)) {
+      onStoreChange();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
   window.addEventListener(DAILY_LIMIT_UPDATED_EVENT, onStoreChange);
   document.addEventListener("visibilitychange", handleVisibilityChange);
 
   const intervalId = window.setInterval(onStoreChange, 60_000);
 
   return () => {
-    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener("storage", handleStorage);
     window.removeEventListener(DAILY_LIMIT_UPDATED_EVENT, onStoreChange);
     document.removeEventListener("visibilitychange", handleVisibilityChange);
     window.clearInterval(intervalId);
@@ -142,7 +152,7 @@ function readDailyLimitRecord(): DailyLimitRecord {
 
   try {
     const record = parseDailyLimitRecord(
-      window.localStorage.getItem(DAILY_LIMIT_STORAGE_KEY),
+      window.localStorage.getItem(getAccountStorageKey(DAILY_LIMIT_STORAGE_KEY)),
       today,
     );
     fallbackRecord = record;
@@ -158,7 +168,7 @@ function writeDailyLimitRecord(record: DailyLimitRecord) {
 
   try {
     window.localStorage.setItem(
-      DAILY_LIMIT_STORAGE_KEY,
+      getAccountStorageKey(DAILY_LIMIT_STORAGE_KEY),
       serializeDailyLimitRecord(record),
     );
   } catch {

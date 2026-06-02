@@ -6,27 +6,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveOnboardingAction } from "@/lib/auth/onboarding-actions";
-import type { Grade, Goal } from "@/lib/supabase/database.types";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
-
-const GRADES: { value: Grade; description: string }[] = [
-  { value: "1年", description: "基礎を着実に積み上げる時期" },
-  { value: "2年", description: "視能学・眼科学が本格化する時期" },
-  { value: "3年", description: "実習と国試対策の橋渡し" },
-  { value: "受験生", description: "本番まで全力で駆け抜ける" },
-];
-
-const GOALS: { value: Goal; description: string }[] = [
-  { value: "基礎固め", description: "毎日コツコツ、用語と仕組みを身につける" },
-  { value: "苦手克服", description: "間違えた分野を重点的に潰す" },
-  { value: "本番対策", description: "過去問を繰り返し解いて得点力を伸ばす" },
-];
+import { EXAM_TIMING_OPTIONS } from "@/lib/auth/onboarding-profile";
+import { DIAGNOSTIC_QUESTION_COUNT } from "@/lib/onboarding/diagnostic";
+import type { ExamTiming } from "@/lib/supabase/database.types";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Compass,
+  Play,
+  Sparkles,
+  Timer,
+} from "lucide-react";
 
 export function OnboardingFlow() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [nickname, setNickname] = useState("");
-  const [grade, setGrade] = useState<Grade | null>(null);
-  const [goal, setGoal] = useState<Goal | null>(null);
+  const [examTiming, setExamTiming] = useState<ExamTiming | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -40,7 +36,7 @@ export function OnboardingFlow() {
       return;
     }
     if (step === 2) {
-      if (!grade) return setError("学年を選択してください。");
+      if (!examTiming) return setError("受験予定を選択してください。");
       setStep(3);
       return;
     }
@@ -52,13 +48,13 @@ export function OnboardingFlow() {
     if (step === 3) setStep(2);
   }
 
-  function submit() {
-    if (!grade || !goal) return;
+  function submit(destination: "diagnostic" | "home") {
+    if (!examTiming) return;
     setError(null);
     const fd = new FormData();
     fd.append("nickname", nickname.trim());
-    fd.append("grade", grade);
-    fd.append("goal", goal);
+    fd.append("examTiming", examTiming);
+    fd.append("destination", destination);
     startTransition(async () => {
       const result = await saveOnboardingAction(fd);
       if (result && !result.ok) {
@@ -84,15 +80,15 @@ export function OnboardingFlow() {
           {step === 1
             ? "はじめまして"
             : step === 2
-              ? "学年を教えてください"
-              : "目標を選びましょう"}
+              ? "受験予定を教えてください"
+              : "最初に今の位置を知ろう"}
         </CardTitle>
         <p className="text-center text-[12px] text-[var(--text-2)]">
           {step === 1
             ? "あなたのことを少しだけ教えてね。"
             : step === 2
-              ? "今の状況に合わせて学習を最適化します。"
-              : "途中でいつでも変更できます。"}
+              ? "今の状況に合わせた学習につなげます。"
+              : "初回診断を受けると、学習の優先順位が整います。"}
         </p>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -105,7 +101,6 @@ export function OnboardingFlow() {
               id="nickname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="例：やまし"
               maxLength={20}
               autoFocus
             />
@@ -117,29 +112,45 @@ export function OnboardingFlow() {
 
         {step === 2 ? (
           <div className="space-y-2">
-            {GRADES.map((g) => (
+            {EXAM_TIMING_OPTIONS.map((option) => (
               <ChoiceButton
-                key={g.value}
-                active={grade === g.value}
-                onClick={() => setGrade(g.value)}
-                label={g.value}
-                description={g.description}
+                key={option.value}
+                active={examTiming === option.value}
+                onClick={() => setExamTiming(option.value)}
+                label={option.label}
+                description={option.description}
               />
             ))}
           </div>
         ) : null}
 
         {step === 3 ? (
-          <div className="space-y-2">
-            {GOALS.map((g) => (
-              <ChoiceButton
-                key={g.value}
-                active={goal === g.value}
-                onClick={() => setGoal(g.value)}
-                label={g.value}
-                description={g.description}
-              />
-            ))}
+          <div className="space-y-3">
+            <div className="rounded-[14px] border border-[var(--primary)]/35 bg-[var(--primary-soft)]/70 p-3.5">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[var(--bg-card)] text-[var(--primary-dark)]">
+                  <Compass className="h-5 w-5" strokeWidth={2.5} />
+                </span>
+                <div>
+                  <p className="text-[14px] font-extrabold text-[var(--text-1)]">
+                    {DIAGNOSTIC_QUESTION_COUNT}問の初回診断がおすすめです
+                  </p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-2)]">
+                    9分野から3問ずつ出題。解答をもとに、苦手分野と現在地の目安を表示します。
+                  </p>
+                </div>
+              </div>
+            </div>
+            <DiagnosticBenefit
+              icon={<Sparkles />}
+              title="あなた向けの優先順位が分かる"
+              description="診断後は、復習や苦手克服を始めやすくなります。"
+            />
+            <DiagnosticBenefit
+              icon={<Timer />}
+              title="所要時間は15〜25分"
+              description="途中で離れても、解いた分は記録されます。"
+            />
           </div>
         ) : null}
 
@@ -173,19 +184,53 @@ export function OnboardingFlow() {
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={submit}
-              disabled={pending || !goal}
-              className="ml-auto h-10 gap-1"
-            >
-              {pending ? "保存中..." : "はじめる"}
-              <Check className="h-3.5 w-3.5" />
-            </Button>
+            <div className="ml-auto flex flex-col items-end gap-1.5">
+              <Button
+                type="button"
+                onClick={() => submit("diagnostic")}
+                disabled={pending}
+                className="h-10 gap-1.5"
+              >
+                {pending ? "保存中..." : "初回診断をはじめる"}
+                <Play className="h-3.5 w-3.5" />
+              </Button>
+              <button
+                type="button"
+                onClick={() => submit("home")}
+                disabled={pending}
+                className="px-1 py-1 text-[11px] font-bold text-[var(--text-3)] underline underline-offset-2 disabled:opacity-50"
+              >
+                あとで受ける
+              </button>
+            </div>
           )}
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function DiagnosticBenefit({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-[12px] bg-[var(--bg-muted)]/55 px-3 py-2.5">
+      <span className="mt-0.5 text-[var(--primary-dark)] [&>svg]:h-4 [&>svg]:w-4 [&>svg]:[stroke-width:2.5]">
+        {icon}
+      </span>
+      <div>
+        <p className="text-[12px] font-bold text-[var(--text-1)]">{title}</p>
+        <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-3)]">
+          {description}
+        </p>
+      </div>
+    </div>
   );
 }
 

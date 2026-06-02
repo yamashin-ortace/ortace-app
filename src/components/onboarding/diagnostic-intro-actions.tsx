@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronRight, Play, X } from "lucide-react";
+import { ChevronRight, Play } from "lucide-react";
 import { useDiagnosticStatus } from "@/lib/onboarding/use-diagnostic-status";
 import { startNavigationPending } from "@/lib/navigation-pending";
 
@@ -20,7 +20,7 @@ export function DiagnosticIntroActions() {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+    <div className="space-y-2 text-center">
       <button
         type="button"
         onClick={handleStart}
@@ -33,10 +33,9 @@ export function DiagnosticIntroActions() {
       <button
         type="button"
         onClick={handleSkip}
-        className="choice-pressable inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-[14px] border border-border bg-[var(--bg-card)] px-4 text-[13px] font-bold text-[var(--text-2)] hover:bg-[var(--bg-muted)]"
+        className="inline-flex px-2 py-1 text-[12px] font-bold text-[var(--text-3)] underline underline-offset-2"
       >
-        <X className="h-4 w-4" strokeWidth={2.5} />
-        スキップして自分で進める
+        あとで受ける
       </button>
     </div>
   );

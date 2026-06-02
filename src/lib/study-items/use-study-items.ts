@@ -29,6 +29,10 @@ import {
   syncStudyItemsWithDatabase,
 } from "@/lib/study-sync";
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
+import {
+  getAccountStorageKey,
+  isCurrentAccountStorageKey,
+} from "@/lib/auth/account-storage";
 
 const STUDY_ITEMS_UPDATED_EVENT = "ortace:study-items-updated";
 
@@ -170,9 +174,8 @@ function subscribeStudyItems(onStoreChange: () => void): () => void {
 
   const handleStorage = (event: StorageEvent) => {
     if (
-      event.key === BOOKMARKS_STORAGE_KEY ||
-      event.key === NOTES_STORAGE_KEY ||
-      event.key === null
+      isCurrentAccountStorageKey(event.key, BOOKMARKS_STORAGE_KEY) ||
+      isCurrentAccountStorageKey(event.key, NOTES_STORAGE_KEY)
     ) {
       onStoreChange();
     }
@@ -208,7 +211,7 @@ function readBookmarksStore(): BookmarksStore {
 
   try {
     const store = parseBookmarksStore(
-      window.localStorage.getItem(BOOKMARKS_STORAGE_KEY),
+      window.localStorage.getItem(getAccountStorageKey(BOOKMARKS_STORAGE_KEY)),
     );
     fallbackBookmarksStore = store;
     return store;
@@ -223,7 +226,9 @@ function readNotesStore(): NotesStore {
   }
 
   try {
-    const store = parseNotesStore(window.localStorage.getItem(NOTES_STORAGE_KEY));
+    const store = parseNotesStore(
+      window.localStorage.getItem(getAccountStorageKey(NOTES_STORAGE_KEY)),
+    );
     fallbackNotesStore = store;
     return store;
   } catch {
@@ -238,7 +243,7 @@ function writeBookmarksStore(store: BookmarksStore) {
 
   try {
     window.localStorage.setItem(
-      BOOKMARKS_STORAGE_KEY,
+      getAccountStorageKey(BOOKMARKS_STORAGE_KEY),
       serializeBookmarksStore(next),
     );
   } catch {
@@ -252,7 +257,10 @@ function writeNotesStore(store: NotesStore) {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(NOTES_STORAGE_KEY, serializeNotesStore(next));
+    window.localStorage.setItem(
+      getAccountStorageKey(NOTES_STORAGE_KEY),
+      serializeNotesStore(next),
+    );
   } catch {
     // LocalStorage が使えない環境では、その場の state だけで扱う。
   }

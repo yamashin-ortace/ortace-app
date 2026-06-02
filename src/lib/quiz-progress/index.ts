@@ -1,3 +1,5 @@
+import { getAccountStorageKey } from "@/lib/auth/account-storage";
+
 export const LAST_QUIZ_STORAGE_KEY = "ortace.lastQuiz";
 
 export type LastQuizProgress = {
@@ -11,7 +13,9 @@ export type LastQuizProgress = {
 export function readLastQuizProgress(): LastQuizProgress | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(LAST_QUIZ_STORAGE_KEY);
+    const raw = window.localStorage.getItem(
+      getAccountStorageKey(LAST_QUIZ_STORAGE_KEY),
+    );
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<LastQuizProgress>;
     if (
@@ -31,10 +35,13 @@ export function readLastQuizProgress(): LastQuizProgress | null {
 
 export function writeLastQuizProgress(progress: LastQuizProgress): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(LAST_QUIZ_STORAGE_KEY, JSON.stringify(progress));
+  window.localStorage.setItem(
+    getAccountStorageKey(LAST_QUIZ_STORAGE_KEY),
+    JSON.stringify(progress),
+  );
 }
 
 export function clearLastQuizProgress(): void {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(LAST_QUIZ_STORAGE_KEY);
+  window.localStorage.removeItem(getAccountStorageKey(LAST_QUIZ_STORAGE_KEY));
 }

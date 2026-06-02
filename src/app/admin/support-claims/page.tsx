@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { FileImage, ShieldCheck } from "lucide-react";
 import { isAdminUserId } from "@/lib/admin/access";
+import { getExamTimingLabel } from "@/lib/auth/onboarding-profile";
 import { getSessionContext } from "@/lib/auth/profile";
 import { createSupabaseAdminClient } from "@/lib/billing/supabase-admin";
 import type {
@@ -153,7 +154,10 @@ function ClaimCard({ view }: { view: ClaimView }) {
         <div className="grid grid-cols-2 gap-2 text-right sm:grid-cols-4">
           <AdminStat label="プラン" value={profile?.plan ?? "-"} />
           <AdminStat label="学習日" value={`${view.learningDays}日`} />
-          <AdminStat label="学年" value={profile?.grade ?? "-"} />
+          <AdminStat
+            label="受験予定"
+            value={getExamTimingLabel(profile?.exam_timing) ?? profile?.grade ?? "-"}
+          />
           <AdminStat
             label="期限"
             value={profile?.plan_expires_at ? formatDate(profile.plan_expires_at) : "-"}

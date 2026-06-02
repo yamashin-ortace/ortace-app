@@ -14,6 +14,10 @@ import {
   type StudyGoalConfigRecord,
 } from "@/lib/study-sync";
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
+import {
+  getAccountStorageKey,
+  isCurrentAccountStorageKey,
+} from "@/lib/auth/account-storage";
 
 const CHANGE_EVENT = "ortace.studyGoal.changed";
 const UPDATED_AT_KEY = "updatedAt";
@@ -22,7 +26,9 @@ function readConfigRecord(): StudyGoalConfigRecord {
   if (typeof window === "undefined") {
     return { config: DEFAULT_STUDY_GOAL, updatedAt: null };
   }
-  const raw = window.localStorage.getItem(STUDY_GOAL_STORAGE_KEY);
+  const raw = window.localStorage.getItem(
+    getAccountStorageKey(STUDY_GOAL_STORAGE_KEY),
+  );
   return {
     config: parseStudyGoalConfig(raw),
     updatedAt: readUpdatedAt(raw),
@@ -34,7 +40,7 @@ let cachedRecord: StudyGoalConfigRecord = readConfigRecord();
 function subscribe(listener: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   const handleStorage = (event: StorageEvent) => {
-    if (event.key !== null && event.key !== STUDY_GOAL_STORAGE_KEY) return;
+    if (!isCurrentAccountStorageKey(event.key, STUDY_GOAL_STORAGE_KEY)) return;
     cachedRecord = readConfigRecord();
     listener();
   };
@@ -96,7 +102,7 @@ function writeStudyGoalConfig(
   if (typeof window === "undefined") return record;
 
   window.localStorage.setItem(
-    STUDY_GOAL_STORAGE_KEY,
+    getAccountStorageKey(STUDY_GOAL_STORAGE_KEY),
     JSON.stringify({
       ...JSON.parse(serializeStudyGoalConfig(config)),
       ...(updatedAt ? { [UPDATED_AT_KEY]: updatedAt } : {}),

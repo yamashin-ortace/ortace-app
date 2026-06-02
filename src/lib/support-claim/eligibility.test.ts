@@ -66,6 +66,7 @@ function profile(overrides: Partial<ProfilesRow> = {}): ProfilesRow {
     nickname: "やましん",
     grade: "受験生",
     goal: "本番対策",
+    exam_timing: null,
     plan: "exam",
     plan_status: "active",
     plan_expires_at: "2026-03-31T14:59:59.999Z",

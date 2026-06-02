@@ -9,6 +9,10 @@ import {
   recordWeakPracticeSession,
   serializeWeakPracticeState,
 } from "./practice-state";
+import {
+  getAccountStorageKey,
+  isCurrentAccountStorageKey,
+} from "@/lib/auth/account-storage";
 
 export function useWeakPracticeState() {
   const snapshot = useSyncExternalStore(
@@ -34,10 +38,15 @@ export function useWeakPracticeState() {
 
 function subscribe(onStoreChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  window.addEventListener("storage", onStoreChange);
+  const handleStorage = (event: StorageEvent) => {
+    if (isCurrentAccountStorageKey(event.key, WEAK_PRACTICE_STATE_STORAGE_KEY)) {
+      onStoreChange();
+    }
+  };
+  window.addEventListener("storage", handleStorage);
   window.addEventListener(WEAK_PRACTICE_STATE_UPDATED_EVENT, onStoreChange);
   return () => {
-    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener("storage", handleStorage);
     window.removeEventListener(WEAK_PRACTICE_STATE_UPDATED_EVENT, onStoreChange);
   };
 }
@@ -54,7 +63,9 @@ function readState() {
   if (typeof window === "undefined") return createWeakPracticeState();
   try {
     return parseWeakPracticeState(
-      window.localStorage.getItem(WEAK_PRACTICE_STATE_STORAGE_KEY),
+      window.localStorage.getItem(
+        getAccountStorageKey(WEAK_PRACTICE_STATE_STORAGE_KEY),
+      ),
     );
   } catch {
     return createWeakPracticeState();
@@ -65,7 +76,7 @@ function writeState(state: ReturnType<typeof readState>) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(
-      WEAK_PRACTICE_STATE_STORAGE_KEY,
+      getAccountStorageKey(WEAK_PRACTICE_STATE_STORAGE_KEY),
       serializeWeakPracticeState(state),
     );
   } catch {

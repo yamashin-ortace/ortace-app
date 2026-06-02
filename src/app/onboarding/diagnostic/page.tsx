@@ -14,7 +14,7 @@ export default function DiagnosticIntroPage() {
             <Compass className="h-5 w-5" strokeWidth={2.5} />
           </span>
           <h1 className="text-[24px] font-extrabold tracking-tight text-[var(--text-1)]">
-            初回診断（任意）
+            初回診断
           </h1>
         </div>
         <p className="text-[12px] text-[var(--text-3)]">
@@ -47,7 +47,7 @@ export default function DiagnosticIntroPage() {
           ・診断分の {DIAGNOSTIC_QUESTION_COUNT}問は <strong className="font-bold text-[var(--text-1)]">1日20問の制限の対象外</strong>{" "}
           です（初回特典）。
           <br />
-          ・診断は何度でもスキップ／再開できます。
+          ・今は受けずに、あとから開始することもできます。
         </div>
       </section>
 

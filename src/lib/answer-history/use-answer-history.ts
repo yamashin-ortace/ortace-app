@@ -24,6 +24,10 @@ import {
   incrementLifetimeAnswerCount,
   notifyLifetimeAnswerCountUpdated,
 } from "@/lib/study-goal/lifetime-answer-count";
+import {
+  getAccountStorageKey,
+  isCurrentAccountStorageKey,
+} from "@/lib/auth/account-storage";
 
 export function useAnswerHistory() {
   useEnsureAnswerHistorySynced();
@@ -125,10 +129,7 @@ function subscribeAnswerHistory(onStoreChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
 
   const handleStorage = (event: StorageEvent) => {
-    if (
-      event.key === ANSWER_HISTORY_STORAGE_KEY ||
-      event.key === null
-    ) {
+    if (isCurrentAccountStorageKey(event.key, ANSWER_HISTORY_STORAGE_KEY)) {
       onStoreChange();
     }
   };
@@ -157,7 +158,7 @@ function readAnswerHistoryStore(): AnswerHistoryStore {
 
   try {
     const store = parseAnswerHistoryStore(
-      window.localStorage.getItem(ANSWER_HISTORY_STORAGE_KEY),
+      window.localStorage.getItem(getAccountStorageKey(ANSWER_HISTORY_STORAGE_KEY)),
     );
     fallbackAnswerHistoryStore = store;
     return store;
@@ -180,7 +181,7 @@ function writeAnswerHistoryStore(store: AnswerHistoryStore) {
 
   try {
     window.localStorage.setItem(
-      ANSWER_HISTORY_STORAGE_KEY,
+      getAccountStorageKey(ANSWER_HISTORY_STORAGE_KEY),
       serializeAnswerHistoryStore(next),
     );
   } catch {

@@ -11,6 +11,7 @@ import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { DeviceSessionGuard } from "@/components/auth/device-session-guard";
 import { AppHeader } from "@/components/app-header";
 import { MarketingHeader } from "@/components/marketing-header";
+import { ACCOUNT_STORAGE_USER_ID_KEY } from "@/lib/auth/account-storage";
 import { getSessionContext } from "@/lib/auth/profile";
 import { cn } from "@/lib/utils";
 
@@ -100,6 +101,10 @@ export const viewport: Viewport = {
 
 const COLOR_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('ortace.colorTheme');var valid=['pink','lavender','mint','peach','sky'];document.documentElement.setAttribute('data-theme',valid.indexOf(t)>=0?t:'pink');}catch(e){document.documentElement.setAttribute('data-theme','pink');}})();`;
 
+function createAccountStorageScript(userId: string | null): string {
+  return `(function(){var u=${JSON.stringify(userId)};window.__ORTACE_ACCOUNT_USER_ID__=u;try{var k=${JSON.stringify(ACCOUNT_STORAGE_USER_ID_KEY)};if(u){localStorage.setItem(k,u);}else{localStorage.removeItem(k);}}catch(e){}})();`;
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -115,6 +120,11 @@ export default async function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: COLOR_THEME_SCRIPT }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: createAccountStorageScript(session?.userId ?? null),
+          }}
+        />
       </head>
       <body className="min-h-full">
         <ThemeProvider>

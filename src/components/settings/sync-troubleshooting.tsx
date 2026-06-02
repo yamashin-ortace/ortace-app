@@ -19,6 +19,7 @@ import {
   syncAnswerHistoryWithDatabase,
   syncDailyLimitWithDatabase,
 } from "@/lib/study-sync";
+import { getAccountStorageKey } from "@/lib/auth/account-storage";
 
 const DAILY_LIMIT_UPDATED_EVENT = "ortace:daily-limit-updated";
 
@@ -30,29 +31,31 @@ export function SyncTroubleshooting() {
     setMessage(null);
     startTransition(async () => {
       try {
+        const answerHistoryKey = getAccountStorageKey(ANSWER_HISTORY_STORAGE_KEY);
+        const dailyLimitKey = getAccountStorageKey(DAILY_LIMIT_STORAGE_KEY);
         const answerHistory = parseAnswerHistoryStore(
-          window.localStorage.getItem(ANSWER_HISTORY_STORAGE_KEY),
+          window.localStorage.getItem(answerHistoryKey),
         );
         const mergedHistory =
           await syncAnswerHistoryWithDatabase(answerHistory);
 
         if (mergedHistory) {
           window.localStorage.setItem(
-            ANSWER_HISTORY_STORAGE_KEY,
+            answerHistoryKey,
             serializeAnswerHistoryStore(mergedHistory),
           );
           window.dispatchEvent(new Event(ANSWER_HISTORY_UPDATED_EVENT));
         }
 
         const dailyLimit = parseDailyLimitRecord(
-          window.localStorage.getItem(DAILY_LIMIT_STORAGE_KEY),
+          window.localStorage.getItem(dailyLimitKey),
           getTokyoDateString(),
         );
         const mergedDailyLimit = await syncDailyLimitWithDatabase(dailyLimit);
 
         if (mergedDailyLimit) {
           window.localStorage.setItem(
-            DAILY_LIMIT_STORAGE_KEY,
+            dailyLimitKey,
             serializeDailyLimitRecord(mergedDailyLimit),
           );
           window.dispatchEvent(new Event(DAILY_LIMIT_UPDATED_EVENT));

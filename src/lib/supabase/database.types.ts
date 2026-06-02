@@ -9,6 +9,7 @@
 
 export type Grade = "1年" | "2年" | "3年" | "4年" | "受験生";
 export type Goal = "基礎固め" | "苦手克服" | "本番対策";
+export type ExamTiming = "next_exam" | "later" | "undecided";
 export type BillingPlan = "free" | "low" | "exam";
 export type BillingPlanStatus =
   | "active"
@@ -30,6 +31,7 @@ export type ProfilesRow = {
   nickname: string | null;
   grade: Grade | null;
   goal: Goal | null;
+  exam_timing: ExamTiming | null;
   plan: BillingPlan;
   plan_status: BillingPlanStatus;
   plan_expires_at: string | null;
@@ -55,6 +57,7 @@ export type ProfilesInsert = {
   nickname?: string | null;
   grade?: Grade | null;
   goal?: Goal | null;
+  exam_timing?: ExamTiming | null;
   plan?: BillingPlan;
   plan_status?: BillingPlanStatus;
   plan_expires_at?: string | null;
@@ -77,6 +80,7 @@ export type ProfilesUpdate = {
   nickname?: string | null;
   grade?: Grade | null;
   goal?: Goal | null;
+  exam_timing?: ExamTiming | null;
   plan?: BillingPlan;
   plan_status?: BillingPlanStatus;
   plan_expires_at?: string | null;

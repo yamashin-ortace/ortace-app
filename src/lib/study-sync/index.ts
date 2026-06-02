@@ -23,6 +23,7 @@ import {
   type StudyGoalConfig,
 } from "@/lib/study-goal";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isAccountStorageUser } from "@/lib/auth/account-storage";
 import type {
   AnswerHistoryInsert,
   AnswerHistoryRow,
@@ -529,7 +530,15 @@ async function getCurrentUserId(): Promise<string | null> {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    return user?.id ?? null;
+    if (!user || !isAccountStorageUser(user.id)) {
+      if (typeof window !== "undefined") {
+        console.warn(
+          "[study-sync] 画面と認証のアカウントが一致しないため同期を停止しました。",
+        );
+      }
+      return null;
+    }
+    return user.id;
   } catch {
     return null;
   }

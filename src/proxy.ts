@@ -3,6 +3,7 @@ import {
   createAdminBasicAuthChallenge,
   hasValidAdminBasicAuth,
 } from "@/lib/admin/basic-auth";
+import { hasCompletedOnboarding } from "@/lib/auth/onboarding-profile";
 import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware";
 
 /** 未ログインでも閲覧可（LP・ログイン・法務ページ・問い合わせ） */
@@ -63,20 +64,19 @@ export async function proxy(request: NextRequest) {
   }
 
   // ログイン済み・/onboarding 以外で profiles 完了状態を確認。
-  // オンボ済み Cookie があれば DB 問い合わせをスキップ（毎ページの遅延削減）。
+  // 同じ利用者のオンボ済み Cookie があれば DB 問い合わせをスキップ（毎ページの遅延削減）。
+  // 別アカウントの Cookie は使わず、新規利用者の初回設定を確実に表示する。
   if (user && pathname !== "/onboarding") {
-    const onboardedCookie = request.cookies.get(ONBOARDED_COOKIE);
+    const onboardedCookie = request.cookies.get(ONBOARDED_COOKIE)?.value;
 
-    if (!onboardedCookie) {
+    if (onboardedCookie !== user.id) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("nickname,grade,goal")
+        .select("nickname,grade,goal,exam_timing")
         .eq("id", user.id)
         .maybeSingle();
 
-      const onboarded = Boolean(
-        profile?.nickname && profile?.grade && profile?.goal,
-      );
+      const onboarded = hasCompletedOnboarding(profile);
       if (!onboarded) {
         const url = request.nextUrl.clone();
         url.pathname = "/onboarding";
@@ -84,7 +84,7 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(url);
       }
       // オンボ済み → 次回以降の DB 問い合わせを省略するため Cookie に記録
-      response.cookies.set(ONBOARDED_COOKIE, "1", ONBOARDED_COOKIE_OPTIONS);
+      response.cookies.set(ONBOARDED_COOKIE, user.id, ONBOARDED_COOKIE_OPTIONS);
     }
   }
 

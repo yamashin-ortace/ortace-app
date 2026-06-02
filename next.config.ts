@@ -54,13 +54,12 @@ const baseNextConfig: NextConfig = {
  * - swSrc: SW のソース（src/app/sw.ts）
  * - swDest: ビルド時の出力先（public/sw.js → /sw.js で配信）
  * - 開発モードでは無効化（disable: NODE_ENV !== 'production'）
- * - 公開アクセス用ルートと、ログイン後の動的ページが混在するため
- *   ランタイムキャッシュは defaultCache に任せる
+ * - 認証後の動的ページをキャッシュしない
  */
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
-  cacheOnNavigation: true,
+  cacheOnNavigation: false,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV !== "production",
 });

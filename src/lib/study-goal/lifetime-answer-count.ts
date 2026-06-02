@@ -3,6 +3,7 @@ import {
   getUniqueSortedAnswerHistoryEntries,
   parseAnswerHistoryStore,
 } from "@/lib/answer-history";
+import { getAccountStorageKey } from "@/lib/auth/account-storage";
 
 export const LIFETIME_ANSWER_COUNT_KEY = "ortace.stats.lifetimeAnswerCount";
 const MAX_LOCAL_HISTORY_COUNT = 10_000;
@@ -16,7 +17,7 @@ export function readLifetimeAnswerCount(): number {
   try {
     const storedCount = readStoredLifetimeAnswerCount();
     const historyCount = countLifetimeAnswersFromHistoryRaw(
-      window.localStorage.getItem(ANSWER_HISTORY_STORAGE_KEY),
+      window.localStorage.getItem(getAccountStorageKey(ANSWER_HISTORY_STORAGE_KEY)),
     );
     if (
       historyCount > 0 &&
@@ -76,7 +77,9 @@ export function notifyLifetimeAnswerCountUpdated(): number {
 
 function readStoredLifetimeAnswerCount(): number {
   if (typeof window === "undefined") return 0;
-  const raw = window.localStorage.getItem(LIFETIME_ANSWER_COUNT_KEY);
+  const raw = window.localStorage.getItem(
+    getAccountStorageKey(LIFETIME_ANSWER_COUNT_KEY),
+  );
   if (!raw) return 0;
   const count = Number(raw);
   if (!Number.isFinite(count) || count < 0) return 0;
@@ -86,7 +89,7 @@ function readStoredLifetimeAnswerCount(): number {
 function writeStoredLifetimeAnswerCount(count: number) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(
-    LIFETIME_ANSWER_COUNT_KEY,
+    getAccountStorageKey(LIFETIME_ANSWER_COUNT_KEY),
     String(Math.max(0, Math.floor(count))),
   );
 }

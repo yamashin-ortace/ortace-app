@@ -6,12 +6,18 @@ import {
   isDiagnosticStatus,
   type DiagnosticStatus,
 } from "./diagnostic";
+import {
+  getAccountStorageKey,
+  isCurrentAccountStorageKey,
+} from "@/lib/auth/account-storage";
 
 const CHANGE_EVENT = "ortace.diagnostic.changed";
 
 function readStatus(): DiagnosticStatus {
   if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(DIAGNOSTIC_STATUS_KEY);
+  const raw = window.localStorage.getItem(
+    getAccountStorageKey(DIAGNOSTIC_STATUS_KEY),
+  );
   if (raw === null) return null;
   if (raw === "completed" || raw === "skipped") return raw;
   return null;
@@ -32,7 +38,7 @@ function subscribe(listener: () => void): () => void {
   const handle = (event: Event) => {
     if (
       event instanceof StorageEvent &&
-      event.key !== DIAGNOSTIC_STATUS_KEY
+      !isCurrentAccountStorageKey(event.key, DIAGNOSTIC_STATUS_KEY)
     ) {
       return;
     }
@@ -53,9 +59,9 @@ export function useDiagnosticStatus() {
     if (typeof window === "undefined") return;
     if (!isDiagnosticStatus(next)) return;
     if (next === null) {
-      window.localStorage.removeItem(DIAGNOSTIC_STATUS_KEY);
+      window.localStorage.removeItem(getAccountStorageKey(DIAGNOSTIC_STATUS_KEY));
     } else {
-      window.localStorage.setItem(DIAGNOSTIC_STATUS_KEY, next);
+      window.localStorage.setItem(getAccountStorageKey(DIAGNOSTIC_STATUS_KEY), next);
     }
     cached = next;
     window.dispatchEvent(new Event(CHANGE_EVENT));

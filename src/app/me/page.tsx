@@ -18,6 +18,7 @@ import {
   PLAN_DEFINITIONS,
   getEffectivePlanForProfile,
 } from "@/lib/billing/plans";
+import { getExamTimingLabel } from "@/lib/auth/onboarding-profile";
 import type { BillingPlanStatus } from "@/lib/supabase/database.types";
 
 export default async function MePage() {
@@ -33,6 +34,9 @@ export default async function MePage() {
   const expiresAt = profile?.plan_expires_at
     ? formatDate(profile.plan_expires_at)
     : null;
+  const examTimingLabel =
+    getExamTimingLabel(profile?.exam_timing) ??
+    (profile?.grade ? `${profile.grade}（旧設定）` : "未設定");
 
   return (
     <div className="space-y-5 pt-2">
@@ -64,15 +68,14 @@ export default async function MePage() {
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           <ProfileTile
             icon={<GraduationCap />}
-            label="学年"
-            value={profile?.grade ?? "未設定"}
-            subValue={profile?.grade ? undefined : "初回設定が未完了です"}
+            label="受験予定"
+            value={examTimingLabel}
           />
           <ProfileTile
             icon={<Target />}
-            label="目標"
-            value={profile?.goal ?? "未設定"}
-            subValue={profile?.goal ? undefined : "初回設定が未完了です"}
+            label="学習方針"
+            value="診断結果から自動調整"
+            subValue="復習と苦手克服の優先度を整えます"
           />
         </div>
       </section>

@@ -1,4 +1,3 @@
-import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { Serwist } from "serwist";
 
@@ -15,14 +14,14 @@ declare const self: ServiceWorkerGlobalScope;
  * ORT ACE の Service Worker。
  * - 静的アセット・主要ルートをプリキャッシュ
  * - オフライン時のフォールバックページ /~offline を提供
- * - 既定のランタイムキャッシュ戦略を使う（Serwist の defaultCache）
+ * - 認証後の動的ページはキャッシュしない
  */
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [],
   fallbacks: {
     entries: [
       {
