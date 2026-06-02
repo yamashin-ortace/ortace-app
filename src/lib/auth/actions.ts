@@ -96,6 +96,10 @@ function translateAuthError(message: string): string {
     "User already registered": "このメールアドレスはすでに登録されています。",
     "Password should be at least 6 characters":
       "パスワードは6文字以上で入力してください。",
+    "email rate limit exceeded":
+      "確認メールの送信回数が上限に達しました。時間をおいてから、もう一度お試しください。",
+    "Email address not authorized":
+      "現在、このメールアドレスには確認メールを送信できません。運営者にお問い合わせください。",
   };
   return map[message] ?? message;
 }

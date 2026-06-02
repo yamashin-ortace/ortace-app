@@ -209,7 +209,7 @@ export function LoginCard({
               <ModeTab
                 active={emailMode === "magic"}
                 onClick={() => setEmailMode("magic")}
-                label="リンクで"
+                label="リンクログイン"
               />
             </div>
 
