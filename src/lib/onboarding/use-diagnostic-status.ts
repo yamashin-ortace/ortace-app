@@ -19,7 +19,7 @@ function readStatus(): DiagnosticStatus {
     getAccountStorageKey(DIAGNOSTIC_STATUS_KEY),
   );
   if (raw === null) return null;
-  if (raw === "completed" || raw === "skipped") return raw;
+  if (raw === "started" || raw === "completed" || raw === "skipped") return raw;
   return null;
 }
 

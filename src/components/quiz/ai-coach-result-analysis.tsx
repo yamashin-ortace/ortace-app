@@ -12,12 +12,14 @@ type Props = {
   questions: readonly Question[];
   judgements: Readonly<Record<string, AnswerJudgement>>;
   selectedAnswers: Readonly<Record<string, ChoiceKey[]>>;
+  canUseAiThemeCheck: boolean;
 };
 
 export function AiCoachResultAnalysis({
   questions,
   judgements,
   selectedAnswers,
+  canUseAiThemeCheck,
 }: Props) {
   const { entries } = useAnswerHistoryList();
   const answeredCount = useMemo(
@@ -33,6 +35,13 @@ export function AiCoachResultAnalysis({
     () => analyzeAiCoachSession(questions, judgements, entries),
     [entries, judgements, questions],
   );
+  const isAiThemeCheck = analysis.actionHref?.startsWith("/study/ai-theme/");
+  const actionHref =
+    isAiThemeCheck && !canUseAiThemeCheck ? "/plans" : analysis.actionHref;
+  const actionLabel =
+    isAiThemeCheck && !canUseAiThemeCheck
+      ? "国試対策パックで3問確認"
+      : analysis.actionLabel;
 
   return (
     <section className="relative overflow-hidden rounded-[16px] border border-[var(--primary)]/25 bg-[var(--bg-card)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
@@ -75,12 +84,12 @@ export function AiCoachResultAnalysis({
             </div>
           ) : null}
         </div>
-        {analysis.actionHref && analysis.actionLabel ? (
+        {actionHref && actionLabel ? (
           <Link
-            href={analysis.actionHref}
+            href={actionHref}
             className="choice-pressable flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
           >
-            {analysis.actionLabel}
+            {actionLabel}
             <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
           </Link>
         ) : null}

@@ -5,7 +5,7 @@ import {
   type AnswerHistoryStore,
 } from "@/lib/answer-history";
 import {
-  DAILY_LIMIT,
+  LOW_PLAN_DAILY_LIMIT,
   normalizeDailyLimitRecord,
   type DailyLimitRecord,
 } from "@/lib/daily-limit";
@@ -56,7 +56,7 @@ export function mergeDailyLimitRecords(
   return {
     date: localRecord.date,
     count: Math.min(
-      DAILY_LIMIT,
+      LOW_PLAN_DAILY_LIMIT,
       Math.max(localRecord.count, Math.floor(remote.count)),
     ),
   };

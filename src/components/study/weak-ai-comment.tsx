@@ -63,10 +63,10 @@ export function WeakAiComment({
             </span>
             <div className="min-w-0 space-y-1">
               <p className="text-[14px] font-bold text-[var(--text-1)]">
-                今のところ、明確な苦手テーマはありません
+                直近では、明確な苦手テーマはありません
               </p>
               <p className="text-[12px] leading-relaxed text-[var(--text-2)]">
-                直近5問で正解2問以下、または直近3問連続誤答のテーマは見つかりませんでした。無理に苦手を作らず、新しい問題に進みましょう。
+                直近5問で正解2問以下、または直近3問連続誤答のテーマは見つかりませんでした。過去に正答率が低かった細かいテーマは、学習トップの「テーマ別 3問チェック」で短く確認できます。
               </p>
             </div>
           </div>

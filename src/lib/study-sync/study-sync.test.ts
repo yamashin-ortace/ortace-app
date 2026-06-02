@@ -27,6 +27,20 @@ describe("study sync helpers", () => {
     ).toEqual({ date: "2026-05-08", count: 8 });
   });
 
+  it("daily limitは基礎定着パスの50問まで同期できる", () => {
+    expect(
+      mergeDailyLimitRecords(
+        { date: "2026-05-08", count: 20 },
+        {
+          user_id: "user-1",
+          date: "2026-05-08",
+          count: 50,
+          updated_at: "2026-05-08T00:00:00.000Z",
+        },
+      ),
+    ).toEqual({ date: "2026-05-08", count: 50 });
+  });
+
   it("ブックマークはカテゴリを和集合にして追加日時は古い方を残す", () => {
     const merged = mergeBookmarksStores(
       {

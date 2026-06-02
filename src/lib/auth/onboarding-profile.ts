@@ -6,28 +6,27 @@ import type {
 } from "@/lib/supabase/database.types";
 
 export const EXAM_TIMING_OPTIONS: readonly {
-  value: ExamTiming;
+  value: Exclude<ExamTiming, "undecided">;
   label: string;
   description: string;
 }[] = [
   {
     value: "next_exam",
-    label: "次回の国家試験を受験する",
-    description: "本番までの残り期間を意識して進める",
+    label: "受験する",
+    description: "本番までの期間を意識して進める",
   },
   {
     value: "later",
-    label: "翌年度以降に受験する",
-    description: "基礎から少しずつ積み上げる",
-  },
-  {
-    value: "undecided",
-    label: "まだ決めていない",
-    description: "まずは診断で今の位置を確認する",
+    label: "受験しない",
+    description: "翌年度以降に向けて基礎から積み上げる",
   },
 ] as const;
 
-const EXAM_TIMINGS = EXAM_TIMING_OPTIONS.map(({ value }) => value);
+const EXAM_TIMINGS: readonly ExamTiming[] = [
+  "next_exam",
+  "later",
+  "undecided",
+];
 
 type OnboardingProfile = Pick<
   ProfilesRow,
@@ -36,6 +35,12 @@ type OnboardingProfile = Pick<
 
 export function isExamTiming(value: string): value is ExamTiming {
   return EXAM_TIMINGS.includes(value as ExamTiming);
+}
+
+export function isSelectableExamTiming(
+  value: string,
+): value is Exclude<ExamTiming, "undecided"> {
+  return EXAM_TIMING_OPTIONS.some((option) => option.value === value);
 }
 
 /**
@@ -53,9 +58,10 @@ export function hasCompletedOnboarding(
 export function getExamTimingLabel(
   examTiming: ExamTiming | null | undefined,
 ): string | null {
-  return (
-    EXAM_TIMING_OPTIONS.find(({ value }) => value === examTiming)?.label ?? null
-  );
+  if (examTiming === "next_exam") return "次の2月に受験する";
+  if (examTiming === "later") return "次の2月は受験しない";
+  if (examTiming === "undecided") return "未定";
+  return null;
 }
 
 function hasLegacyOnboardingAnswers(

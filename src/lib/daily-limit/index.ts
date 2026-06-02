@@ -1,6 +1,6 @@
 /** 無料プランの1日あたり解答上限 */
 export const DAILY_LIMIT = 20;
-export const LOW_PLAN_DAILY_LIMIT = 100;
+export const LOW_PLAN_DAILY_LIMIT = 50;
 const MAX_TRACKED_DAILY_LIMIT = LOW_PLAN_DAILY_LIMIT;
 
 /** 残り何問から警告表示するか */

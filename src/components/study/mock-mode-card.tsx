@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { CalendarDays, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronRight, LockKeyhole } from "lucide-react";
+import type { PlanType } from "@/lib/daily-limit";
 
-export function MockModeCard() {
+export function MockModeCard({ plan }: { plan: PlanType }) {
+  const isExamPlan = plan === "exam";
   return (
     <Link
       href="/study/mock"
@@ -18,17 +20,24 @@ export function MockModeCard() {
             模試にチャレンジ
           </span>
           <span className="inline-flex items-center rounded-full border border-[var(--primary)]/35 bg-[var(--primary-soft)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--primary-dark)]">
-            12月1日公開
+            {isExamPlan ? "12月1日公開" : "限定"}
           </span>
         </div>
         <span className="mt-0.5 text-[11px] font-medium leading-snug text-[var(--text-2)]">
           本番形式の75問模試を国試対策パックで解禁。出題内容とスコアレポートを確認できます
         </span>
       </div>
-      <ChevronRight
-        className="h-5 w-5 shrink-0 text-[var(--primary-dark)]"
-        strokeWidth={2.5}
-      />
+      {isExamPlan ? (
+        <ChevronRight
+          className="h-5 w-5 shrink-0 text-[var(--primary-dark)]"
+          strokeWidth={2.5}
+        />
+      ) : (
+        <LockKeyhole
+          className="h-4 w-4 shrink-0 text-[var(--primary-dark)]"
+          strokeWidth={2.5}
+        />
+      )}
     </Link>
   );
 }

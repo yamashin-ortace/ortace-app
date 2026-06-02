@@ -139,7 +139,7 @@ function LimitExplanationCard() {
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <LimitCell label="無料プラン" value="20問/日" />
-        <LimitCell label="基礎定着パス" value="100問/日" />
+        <LimitCell label="基礎定着パス" value="50問/日" />
         <LimitCell
           label="国試対策パック"
           value="無制限"

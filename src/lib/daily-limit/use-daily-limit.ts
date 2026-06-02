@@ -64,9 +64,7 @@ export function useDailyLimit(plan: PlanType = "free"): DailyLimitState {
     const next = incrementDailyLimitRecord(current, getTokyoDateString(), plan);
     writeDailyLimitRecord(next);
     notifyDailyLimitUpdated();
-    if (plan === "free") {
-      void pushDailyLimitToDatabase(next);
-    }
+    void pushDailyLimitToDatabase(next);
     return true;
   }, [plan]);
 
@@ -97,13 +95,16 @@ async function runDailyLimitSync() {
 }
 
 function useEnsureDailyLimitSynced(_record: DailyLimitRecord, plan: PlanType) {
-  // 無料プランのみDB同期対象（low/exam は無制限のため）
+  // 上限がある無料プラン・基礎定着パスはDB同期対象。
   // key に plan と日付を含めて、日付が変わったら別の同期サイクルとして扱う
   const today = getTokyoDateString();
-  const key = plan === "free" ? `daily-limit:${today}` : "daily-limit:disabled";
+  const shouldSync = plan !== "exam";
+  const key = shouldSync
+    ? `daily-limit:${plan}:${today}`
+    : "daily-limit:disabled";
   useDataSync({
     key,
-    run: plan === "free" ? runDailyLimitSync : async () => {},
+    run: shouldSync ? runDailyLimitSync : async () => {},
   });
 }
 

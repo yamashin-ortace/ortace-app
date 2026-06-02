@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
+import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { PlanType } from "@/lib/daily-limit";
 import type { Question } from "@/lib/questions";
-import { selectDiagnosticQuestions } from "@/lib/onboarding/diagnostic";
+import {
+  hasDiagnosticBaseline,
+  selectDiagnosticQuestions,
+} from "@/lib/onboarding/diagnostic";
 import { useDiagnosticStatus } from "@/lib/onboarding/use-diagnostic-status";
 
 type Props = {
@@ -15,12 +19,14 @@ type Props = {
 /**
  * 初回診断パッケージのプレイクライアント。
  * - 全問題から各分野3問を抽出し、QuizPlayer に渡す。
- * - 日次制限はバイパス（初日特典）。
+ * - 最初に開始した診断セッションだけ日次制限をバイパス（初日特典）。
  * - すべて解答し終えたら自動的に `completed` 状態にする。
  */
 export function DiagnosticPlayClient({ questions, plan }: Props) {
-  const { setStatus } = useDiagnosticStatus();
+  const { status, setStatus } = useDiagnosticStatus();
+  const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
+  const [bypassDailyLimit, setBypassDailyLimit] = useState<boolean | null>(null);
 
   const handleComplete = useCallback(() => {
     setStatus("completed");
@@ -31,6 +37,17 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    if (!hydrated || bypassDailyLimit !== null) return;
+    const canUseInitialBonus =
+      status !== "started" &&
+      status !== "completed" &&
+      !hasDiagnosticBaseline(entries);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage と同期済み履歴を hydration 後に一度だけ評価し、この診断セッション中は値を固定する。
+    setBypassDailyLimit(canUseInitialBonus);
+    if (canUseInitialBonus) setStatus("started");
+  }, [bypassDailyLimit, entries, hydrated, setStatus, status]);
+
   const sessionQuestions = useMemo(() => {
     if (!hydrated) return null;
     return selectDiagnosticQuestions(questions);
@@ -38,7 +55,7 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 上記
   }, [hydrated]);
 
-  if (!hydrated || sessionQuestions === null) {
+  if (!hydrated || sessionQuestions === null || bypassDailyLimit === null) {
     return (
       <div className="py-12 text-center text-[13px] text-[var(--text-3)]">
         読み込み中…
@@ -60,7 +77,7 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
       mode="random"
       plan={plan}
       resumeLabel="初回診断"
-      bypassDailyLimit
+      bypassDailyLimit={bypassDailyLimit}
       onSessionComplete={handleComplete}
       hideRestartOnResult
       resultBackHref="/"

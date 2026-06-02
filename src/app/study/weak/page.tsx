@@ -1,5 +1,6 @@
 import { BackLink } from "@/components/study/back-link";
 import { DataReadinessHint } from "@/components/study/data-readiness-hint";
+import { ExamPackLockedCard } from "@/components/study/exam-pack-locked-card";
 import { QuestionCountSelector } from "@/components/study/question-count-selector";
 import { RecommendedPlayClient } from "@/components/study/recommended-play-client";
 import { getEffectivePlanForProfile } from "@/lib/billing/plans";
@@ -29,6 +30,13 @@ export default async function WeakPage() {
       </div>
 
       {isExamPlan ? null : <QuestionCountSelector defaultCount={20} />}
+
+      {isExamPlan ? null : (
+        <ExamPackLockedCard
+          title="テーマ単位まで深掘りして克服"
+          description="国試対策パックでは、中分類の弱点分析、MiLu先生コメント、克服順に沿った集中演習を利用できます。"
+        />
+      )}
 
       <DataReadinessHint
         threshold={isExamPlan ? 30 : 15}

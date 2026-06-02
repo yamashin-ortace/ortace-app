@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarRange, Info, RotateCcw, Save } from "lucide-react";
+import Link from "next/link";
+import { CalendarRange, Info, LockKeyhole, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   STUDY_GOAL_DEADLINES,
@@ -22,10 +23,12 @@ import {
 import { useStudyGoalConfig } from "@/lib/study-goal/use-study-goal-config";
 import { useExamDate } from "@/lib/exam-date/use-exam-date";
 import { cn } from "@/lib/utils";
+import type { PlanType } from "@/lib/daily-limit";
 
 type Props = {
   /** 過去問の総問題数（ペース計算の母数） */
   pastQuestionsTotal: number;
+  plan: PlanType;
 };
 
 /**
@@ -34,7 +37,7 @@ type Props = {
  * 「目標を立てるか」のトグル、スコープ／周回／期限を1択で組み合わせる形式。
  * 入力中は下書きとして扱い、「保存する」でアカウント設定へ反映する。
  */
-export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
+export function StudyGoalSetting({ pastQuestionsTotal, plan }: Props) {
   const { config, setConfig } = useStudyGoalConfig();
   const [draftOverride, setDraftOverride] = useState<StudyGoalConfig | null>(
     null,
@@ -42,6 +45,8 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
   const [savedNotice, setSavedNotice] = useState(false);
   const { examDate } = useExamDate();
   const draft = draftOverride ?? config;
+  const canUseOriginalScope = plan === "exam";
+  const activeScope = canUseOriginalScope ? draft.scope : "past";
 
   useEffect(() => {
     if (!savedNotice) return;
@@ -50,7 +55,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
   }, [savedNotice]);
 
   const preview = previewDailyPace({
-    scope: draft.scope,
+    scope: activeScope,
     rounds: draft.rounds,
     deadline: draft.deadline,
     customDeadlineISO: draft.customDeadlineISO,
@@ -71,7 +76,7 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
   };
 
   const handleSave = () => {
-    setConfig(draft);
+    setConfig({ ...draft, scope: activeScope });
     setDraftOverride(null);
     setSavedNotice(true);
   };
@@ -154,8 +159,9 @@ export function StudyGoalSetting({ pastQuestionsTotal }: Props) {
             id: s.id,
             label: s.label,
             hint: s.hint,
+            locked: s.id === "past_plus_original" && !canUseOriginalScope,
           }))}
-          value={draft.scope}
+          value={activeScope}
           onChange={(next) => updateDraft({ scope: next as StudyGoalScope })}
         />
 
@@ -296,11 +302,12 @@ function ChipRow({
   onChange,
 }: {
   legend: string;
-  options: Array<{ id: string; label: string; hint: string }>;
+  options: Array<{ id: string; label: string; hint: string; locked?: boolean }>;
   value: string;
   onChange: (next: string) => void;
 }) {
   const selectedHint = options.find((opt) => opt.id === value)?.hint ?? "";
+  const hasLockedOption = options.some((opt) => opt.locked);
   return (
     <div className="space-y-1.5">
       <p className="text-[11px] font-semibold text-[var(--text-3)]">{legend}</p>
@@ -311,17 +318,25 @@ function ChipRow({
             <button
               key={opt.id}
               type="button"
+              disabled={opt.locked}
               onClick={() => onChange(opt.id)}
               aria-pressed={selected}
               className={cn(
                 "shrink-0 rounded-[12px] border px-3.5 py-2 text-center text-[13px] font-bold transition-colors",
                 "min-w-[30%] sm:min-w-[120px]",
-                selected
+                opt.locked
+                  ? "cursor-not-allowed border-border bg-[var(--bg-muted)]/60 text-[var(--text-3)]"
+                  : selected
                   ? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary-dark)]"
                   : "border-border bg-[var(--bg-card)] text-[var(--text-1)] hover:bg-[var(--bg-muted)]",
               )}
             >
-              {opt.label}
+              <span className="inline-flex items-center gap-1">
+                {opt.locked ? (
+                  <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2.5} />
+                ) : null}
+                {opt.label}
+              </span>
             </button>
           );
         })}
@@ -329,6 +344,15 @@ function ChipRow({
       <p className="min-h-[16px] text-[11px] leading-snug text-[var(--text-2)]">
         {selectedHint}
       </p>
+      {hasLockedOption ? (
+        <Link
+          href="/plans"
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--primary-dark)] underline-offset-2 hover:underline"
+        >
+          <LockKeyhole className="h-3 w-3" strokeWidth={2.5} />
+          オリジナル問題は国試対策パックで利用できます
+        </Link>
+      ) : null}
     </div>
   );
 }

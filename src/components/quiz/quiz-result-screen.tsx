@@ -32,6 +32,7 @@ type Props = {
   /** 指定時は下部の戻る操作をリンクではなくボタンとして扱う */
   onBack?: () => void;
   showAiCoachAnalysis?: boolean;
+  canUseAiThemeCheck?: boolean;
   /** 苦手克服の集中演習で、専用フィードバックを表示するテーマ名 */
   weakPracticeTheme?: string;
 };
@@ -45,6 +46,7 @@ export function QuizResultScreen({
   backLabel = "学習タブへ戻る",
   onBack,
   showAiCoachAnalysis = true,
+  canUseAiThemeCheck = false,
   weakPracticeTheme,
 }: Props) {
   const [reviewOpen, setReviewOpen] = useState(true);
@@ -161,6 +163,7 @@ export function QuizResultScreen({
           questions={questions}
           judgements={judgements}
           selectedAnswers={selectedAnswers}
+          canUseAiThemeCheck={canUseAiThemeCheck}
         />
       ) : null}
 

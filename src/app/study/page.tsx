@@ -1,6 +1,7 @@
 import { DailyLimitBanner } from "@/components/study/daily-limit-banner";
 import { ContinueQuizCard } from "@/components/study/continue-quiz-card";
 import { FilterModeCard } from "@/components/study/filter-mode-card";
+import { ExamPackLockedCard } from "@/components/study/exam-pack-locked-card";
 import { MockModeCard } from "@/components/study/mock-mode-card";
 import { OriginalQuestionPreviewCard } from "@/components/study/original-question-preview-card";
 import { RandomModeCard } from "@/components/study/random-mode-card";
@@ -49,7 +50,16 @@ export default async function StudyPage() {
         </div>
       </section>
 
-      <WeakClusterSection clusters={clusters} />
+      {plan === "exam" ? (
+        <WeakClusterSection clusters={clusters} />
+      ) : (
+        <section className="space-y-2">
+          <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
+            国試対策パック限定
+          </h2>
+          <ExamPackLockedCard />
+        </section>
+      )}
 
       <section className="space-y-2">
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
@@ -67,7 +77,7 @@ export default async function StudyPage() {
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
           オリジナル問題
         </h2>
-        <OriginalQuestionPreviewCard />
+        <OriginalQuestionPreviewCard plan={plan} />
       </section>
 
       <section className="space-y-2">
@@ -75,7 +85,7 @@ export default async function StudyPage() {
           腕試し
         </h2>
         <div className="space-y-2.5">
-          <MockModeCard />
+          <MockModeCard plan={plan} />
         </div>
       </section>
 

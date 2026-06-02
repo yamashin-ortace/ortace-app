@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isExamTiming } from "@/lib/auth/onboarding-profile";
+import { isSelectableExamTiming } from "@/lib/auth/onboarding-profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function saveOnboardingAction(formData: FormData) {
@@ -13,7 +13,7 @@ export async function saveOnboardingAction(formData: FormData) {
   if (!nickname || nickname.length > 20) {
     return { ok: false as const, message: "ニックネームは1〜20文字で入力してください。" };
   }
-  if (!isExamTiming(examTiming)) {
+  if (!isSelectableExamTiming(examTiming)) {
     return { ok: false as const, message: "受験予定を選択してください。" };
   }
 

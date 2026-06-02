@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { BackLink } from "@/components/study/back-link";
 import { AiThemePlayClient } from "@/components/study/ai-theme-play-client";
 import { getEffectivePlanForProfile } from "@/lib/billing/plans";
@@ -22,6 +22,12 @@ export default async function AiThemePage({ params, searchParams }: Props) {
   const cluster = getAiThemeClusterById(clusterId);
   if (!cluster) notFound();
 
+  const sessionContext = await getSessionContext();
+  const plan = sessionContext?.profile
+    ? getEffectivePlanForProfile(sessionContext.profile)
+    : "free";
+  if (plan !== "exam") redirect("/plans");
+
   const count = parseCount(query.count);
   const excludeIds = parseExcludeIds(query.exclude);
   const focusTheme = parseFocusTheme(query.focus);
@@ -33,11 +39,6 @@ export default async function AiThemePage({ params, searchParams }: Props) {
       !excludeIds.has(question.id),
   );
   if (questions.length === 0) notFound();
-
-  const sessionContext = await getSessionContext();
-  const plan = sessionContext?.profile
-    ? getEffectivePlanForProfile(sessionContext.profile)
-    : "free";
 
   return (
     <div className="space-y-4 pt-2">

@@ -20,7 +20,7 @@ export default async function DiagnosticPlayPage() {
           初回診断 {DIAGNOSTIC_QUESTION_COUNT}問
         </h1>
         <p className="text-[12px] text-[var(--text-3)]">
-          1日20問の制限とは別カウント。途中の解答も記録されます。
+          最初に受ける診断だけ、1日の制限とは別カウント。途中の解答も記録されます。
         </p>
       </div>
 

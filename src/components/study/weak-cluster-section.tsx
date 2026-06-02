@@ -52,7 +52,7 @@ export function WeakClusterSection({ clusters }: Props) {
       </h2>
       <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <p className="mb-2 px-1 text-[11px] text-[var(--text-3)]">
-          解答履歴から、今確認したいテーマを優先度順に並べました。タップすると近い問題を3問だけ確認できます。
+          苦手克服の「直近の苦手」判定とは別に、これまでの正答率が低かった細かいテーマを並べています。タップすると近い問題を3問だけ確認できます。
         </p>
         <ul className="divide-y divide-border/70">
           {rows.map((row, index) => (
@@ -80,7 +80,7 @@ export function WeakClusterSection({ clusters }: Props) {
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-bold text-[var(--text-3)]">
-                    正答率
+                    履歴の正答率
                   </p>
                   <p className="text-[18px] font-extrabold leading-none tabular-nums text-[var(--primary-dark)]">
                     {row.accuracy}

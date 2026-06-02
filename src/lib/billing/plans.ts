@@ -62,7 +62,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
     name: "基礎定着パス",
     description: "受験年度を迎える前の学生向け。授業理解と日々の復習を積み上げるパスです。",
     checkoutLabel: "基礎定着パスを購入",
-    dailyLimit: 100,
+    dailyLimit: 50,
     durations: [
       {
         id: "3m",
@@ -84,7 +84,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
     defaultDurationId: "3m",
     featureLabels: [
       "無料プランの内容すべて",
-      "1日100問まで",
+      "1日50問まで",
       "苦手克服・思い込みチェック",
       "端末間同期",
       "初回14日無料トライアル",

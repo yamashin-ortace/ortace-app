@@ -99,7 +99,7 @@ export function RecommendationSection({ clusters, questions, plan }: Props) {
             ? `${examWeak.minorCategory}を集中補修`
             : examWeakAnalysis.readiness === "collecting"
               ? "分析に必要な履歴を収集中"
-              : "明確な苦手テーマはありません"
+              : "直近では明確な苦手テーマなし"
           : "",
       misconceptionCount,
       focusLabel: focus?.clusterLabel ?? "",

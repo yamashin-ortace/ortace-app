@@ -38,7 +38,7 @@ export function DailyLimitBanner({ used, plan = "free" }: Props) {
   const upgradeCopy =
     plan === "low"
       ? "国試対策パックなら、今日も制限なく続けられます"
-      : "基礎定着パスは1日100問、国試対策パックは無制限です";
+      : "基礎定着パスは1日50問、国試対策パックは無制限です";
 
   // 上限到達：CTAバナー
   if (remaining === 0) {

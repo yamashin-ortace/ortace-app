@@ -80,14 +80,14 @@ export function OnboardingFlow() {
           {step === 1
             ? "はじめまして"
             : step === 2
-              ? "受験予定を教えてください"
-              : "最初に今の位置を知ろう"}
+              ? "次の2月に受験しますか？"
+              : "最初に現在地を知ろう"}
         </CardTitle>
         <p className="text-center text-[12px] text-[var(--text-2)]">
           {step === 1
             ? "あなたのことを少しだけ教えてね。"
             : step === 2
-              ? "今の状況に合わせた学習につなげます。"
+              ? "学習ペースの目安に使います。"
               : "初回診断を受けると、学習の優先順位が整います。"}
         </p>
       </CardHeader>
@@ -125,32 +125,32 @@ export function OnboardingFlow() {
         ) : null}
 
         {step === 3 ? (
-          <div className="space-y-3">
-            <div className="rounded-[14px] border border-[var(--primary)]/35 bg-[var(--primary-soft)]/70 p-3.5">
-              <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[var(--bg-card)] text-[var(--primary-dark)]">
-                  <Compass className="h-5 w-5" strokeWidth={2.5} />
-                </span>
-                <div>
-                  <p className="text-[14px] font-extrabold text-[var(--text-1)]">
-                    {DIAGNOSTIC_QUESTION_COUNT}問の初回診断がおすすめです
-                  </p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-2)]">
-                    9分野から3問ずつ出題。解答をもとに、苦手分野と現在地の目安を表示します。
-                  </p>
-                </div>
+          <div className="space-y-4 px-1">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+                <Compass className="h-5 w-5" strokeWidth={2.5} />
+              </span>
+              <div>
+                <p className="text-[14px] font-extrabold text-[var(--text-1)]">
+                  {DIAGNOSTIC_QUESTION_COUNT}問で得意・苦手を確認
+                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-2)]">
+                  9分野から3問ずつ出題。解答をもとに、現在地の目安を表示します。
+                </p>
               </div>
             </div>
-            <DiagnosticBenefit
-              icon={<Sparkles />}
-              title="あなた向けの優先順位が分かる"
-              description="診断後は、復習や苦手克服を始めやすくなります。"
-            />
-            <DiagnosticBenefit
-              icon={<Timer />}
-              title="所要時間は15〜25分"
-              description="途中で離れても、解いた分は記録されます。"
-            />
+            <div className="space-y-3 border-t border-border pt-3">
+              <DiagnosticBenefit
+                icon={<Sparkles />}
+                title="あなた向けの優先順位が分かる"
+                description="診断後は、復習や苦手克服を始めやすくなります。"
+              />
+              <DiagnosticBenefit
+                icon={<Timer />}
+                title="所要時間は15〜25分"
+                description="途中で離れても、解いた分は記録されます。"
+              />
+            </div>
           </div>
         ) : null}
 
@@ -160,40 +160,42 @@ export function OnboardingFlow() {
           </p>
         ) : null}
 
-        <div className="flex gap-2">
-          {step > 1 ? (
+        <div className={step === 3 ? "space-y-2.5" : "flex gap-2"}>
+          {step === 3 ? (
             <Button
               type="button"
-              variant="outline"
-              onClick={back}
+              onClick={() => submit("diagnostic")}
               disabled={pending}
-              className="h-10 gap-1"
+              className="mx-auto flex h-10 gap-1.5 px-5"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              戻る
+              {pending ? "保存中..." : "診断をはじめる"}
+              <Play className="h-3.5 w-3.5" />
             </Button>
           ) : null}
-          {step < 3 ? (
-            <Button
-              type="button"
-              onClick={next}
-              disabled={pending}
-              className="ml-auto h-10 gap-1"
-            >
-              次へ
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          ) : (
-            <div className="ml-auto flex flex-col items-end gap-1.5">
+          <div className={step === 3 ? "flex items-center justify-between" : "contents"}>
+            {step > 1 ? (
               <Button
                 type="button"
-                onClick={() => submit("diagnostic")}
+                variant="outline"
+                onClick={back}
                 disabled={pending}
-                className="h-10 gap-1.5"
+                className="h-10 gap-1"
               >
-                {pending ? "保存中..." : "初回診断をはじめる"}
-                <Play className="h-3.5 w-3.5" />
+                <ArrowLeft className="h-3.5 w-3.5" />
+                戻る
               </Button>
+            ) : null}
+            {step < 3 ? (
+              <Button
+                type="button"
+                onClick={next}
+                disabled={pending}
+                className="ml-auto h-10 gap-1"
+              >
+                次へ
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            ) : (
               <button
                 type="button"
                 onClick={() => submit("home")}
@@ -202,8 +204,8 @@ export function OnboardingFlow() {
               >
                 あとで受ける
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -220,8 +222,8 @@ function DiagnosticBenefit({
   description: string;
 }) {
   return (
-    <div className="flex items-start gap-2.5 rounded-[12px] bg-[var(--bg-muted)]/55 px-3 py-2.5">
-      <span className="mt-0.5 text-[var(--primary-dark)] [&>svg]:h-4 [&>svg]:w-4 [&>svg]:[stroke-width:2.5]">
+    <div className="flex items-start gap-2.5">
+      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary-dark)] [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:[stroke-width:2.5]">
         {icon}
       </span>
       <div>

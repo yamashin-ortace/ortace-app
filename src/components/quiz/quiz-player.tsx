@@ -405,6 +405,7 @@ export function QuizPlayer({
         backLabel={resultBackLabel}
         onBack={onResultBack}
         showAiCoachAnalysis={showAiCoachResultAnalysis}
+        canUseAiThemeCheck={plan === "exam"}
         weakPracticeTheme={weakPracticeTheme}
       />
     );
@@ -693,7 +694,7 @@ function DailyLimitReachedNotice({
   const upgradeCopy =
     plan === "low"
       ? "国試対策パックなら、今日も制限なく続けられます。"
-      : "基礎定着パスは1日100問、国試対策パックは無制限で演習できます。";
+      : "基礎定着パスは1日50問、国試対策パックは無制限で演習できます。";
   return (
     <div className="flex items-start gap-3 rounded-[12px] border border-[var(--primary)] bg-[var(--primary-soft)] px-4 py-3">
       <LockKeyhole

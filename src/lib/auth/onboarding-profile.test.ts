@@ -3,6 +3,7 @@ import {
   getExamTimingLabel,
   hasCompletedOnboarding,
   isExamTiming,
+  isSelectableExamTiming,
 } from "./onboarding-profile";
 
 describe("onboarding profile", () => {
@@ -42,6 +43,8 @@ describe("onboarding profile", () => {
   it("受験予定の値と表示名を扱う", () => {
     expect(isExamTiming("later")).toBe(true);
     expect(isExamTiming("invalid")).toBe(false);
-    expect(getExamTimingLabel("undecided")).toBe("まだ決めていない");
+    expect(isSelectableExamTiming("next_exam")).toBe(true);
+    expect(isSelectableExamTiming("undecided")).toBe(false);
+    expect(getExamTimingLabel("undecided")).toBe("未定");
   });
 });

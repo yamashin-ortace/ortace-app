@@ -2,7 +2,7 @@
  * 初回診断パッケージ（27問・任意）
  *
  * - 9分野 × 3問 = 27問。
- * - 完了/スキップの明示状態は端末ローカル（localStorage）に保存する。
+ * - 開始/完了/スキップの明示状態は端末ローカル（localStorage）に保存する。
  * - 別端末で解いた場合は同期済み解答履歴から診断相当の完了状態を推定する。
  * - QuizPlayer の `bypassDailyLimit` で初日のキャップを実質拡張する。
  */
@@ -17,7 +17,7 @@ export const DIAGNOSTIC_QUESTIONS_PER_FIELD = 3;
 export const DIAGNOSTIC_QUESTION_COUNT =
   FIELDS.length * DIAGNOSTIC_QUESTIONS_PER_FIELD;
 
-export type DiagnosticStatus = "completed" | "skipped" | null;
+export type DiagnosticStatus = "started" | "completed" | "skipped" | null;
 
 /** `completed` のときだけホームから診断リマインダーを消す */
 export function isDiagnosticComplete(status: DiagnosticStatus): boolean {
@@ -25,7 +25,12 @@ export function isDiagnosticComplete(status: DiagnosticStatus): boolean {
 }
 
 export function isDiagnosticStatus(value: unknown): value is DiagnosticStatus {
-  return value === "completed" || value === "skipped" || value === null;
+  return (
+    value === "started" ||
+    value === "completed" ||
+    value === "skipped" ||
+    value === null
+  );
 }
 
 /**

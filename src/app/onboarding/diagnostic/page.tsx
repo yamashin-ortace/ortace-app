@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Compass, Sparkles, Target, Timer } from "lucide-react";
 import { BackLink } from "@/components/study/back-link";
 import { DiagnosticIntroActions } from "@/components/onboarding/diagnostic-intro-actions";
@@ -44,7 +43,7 @@ export default function DiagnosticIntroPage() {
           ・出題は <strong className="font-bold text-[var(--text-1)]">9分野×3問＝{DIAGNOSTIC_QUESTION_COUNT}問</strong>{" "}
           。同じ問題は出ません。
           <br />
-          ・診断分の {DIAGNOSTIC_QUESTION_COUNT}問は <strong className="font-bold text-[var(--text-1)]">1日20問の制限の対象外</strong>{" "}
+          ・最初に受ける診断分の {DIAGNOSTIC_QUESTION_COUNT}問は <strong className="font-bold text-[var(--text-1)]">1日の制限の対象外</strong>{" "}
           です（初回特典）。
           <br />
           ・今は受けずに、あとから開始することもできます。
@@ -54,13 +53,7 @@ export default function DiagnosticIntroPage() {
       <DiagnosticIntroActions />
 
       <p className="text-center text-[11px] text-[var(--text-3)]">
-        診断を受けないとアプリが使えない、ということはありません。
-        <Link
-          href="/"
-          className="ml-1 font-bold text-[var(--primary-dark)] underline"
-        >
-          ホームへ戻る
-        </Link>
+        診断はあとからホームで始められます。
       </p>
     </div>
   );

@@ -20,11 +20,11 @@ export function DiagnosticIntroActions() {
   };
 
   return (
-    <div className="space-y-2 text-center">
+    <div className="flex flex-col items-center gap-2">
       <button
         type="button"
         onClick={handleStart}
-        className="choice-pressable flex min-h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-[var(--primary)] px-4 text-[15px] font-extrabold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
+        className="choice-pressable inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-[var(--primary)] px-6 text-[15px] font-extrabold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)]"
       >
         <Play className="h-4 w-4" strokeWidth={2.5} />
         診断をはじめる

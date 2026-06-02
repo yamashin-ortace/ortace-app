@@ -9,12 +9,16 @@ import { StudyGoalSetting } from "@/components/settings/study-goal-setting";
 import { SyncTroubleshooting } from "@/components/settings/sync-troubleshooting";
 import { ActiveDevices } from "@/components/settings/active-devices";
 import { getSessionContext } from "@/lib/auth/profile";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 import type { ActiveDevice } from "@/lib/auth/device-limit";
 import { loadAllQuestions } from "@/lib/questions/loader";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
   const session = await getSessionContext();
+  const plan = session?.profile
+    ? getEffectivePlanForProfile(session.profile)
+    : "free";
   const questions = await loadAllQuestions();
   const devices = session ? await loadActiveDevices(session.userId) : [];
 
@@ -36,7 +40,7 @@ export default async function SettingsPage() {
           title="学習プリセット（任意）"
           description="対象範囲・周回・期限を選ぶと、ホームに1日の目安が出ます。"
         >
-          <StudyGoalSetting pastQuestionsTotal={questions.length} />
+          <StudyGoalSetting pastQuestionsTotal={questions.length} plan={plan} />
         </SettingsSection>
 
         <SettingsSection

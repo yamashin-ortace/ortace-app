@@ -62,15 +62,15 @@ describe("daily-limit", () => {
     ).toEqual({ date: "2026-05-08", count: 20 });
   });
 
-  it("基礎定着パスは100問まで判定する", () => {
-    expect(getDailyLimitForPlan("low")).toBe(100);
-    expect(getDailyLimitRemaining({ date: "2026-05-08", count: 99 }, "low")).toBe(
+  it("基礎定着パスは50問まで判定する", () => {
+    expect(getDailyLimitForPlan("low")).toBe(50);
+    expect(getDailyLimitRemaining({ date: "2026-05-08", count: 49 }, "low")).toBe(
       1,
     );
     expect(
-      incrementDailyLimitRecord({ date: "2026-05-08", count: 99 }, "2026-05-08", "low"),
-    ).toEqual({ date: "2026-05-08", count: 100 });
-    expect(isDailyLimitReached({ date: "2026-05-08", count: 100 }, "low")).toBe(
+      incrementDailyLimitRecord({ date: "2026-05-08", count: 49 }, "2026-05-08", "low"),
+    ).toEqual({ date: "2026-05-08", count: 50 });
+    expect(isDailyLimitReached({ date: "2026-05-08", count: 50 }, "low")).toBe(
       true,
     );
   });
