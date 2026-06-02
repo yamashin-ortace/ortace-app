@@ -336,6 +336,12 @@ function translateOAuthError(message: string): string {
     return "ログインがキャンセルされました。";
   }
   if (
+    normalized === "email_confirmation_failed" ||
+    normalized.includes("pkce code verifier not found")
+  ) {
+    return "メールの確認リンクを処理できませんでした。ログイン画面から新規登録をやり直してください。";
+  }
+  if (
     normalized === "server_error" ||
     normalized === "unexpected_failure" ||
     normalized === "oauth_callback_error"

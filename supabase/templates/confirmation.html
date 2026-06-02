@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ja">
+  <body style="font-family: sans-serif; color: #1f2937; line-height: 1.8">
+    <h2>ORT ACE の新規登録を完了してください</h2>
+    <p>視能訓練士国家試験対策アプリ「ORT ACE」へのご登録ありがとうございます。</p>
+    <p>下のボタンを押して、メールアドレスの確認を完了してください。</p>
+    <p>
+      <a
+        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
+        style="display: inline-block; border-radius: 8px; background: #1f3b6d; padding: 12px 20px; color: #ffffff; text-decoration: none"
+      >
+        メールアドレスを確認する
+      </a>
+    </p>
+    <p style="font-size: 13px; color: #6b7280">
+      このメールに心当たりがない場合は、そのまま破棄してください。
+    </p>
+  </body>
+</html>
