@@ -132,6 +132,14 @@ export async function POST(request: Request) {
     client_reference_id: user.id,
     success_url: `${appUrl}/plans?checkout=success`,
     cancel_url: `${appUrl}/plans?checkout=cancel`,
+    custom_text: hasUsedTrial
+      ? undefined
+      : {
+          submit: {
+            message:
+              "14日間は無料です。無料期間中にキャンセルした場合、料金はかかりません。15日目に表示の料金が決済されます。",
+          },
+        },
     metadata,
   } satisfies Stripe.Checkout.SessionCreateParams;
 
