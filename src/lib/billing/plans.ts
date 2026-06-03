@@ -60,7 +60,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
   low: {
     id: "low",
     name: "基礎定着パス",
-    description: "受験年度を迎える前の学生向け。授業理解と日々の復習を積み上げるパスです。",
+    description: "授業の復習から苦手確認まで、毎日の演習を続けやすくするプランです。",
     checkoutLabel: "基礎定着パスを購入",
     dailyLimit: 50,
     durations: [
@@ -96,7 +96,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
     name: "国試対策パック",
     priceLabel: "¥9,800",
     periodLabel: "受験年度3月31日まで",
-    description: "今年度受験する方向け。合格点まで仕上げるための総仕上げパックです。",
+    description: "過去問を無制限に解き、弱点分析・模試・予想問題で本番まで仕上げるプランです。",
     checkoutLabel: "国試対策パックを購入",
     dailyLimit: null,
     priceEnvKey: "STRIPE_PRICE_EXAM_YEAR_SUBSCRIPTION",
