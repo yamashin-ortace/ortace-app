@@ -188,26 +188,25 @@ html:not([data-theme]),
 
 /* ============ DESIGN.md 準拠ユーティリティ ============ */
 
-/* ボタン押下感（DESIGN.md：戻りはオーバーシュート。ホバーで transform しない＝長時間ホバー後も :active が安定） */
+/* ボタン押下感（DESIGN.md：押下は浅く、戻りは自然に。ホバーで transform しない＝長時間ホバー後も :active が安定） */
 .btn-pressable {
-  transition: transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .btn-pressable:active {
-  transform: translateY(5px) scale(0.97);
-  /* 押し込みはイージングを固定（親の overshoot を継承しない） */
+  transform: translateY(2px) scale(0.99);
   transition: transform 80ms cubic-bezier(0.33, 1, 0.68, 1),
               box-shadow 80ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .btn-primary-shadow {
-  box-shadow: 0 6px 0 var(--primary-shadow), 0 10px 20px var(--primary-shadow-soft);
+  box-shadow: 0 3px 0 var(--primary-shadow), 0 8px 18px var(--primary-shadow-soft);
 }
 .btn-primary-shadow:hover:not(:disabled) {
-  box-shadow: 0 7px 0 var(--primary-shadow), 0 12px 22px var(--primary-shadow-soft);
+  box-shadow: 0 4px 0 var(--primary-shadow), 0 10px 20px var(--primary-shadow-soft);
 }
 .btn-primary-shadow:active {
-  box-shadow: 0 2px 0 var(--primary-shadow), 0 4px 8px var(--primary-shadow-soft);
+  box-shadow: 0 1px 0 var(--primary-shadow), 0 4px 10px var(--primary-shadow-soft);
 }
 
 /* LP visual depth: light, non-essential motion with reduce-motion fallback. */
@@ -253,24 +252,23 @@ html:not([data-theme]),
   transition-duration: 100ms;
 }
 
-/* 演習画面のブックマーク/ノートチップ：しっかり沈む・戻りはゆっくり柔らかく（オーバーシュート弱め） */
+/* 演習画面のブックマーク/ノートチップ：小さなUIなので沈み込みは控えめ */
 .study-action-pressable {
-  box-shadow: 0 3px 0 var(--border);
-  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 450ms cubic-bezier(0.22, 1, 0.36, 1),
+  box-shadow: 0 1px 0 var(--border);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 160ms cubic-bezier(0.22, 1, 0.36, 1),
               border-color 240ms ease-out,
               background-color 240ms ease-out,
               color 240ms ease-out;
 }
 .study-action-pressable:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 0 var(--border);
+  box-shadow: 0 2px 0 var(--border);
 }
 .study-action-pressable:active:not(:disabled) {
-  transform: translateY(5px) scale(0.955);
+  transform: translateY(1px) scale(0.99);
   box-shadow: 0 0 0 var(--border);
-  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1),
-              box-shadow 320ms cubic-bezier(0.33, 1, 0.68, 1),
+  transition: transform 80ms cubic-bezier(0.33, 1, 0.68, 1),
+              box-shadow 80ms cubic-bezier(0.33, 1, 0.68, 1),
               border-color 200ms ease-out,
               background-color 200ms ease-out,
               color 200ms ease-out;
