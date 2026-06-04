@@ -110,7 +110,7 @@ export default async function PlansPage({ searchParams }: Props) {
         </p>
       </section>
 
-      {profile?.stripe_customer_id ? (
+      {profile?.stripe_subscription_id ? (
         <section className="space-y-2 rounded-[14px] border border-border bg-[var(--bg-card)] p-4">
           <h2 className="text-[15px] font-bold text-[var(--text-1)]">
             プラン管理
@@ -119,6 +119,15 @@ export default async function PlansPage({ searchParams }: Props) {
             無料期間中のキャンセル、支払い方法の変更、請求履歴の確認はStripeの管理画面で行えます。
           </p>
           <BillingPortalButton />
+        </section>
+      ) : profile?.stripe_customer_id && currentPlan !== "free" ? (
+        <section className="space-y-2 rounded-[14px] border border-border bg-[var(--bg-card)] p-4">
+          <h2 className="text-[15px] font-bold text-[var(--text-1)]">
+            プラン管理
+          </h2>
+          <p className="text-[12px] leading-relaxed text-[var(--text-3)]">
+            現在のプランは利用期限までそのまま使えます。自動更新や追加請求はありません。
+          </p>
         </section>
       ) : null}
     </div>
