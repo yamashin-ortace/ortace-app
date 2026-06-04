@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { PaidPlanCard } from "@/components/billing/paid-plan-card";
 import { BillingPortalButton } from "@/components/billing/billing-portal-button";
+import { TrialBadge } from "@/components/billing/trial-badge";
 import {
   PAID_PLANS,
   PLAN_DEFINITIONS,
@@ -56,7 +57,7 @@ export default async function PlansPage({ searchParams }: Props) {
       {checkout === "success" ? (
         <StatusNotice
           tone="success"
-          title={session?.trial?.isActive ? "14日無料トライアルを開始しました" : "お支払い手続きが完了しました"}
+          title={session?.trial?.isActive ? "初回14日間無料トライアルを開始しました" : "お支払い手続きが完了しました"}
         >
           {session?.trial?.isActive
             ? "無料期間中にキャンセルした場合、料金は発生しません。継続する場合は15日目に選択したプランの料金が自動で決済されます。"
@@ -81,7 +82,10 @@ export default async function PlansPage({ searchParams }: Props) {
       <LimitExplanationCard />
 
       <section className="grid gap-3 md:grid-cols-3">
-        <FreePlanCard currentPlan={currentPlan} />
+        <FreePlanCard
+          currentPlan={currentPlan}
+          showTrialSpacer={!session?.trial?.hasUsed}
+        />
         {PAID_PLANS.map((plan) => (
           <PaidPlanCard
             key={plan}
@@ -102,7 +106,7 @@ export default async function PlansPage({ searchParams }: Props) {
           <PaymentMethod icon={<FileText />} label="Apple Pay / Google Pay" />
         </div>
         <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-4)]">
-          Apple Pay / Google Pay は、利用端末・ブラウザの条件により表示が変わります。初回14日無料トライアル後の自動課金に対応する支払い方法を表示します。
+          Apple Pay / Google Pay は、利用端末・ブラウザの条件により表示が変わります。初回14日間無料トライアル後の自動課金に対応する支払い方法を表示します。
         </p>
       </section>
 
@@ -232,12 +236,25 @@ function getCurrentPlanDescription({
   return "無料プランとして利用中です。";
 }
 
-function FreePlanCard({ currentPlan }: { currentPlan: BillingPlan }) {
+function FreePlanCard({
+  currentPlan,
+  showTrialSpacer,
+}: {
+  currentPlan: BillingPlan;
+  showTrialSpacer: boolean;
+}) {
   const definition = PLAN_DEFINITIONS.free;
 
   return (
     <FreePlanShell title={definition.name}>
       <div className="space-y-2">
+        <div className="flex min-h-7 justify-end">
+          {showTrialSpacer ? (
+            <div className="invisible" aria-hidden="true">
+              <TrialBadge />
+            </div>
+          ) : null}
+        </div>
         <h2 className="text-[17px] font-bold text-[var(--text-1)]">
           {definition.name}
         </h2>

@@ -427,7 +427,7 @@ export function RecordsClient({ questions }: Props) {
             <History className="h-4 w-4" strokeWidth={2.5} />
             <span className="truncate">履歴</span>
           </span>
-          <span className="h-5 sm:hidden" aria-hidden />
+          <RecordCountPill count={answerHistory.length} />
         </TabsTrigger>
       </TabsList>
 

@@ -51,7 +51,7 @@ export function LandingFinalCta() {
           </Link>
         </div>
         <p className="text-[11px] text-[var(--text-3)]">
-          有料プランは初回14日無料・期間終了後の自動更新なし
+          有料プランは初回14日間無料トライアル・期間終了後の自動更新なし
         </p>
       </div>
     </section>

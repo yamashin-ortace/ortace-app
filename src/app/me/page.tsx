@@ -4,7 +4,6 @@ import {
   CalendarClock,
   ChevronRight,
   CreditCard,
-  GraduationCap,
   LogOut,
   Mail,
   Settings,
@@ -18,7 +17,6 @@ import {
   PLAN_DEFINITIONS,
   getEffectivePlanForProfile,
 } from "@/lib/billing/plans";
-import { getExamTimingLabel } from "@/lib/auth/onboarding-profile";
 import type { BillingPlanStatus } from "@/lib/supabase/database.types";
 
 export default async function MePage() {
@@ -34,9 +32,6 @@ export default async function MePage() {
   const expiresAt = profile?.plan_expires_at
     ? formatDate(profile.plan_expires_at)
     : null;
-  const examTimingLabel =
-    getExamTimingLabel(profile?.exam_timing) ??
-    (profile?.grade ? `${profile.grade}（旧設定）` : "未設定");
 
   return (
     <div className="space-y-5 pt-2">
@@ -65,19 +60,25 @@ export default async function MePage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <ProfileTile
-            icon={<GraduationCap />}
-            label="受験予定"
-            value={examTimingLabel}
-          />
-          <ProfileTile
-            icon={<Target />}
-            label="学習方針"
-            value="診断結果から自動調整"
-            subValue="復習と苦手克服の優先度を整えます"
-          />
-        </div>
+        <Link
+          href="/settings#study-goal"
+          className="btn-pressable mt-5 flex items-center justify-between gap-3 rounded-[14px] bg-[var(--bg-muted)]/45 px-3.5 py-3 text-[var(--text-1)] hover:bg-[var(--bg-muted)]"
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px] bg-[var(--bg-card)] text-[var(--primary-dark)]">
+              <Target className="h-4 w-4" strokeWidth={2.4} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[14px] font-extrabold">
+                学習設定
+              </span>
+              <span className="block truncate text-[12px] text-[var(--text-3)]">
+                試験日・学習目標・表示設定を調整
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-4)]" />
+        </Link>
       </section>
 
       <PlanStatusBanner
@@ -208,37 +209,6 @@ function SettingsLink({
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-4)]" />
     </Link>
-  );
-}
-
-function ProfileTile({
-  icon,
-  label,
-  value,
-  subValue,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  subValue?: string;
-}) {
-  return (
-    <div className="rounded-[14px] bg-[var(--bg-muted)]/45 px-3.5 py-3">
-      <div className="flex items-center gap-2 text-[12px] font-bold text-[var(--text-3)]">
-        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:text-[var(--primary-dark)] [&>svg]:[stroke-width:2.4]">
-          {icon}
-        </span>
-        {label}
-      </div>
-      <p className="mt-1.5 text-[15px] font-extrabold text-[var(--text-1)]">
-        {value}
-      </p>
-      {subValue ? (
-        <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-4)]">
-          {subValue}
-        </p>
-      ) : null}
-    </div>
   );
 }
 

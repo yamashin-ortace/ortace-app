@@ -17,13 +17,17 @@ export function ClaimEligibilityStats({ eligibility }: Props) {
     );
     return Math.max(eligibility.learningDays, localDays);
   }, [entries, eligibility.learningDays]);
+  const displayLearningDays = Math.min(
+    learningDays,
+    eligibility.requiredLearningDays,
+  );
 
   return (
     <div className="grid gap-2 rounded-[14px] border border-border bg-[var(--bg-card)] px-4 py-4 sm:grid-cols-3">
       <EligibilityStat label="受験年度" value={`${eligibility.examYear}年度`} />
       <EligibilityStat
         label="直近3ヶ月の学習日"
-        value={`${learningDays}/${eligibility.requiredLearningDays}日`}
+        value={`${displayLearningDays}/${eligibility.requiredLearningDays}日`}
       />
       <EligibilityStat label="申請期限" value={eligibility.deadlineLabel} />
     </div>

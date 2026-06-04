@@ -73,8 +73,14 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
       )}
     >
       <CardHeader className="border-b border-border pb-4">
-        <div className="flex min-h-7 justify-end">
-          {hasTrial ? <TrialBadge /> : null}
+        <div className="flex justify-end">
+          {hasTrial ? (
+            <TrialBadge />
+          ) : (
+            <div className="invisible" aria-hidden="true">
+              <TrialBadge />
+            </div>
+          )}
         </div>
         <CardTitle className="text-[17px] font-bold text-[var(--text-1)]">
           {plan.name}

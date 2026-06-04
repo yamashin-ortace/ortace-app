@@ -136,7 +136,7 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
                 ? "現在のプランです"
                 : trial?.hasUsed
                   ? definition.checkoutLabel
-                  : "初回14日無料で試す"}
+                  : "初回14日間無料トライアルを始める"}
             </CheckoutButton>
           ) : (
             <Link

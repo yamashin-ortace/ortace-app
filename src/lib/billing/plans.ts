@@ -87,7 +87,6 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
       "1日50問まで",
       "苦手克服・思い込みチェック",
       "端末間同期",
-      "初回14日無料トライアル",
       "3ヶ月・1年から選択",
     ],
   },
@@ -108,7 +107,6 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
       "直近テーマ問題集（順次公開）",
       "AIコーチMiLu先生の弱点深掘り分析",
       "分析に沿った克服順で出題",
-      "初回14日無料トライアル",
     ],
   },
 };

@@ -51,6 +51,22 @@ describe("support-claim eligibility", () => {
     ]);
   });
 
+  it("申請期限が未設定なら受付開始前にする", () => {
+    const eligibility = evaluateSupportClaimEligibility({
+      profile: profile(),
+      learningDays: 20,
+      hasPendingClaim: false,
+      now: new Date("2026-03-01T12:00:00+09:00"),
+      deadline: null,
+    });
+
+    expect(eligibility.eligible).toBe(false);
+    expect(eligibility.deadlineLabel).toBe("受付開始前");
+    expect(eligibility.reasons).toEqual([
+      "合格発表後に受付を開始します。",
+    ]);
+  });
+
   it("承認時の延長期限は翌年3月31日末にする", () => {
     expect(
       calculateSupportClaimExtensionEndsAt(

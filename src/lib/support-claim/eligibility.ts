@@ -54,7 +54,7 @@ export function evaluateSupportClaimEligibility({
     );
   }
   if (!deadlineState.isOpen) {
-    reasons.push("申請期限を過ぎています。");
+    reasons.push(deadlineState.reason);
   }
 
   return {
@@ -113,19 +113,34 @@ export function inferSupportClaimExamYear(
 function getSupportClaimDeadlineState(
   now: Date,
   deadline: string | null,
-): { isOpen: boolean; label: string } {
+): { isOpen: boolean; label: string; reason: string } {
   if (!deadline) {
-    return { isOpen: true, label: "受付中" };
+    return {
+      isOpen: false,
+      label: "受付開始前",
+      reason: "合格発表後に受付を開始します。",
+    };
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
-    return { isOpen: false, label: "申請期限の設定が不正です" };
+    return {
+      isOpen: false,
+      label: "申請期限の設定が不正です",
+      reason: "申請期限の設定が不正です。",
+    };
   }
   const end = new Date(`${deadline}T23:59:59.999+09:00`);
   if (!Number.isFinite(end.getTime())) {
-    return { isOpen: false, label: "申請期限の設定が不正です" };
+    return {
+      isOpen: false,
+      label: "申請期限の設定が不正です",
+      reason: "申請期限の設定が不正です。",
+    };
   }
+  const label = `${deadline} 23:59まで`;
+  const isOpen = now.getTime() <= end.getTime();
   return {
-    isOpen: now.getTime() <= end.getTime(),
-    label: `${deadline} 23:59まで`,
+    isOpen,
+    label,
+    reason: isOpen ? "" : "申請期限を過ぎています。",
   };
 }
