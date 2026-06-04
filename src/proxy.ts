@@ -11,6 +11,8 @@ const PUBLIC_PATHS = new Set([
   "/",
   "/login",
   "/contact",
+  "/opengraph-image",
+  "/twitter-image",
   "/legal/privacy",
   "/legal/terms",
   "/legal/tokushoho",
@@ -94,9 +96,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Next.js 内部・静的アセット・PWA manifest などを除外。
+     * Next.js 内部・静的アセット・PWA manifest・metadata 画像などを除外。
      * /api ルートは現状なしだが将来のため除外。
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|robots.txt|sitemap.xml|api/|landing/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|opengraph-image|twitter-image|robots.txt|sitemap.xml|api/|landing/).*)",
   ],
 };
