@@ -11,6 +11,7 @@ const PUBLIC_PATHS = new Set([
   "/",
   "/login",
   "/contact",
+  "/plans",
   "/opengraph-image",
   "/twitter-image",
   "/legal/privacy",
