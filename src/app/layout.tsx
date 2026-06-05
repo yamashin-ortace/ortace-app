@@ -51,6 +51,9 @@ export const metadata: Metadata = {
   ],
   manifest: "/manifest.webmanifest",
   applicationName: "ORT ACE",
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     title: "ORT ACE",
