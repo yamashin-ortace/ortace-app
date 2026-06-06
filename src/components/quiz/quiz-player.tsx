@@ -153,6 +153,8 @@ export function QuizPlayer({
   );
   const isAnswered = currentState.judgement !== undefined;
   const expectedCount = current ? getExpectedSelectionCount(current) : 1;
+  const selectedCount = currentState.selected.length;
+  const remainingSelectionCount = Math.max(0, expectedCount - selectedCount);
 
   // Try #N の N を、解答前は「履歴件数 + 1（今回分）」、解答後は履歴件数で表示。
   // 解答後は recordAnswer により履歴が +1 されるため、引き算しないと番号が進んでしまう。
@@ -171,6 +173,41 @@ export function QuizPlayer({
     });
   }, []);
 
+  const submitAnswer = useCallback(
+    (selected: ChoiceKey[]) => {
+      if (!current || isAnswered) return;
+      if (!dailyLimit.isLoaded || dailyLimit.isLimitReached) return;
+      if (selected.length !== expectedCount) return;
+
+      if (consumingQuestionIdsRef.current.has(current.id)) return;
+      consumingQuestionIdsRef.current.add(current.id);
+
+      const consumed = dailyLimit.consumeQuestion();
+      if (!consumed) {
+        consumingQuestionIdsRef.current.delete(current.id);
+        return;
+      }
+
+      const judgement = judgeAnswer(current, selected);
+      const startedAt = questionStartedAtRef.current.get(current.id);
+      const durationMs =
+        typeof startedAt === "number"
+          ? Math.max(0, Date.now() - startedAt)
+          : null;
+      recordAnswer({
+        question: current,
+        result: judgement,
+        selectedAnswers: selected,
+        durationMs,
+      });
+      setStates((prev) => ({
+        ...prev,
+        [current.id]: { selected, judgement },
+      }));
+    },
+    [current, dailyLimit, expectedCount, isAnswered, recordAnswer],
+  );
+
   const handleSelect = useCallback(
     (key: ChoiceKey) => {
       if (!current || isAnswered) return;
@@ -185,53 +222,27 @@ export function QuizPlayer({
       } else if (cur.selected.length < expectedCount) {
         next = [...cur.selected, key];
       } else {
-        // 必要数に達した瞬間に判定するため、通常ここには来ない。
         return;
       }
 
-      const reachedExpected = next.length === expectedCount;
-      if (!reachedExpected) {
-        setStates((prev) => ({
-          ...prev,
-          [current.id]: { selected: next },
-        }));
+      if (expectedCount === 1) {
+        submitAnswer(next);
         return;
       }
 
-      if (consumingQuestionIdsRef.current.has(current.id)) return;
-      consumingQuestionIdsRef.current.add(current.id);
-
-      const consumed = dailyLimit.consumeQuestion();
-      if (!consumed) {
-        consumingQuestionIdsRef.current.delete(current.id);
-        return;
-      }
-
-      // 必要数に達した瞬間に判定
-      const judgement = judgeAnswer(current, next);
-      const startedAt = questionStartedAtRef.current.get(current.id);
-      const durationMs =
-        typeof startedAt === "number"
-          ? Math.max(0, Date.now() - startedAt)
-          : null;
-      recordAnswer({
-        question: current,
-        result: judgement,
-        selectedAnswers: next,
-        durationMs,
-      });
       setStates((prev) => ({
         ...prev,
-        [current.id]: { selected: next, judgement },
+        [current.id]: { selected: next },
       }));
     },
     [
       current,
       currentState,
-      dailyLimit,
-      isAnswered,
+      dailyLimit.isLimitReached,
+      dailyLimit.isLoaded,
       expectedCount,
-      recordAnswer,
+      isAnswered,
+      submitAnswer,
     ],
   );
 
@@ -493,6 +504,16 @@ export function QuizPlayer({
           );
         })}
       </div>
+
+      {expectedCount > 1 && !isAnswered ? (
+        <MultiSelectSubmit
+          expectedCount={expectedCount}
+          selectedCount={selectedCount}
+          remainingCount={remainingSelectionCount}
+          disabled={isNewAnswerBlocked || selectedCount !== expectedCount}
+          onSubmit={() => submitAnswer(currentState.selected)}
+        />
+      ) : null}
 
       <div ref={feedbackAnchorRef} className="space-y-3">
         {isAnswered && currentState.judgement ? (
@@ -764,18 +785,61 @@ function restoreSavedStates(
 ): Record<string, QuestionState> | null {
   if (!savedStates) return null;
 
-  const questionIds = new Set(questions.map((question) => question.id));
+  const questionById = new Map(questions.map((question) => [question.id, question]));
   const restored: Record<string, QuestionState> = {};
 
   for (const [id, state] of Object.entries(savedStates)) {
-    if (!questionIds.has(id)) continue;
+    const question = questionById.get(id);
+    if (!question) continue;
+    const selected = state.selected.filter((key) => Boolean(question.choices[key]));
+    const expectedCount = getExpectedSelectionCount(question);
+    const hasJudgement = Boolean(state.judgement);
+    if (!hasJudgement && selected.length >= expectedCount) {
+      restored[id] = { selected: [] };
+      continue;
+    }
     restored[id] = {
-      selected: state.selected,
+      selected,
       ...(state.judgement ? { judgement: state.judgement } : {}),
     };
   }
 
   return Object.keys(restored).length > 0 ? restored : null;
+}
+
+function MultiSelectSubmit({
+  expectedCount,
+  selectedCount,
+  remainingCount,
+  disabled,
+  onSubmit,
+}: {
+  expectedCount: number;
+  selectedCount: number;
+  remainingCount: number;
+  disabled: boolean;
+  onSubmit: () => void;
+}) {
+  const message =
+    selectedCount === 0
+      ? `${expectedCount}つ選んでください`
+      : remainingCount > 0
+        ? `あと${remainingCount}つ選んでください`
+        : `${selectedCount}つ選択済み`;
+
+  return (
+    <div className="space-y-2 rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] p-3">
+      <p className="text-[12px] font-bold text-[var(--text-2)]">{message}</p>
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={disabled}
+        className="choice-pressable flex min-h-[3rem] w-full items-center justify-center rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)] disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        判定する
+      </button>
+    </div>
+  );
 }
 
 function hasSameQuestionOrder(
