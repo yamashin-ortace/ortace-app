@@ -53,6 +53,13 @@ export function hasDiagnosticBaseline(
   );
 }
 
+export function shouldBypassInitialDiagnosticDailyLimit(
+  status: DiagnosticStatus,
+  entries: readonly AnswerHistoryEntry[],
+): boolean {
+  return status !== "completed" && !hasDiagnosticBaseline(entries);
+}
+
 /**
  * 全問題から「各分野3問ずつ」をランダム抽出。
  * 同じ問題が混じらないよう問題IDで重複排除する。

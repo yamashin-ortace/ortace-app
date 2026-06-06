@@ -7,8 +7,8 @@ import type { PlanType } from "@/lib/daily-limit";
 import { resetDailyLimitForToday } from "@/lib/daily-limit/use-daily-limit";
 import type { Question } from "@/lib/questions";
 import {
-  hasDiagnosticBaseline,
   selectDiagnosticQuestions,
+  shouldBypassInitialDiagnosticDailyLimit,
 } from "@/lib/onboarding/diagnostic";
 import { useDiagnosticStatus } from "@/lib/onboarding/use-diagnostic-status";
 
@@ -41,13 +41,13 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
 
   useEffect(() => {
     if (!hydrated || bypassDailyLimit !== null) return;
-    const canUseInitialBonus =
-      status !== "started" &&
-      status !== "completed" &&
-      !hasDiagnosticBaseline(entries);
+    const canUseInitialBonus = shouldBypassInitialDiagnosticDailyLimit(
+      status,
+      entries,
+    );
     // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage と同期済み履歴を hydration 後に一度だけ評価し、この診断セッション中は値を固定する。
     setBypassDailyLimit(canUseInitialBonus);
-    if (canUseInitialBonus) setStatus("started");
+    if (canUseInitialBonus && status !== "started") setStatus("started");
   }, [bypassDailyLimit, entries, hydrated, setStatus, status]);
 
   const sessionQuestions = useMemo(() => {
