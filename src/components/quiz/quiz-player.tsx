@@ -20,6 +20,7 @@ import { DAILY_LIMIT, type PlanType } from "@/lib/daily-limit";
 import { useDailyLimit } from "@/lib/daily-limit/use-daily-limit";
 import {
   clearLastQuizProgress,
+  type LastQuizQuestionState,
   readLastQuizProgress,
   writeLastQuizProgress,
 } from "@/lib/quiz-progress";
@@ -301,8 +302,9 @@ export function QuizPlayer({
     setIsFinished(false);
     consumingQuestionIdsRef.current.clear();
     questionStartedAtRef.current.clear();
+    if (saveProgress) clearLastQuizProgress();
     scrollToQuestionTop();
-  }, [scrollToQuestionTop]);
+  }, [saveProgress, scrollToQuestionTop]);
 
   useEffect(() => {
     if (!current || isAnswered || isFinished) return;
@@ -345,13 +347,26 @@ export function QuizPlayer({
     if (!saveProgress) return;
     const progress = readLastQuizProgress();
     if (!progress || progress.href !== quizHref) return;
+    if (
+      progress.questionIds &&
+      !hasSameQuestionOrder(
+        progress.questionIds,
+        questions.map((question) => question.id),
+      )
+    ) {
+      return;
+    }
+    const restoredStates = restoreSavedStates(progress.states, questions);
     const nextIndex = Math.min(
       Math.max(progress.index, 0),
       Math.max(questions.length - 1, 0),
     );
-    const timer = setTimeout(() => setCurrentIndex(nextIndex), 0);
+    const timer = setTimeout(() => {
+      if (restoredStates) setStates(restoredStates);
+      setCurrentIndex(nextIndex);
+    }, 0);
     return () => clearTimeout(timer);
-  }, [questions.length, quizHref, saveProgress]);
+  }, [questions, questions.length, quizHref, saveProgress]);
 
   useEffect(() => {
     if (!saveProgress || isFinished || !current) return;
@@ -361,15 +376,19 @@ export function QuizPlayer({
       index: currentIndex,
       total: questions.length,
       savedAt: new Date().toISOString(),
+      questionIds: questions.map((question) => question.id),
+      states,
     });
   }, [
     current,
     currentIndex,
     isFinished,
+    questions,
     questions.length,
     quizHref,
     resumeLabel,
     saveProgress,
+    states,
   ]);
 
   useEffect(() => {
@@ -737,6 +756,34 @@ function pickNextUnansweredIndex(
   const forward = sortedIdx.find((i) => i > currentIndex);
   if (typeof forward === "number") return forward;
   return sortedIdx[0] ?? null;
+}
+
+function restoreSavedStates(
+  savedStates: Record<string, LastQuizQuestionState> | undefined,
+  questions: readonly Question[],
+): Record<string, QuestionState> | null {
+  if (!savedStates) return null;
+
+  const questionIds = new Set(questions.map((question) => question.id));
+  const restored: Record<string, QuestionState> = {};
+
+  for (const [id, state] of Object.entries(savedStates)) {
+    if (!questionIds.has(id)) continue;
+    restored[id] = {
+      selected: state.selected,
+      ...(state.judgement ? { judgement: state.judgement } : {}),
+    };
+  }
+
+  return Object.keys(restored).length > 0 ? restored : null;
+}
+
+function hasSameQuestionOrder(
+  savedIds: readonly string[],
+  currentIds: readonly string[],
+): boolean {
+  if (savedIds.length !== currentIds.length) return false;
+  return savedIds.every((id, index) => id === currentIds[index]);
 }
 
 function getChoiceState({

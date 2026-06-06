@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Inbox } from "lucide-react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import type { PlanType } from "@/lib/daily-limit";
 import type { Question } from "@/lib/questions";
 import { useStudyItemsLists } from "@/lib/study-items/use-study-items";
 import type { BookmarkCategory } from "@/lib/study-items";
+import { restoreQuestionsFromLastProgress } from "@/lib/quiz-progress";
 
 type Source =
   | { kind: "bookmark"; category: BookmarkCategory }
@@ -38,10 +40,21 @@ export function BookmarkSetPlayClient({
   plan,
 }: Props) {
   const { bookmarks, notes } = useStudyItemsLists();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const quizHref = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname;
   const [frozen, setFrozen] = useState<Question[] | null>(null);
 
   useEffect(() => {
     if (frozen !== null) return;
+    const restored = restoreQuestionsFromLastProgress(quizHref, questions);
+    if (restored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 前回の演習セットを復元する
+      setFrozen(restored);
+      return;
+    }
     const ids: string[] =
       source.kind === "bookmark"
         ? bookmarks
@@ -55,7 +68,6 @@ export function BookmarkSetPlayClient({
       const q = idToQuestion.get(id);
       if (q) picked.push(q);
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- ハイドレーション後にプールを確定する
     setFrozen(picked);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回マウント時のみ pool を凍結する
   }, []);

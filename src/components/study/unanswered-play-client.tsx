@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Inbox } from "lucide-react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import {
@@ -14,6 +14,7 @@ import type { Field, Question } from "@/lib/questions";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import { getUntouchedQuestions } from "@/lib/answer-history/status";
 import { shuffle } from "@/lib/quiz";
+import { restoreQuestionsFromLastProgress } from "@/lib/quiz-progress";
 
 type Mode = "selected" | "random";
 
@@ -34,7 +35,10 @@ export function UnansweredPlayClient({
   defaultLimit,
   plan,
 }: Props) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const query = searchParams.toString();
+  const quizHref = query ? `${pathname}?${query}` : pathname;
   const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
 
@@ -59,6 +63,8 @@ export function UnansweredPlayClient({
 
   const sessionQuestions = useMemo(() => {
     if (!hydrated) return null;
+    const restored = restoreQuestionsFromLastProgress(quizHref, questions);
+    if (restored) return restored;
     const untouched = getUntouchedQuestions(questions, entries);
     const pool =
       mode === "random"
@@ -78,7 +84,7 @@ export function UnansweredPlayClient({
     return ordered.slice(0, limit);
     // 解答中の並び替えを避けるため、依存は hydrated/mode/limit と分野キーのみ
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 上記
-  }, [hydrated, mode, limit, fieldsParam]);
+  }, [hydrated, mode, limit, fieldsParam, quizHref]);
 
   if (!hydrated || sessionQuestions === null) {
     return (

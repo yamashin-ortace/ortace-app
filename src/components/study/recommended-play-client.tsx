@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Inbox } from "lucide-react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import {
@@ -33,6 +33,7 @@ import {
   MAX_FOCUSED_WEAK_QUESTION_COUNT,
   pickOrderedWeakQuestions,
 } from "@/lib/weak/ordered-question-picker";
+import { restoreQuestionsFromLastProgress } from "@/lib/quiz-progress";
 import { getCoolingQuestionIds } from "@/lib/weak/practice-state";
 import { useWeakPracticeState } from "@/lib/weak/use-weak-practice-state";
 import { shuffle } from "@/lib/quiz";
@@ -76,6 +77,7 @@ export function RecommendedPlayClient({
   const { entries } = useAnswerHistoryList();
   const { state: weakPracticeState, recordSession: recordWeakPracticeSession } =
     useWeakPracticeState();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const limit = parseCountFromSearchParams(
     searchParams.get("count"),
@@ -88,13 +90,21 @@ export function RecommendedPlayClient({
   const [activeExamWeakRow, setActiveExamWeakRow] =
     useState<MidCategoryWeaknessRow | null>(null);
   const isExamWeakMode = mode === "weak" && plan === "exam";
+  const quizHref = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname;
 
   useEffect(() => {
     if (isExamWeakMode) return;
     if (frozenPool !== null) return;
+    const restored = restoreQuestionsFromLastProgress(quizHref, questions);
+    if (restored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 前回の演習セットを復元する
+      setFrozenPool(restored.slice(0, MAX_LIMIT));
+      return;
+    }
     const pool = pickPoolByMode(mode, questions, entries, MAX_LIMIT, plan);
     const ordered = orderPoolForMode(mode, pool, plan);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- ハイドレーション後にプールを確定する
     setFrozenPool(ordered.slice(0, MAX_LIMIT));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回マウント時のみ pool を凍結する
   }, [isExamWeakMode]);

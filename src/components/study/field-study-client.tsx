@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Inbox } from "lucide-react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import {
@@ -14,6 +14,7 @@ import type { Question } from "@/lib/questions";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import { getUntouchedQuestions } from "@/lib/answer-history/status";
 import { shuffle } from "@/lib/quiz";
+import { restoreQuestionsFromLastProgress } from "@/lib/quiz-progress";
 
 type Props = {
   /** その分野の全問題 */
@@ -31,7 +32,10 @@ export function FieldStudyClient({
   plan,
 }: Props) {
   const { entries } = useAnswerHistoryList();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const query = searchParams.toString();
+  const quizHref = query ? `${pathname}?${query}` : pathname;
   const limit = parseCountFromSearchParams(
     searchParams.get("count"),
     defaultLimit,
@@ -45,6 +49,8 @@ export function FieldStudyClient({
 
   const picked = useMemo(() => {
     if (!hydrated) return [];
+    const restored = restoreQuestionsFromLastProgress(quizHref, fieldQuestions);
+    if (restored) return restored;
     const untouched = getUntouchedQuestions(fieldQuestions, entries);
     const untouchedIds = new Set(untouched.map((q) => q.id));
     const answered = fieldQuestions.filter((q) => !untouchedIds.has(q.id));
@@ -54,7 +60,7 @@ export function FieldStudyClient({
     return [...head, ...remain];
     // 解答中の並び替えを避けるため、依存は hydrated/limit のみ
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 上記
-  }, [hydrated, limit]);
+  }, [hydrated, limit, quizHref]);
 
   if (!hydrated) {
     return (

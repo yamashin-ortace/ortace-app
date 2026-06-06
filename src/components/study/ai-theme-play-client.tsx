@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Inbox } from "lucide-react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { PlanType } from "@/lib/daily-limit";
 import type { Question } from "@/lib/questions";
+import { restoreQuestionsFromLastProgress } from "@/lib/quiz-progress";
 
 type Props = {
   questions: Question[];
@@ -25,12 +27,22 @@ export function AiThemePlayClient({
   plan,
 }: Props) {
   const { entries } = useAnswerHistoryList();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const quizHref = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname;
   const [frozenPool, setFrozenPool] = useState<Question[] | null>(null);
 
   useEffect(() => {
     if (frozenPool !== null) return;
+    const restored = restoreQuestionsFromLastProgress(quizHref, questions);
+    if (restored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 前回の演習セットを復元する
+      setFrozenPool(restored.slice(0, count));
+      return;
+    }
     const ordered = orderAiThemeQuestions(questions, entries, focusTheme);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 初回に3問の出題プールを固定する
     setFrozenPool(ordered.slice(0, count));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 初回マウント時のみ pool を凍結する
   }, []);
