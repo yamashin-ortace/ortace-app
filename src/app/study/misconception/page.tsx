@@ -32,7 +32,7 @@ export default async function MisconceptionPage() {
         limit={10}
         resumeLabel="AI思い込みチェック"
         emptyTitle="思い込みチェックの候補はまだありません"
-        emptyMessage="解答後に自信度をつけると、自信ありの誤答や急ぎすぎた誤答を見つけやすくなります。"
+        emptyMessage="解答後に解いた感覚をつけると、自信ありの誤答や急ぎすぎた誤答を見つけやすくなります。"
         plan={plan}
       />
     </div>

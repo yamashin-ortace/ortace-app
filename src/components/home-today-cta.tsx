@@ -138,7 +138,7 @@ export function HomeTodayCta({ clusters }: Props) {
                 今日の復習 {summary.reviewCount}問
               </span>
               <span className="mt-0.5 text-[12px] text-[var(--text-2)]">
-                間違い・迷い・勘かもを少し時間を空けて確認します
+                間違い・迷い・根拠なしを少し時間を空けて確認します
               </span>
             </div>
             <ChevronRight

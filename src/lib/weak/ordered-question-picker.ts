@@ -1,4 +1,7 @@
-import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import {
+  isConfidentAnswer,
+  type AnswerHistoryEntry,
+} from "@/lib/answer-history";
 import { getLatestEntryByQuestionId } from "@/lib/answer-history/status";
 import type { Question } from "@/lib/questions";
 import {
@@ -87,7 +90,7 @@ function getLatestHighConfidenceMissIds(
 ): Set<string> {
   const ids = new Set<string>();
   for (const entry of latest.values()) {
-    if (entry.result === "incorrect" && entry.confidence === "high") {
+    if (entry.result === "incorrect" && isConfidentAnswer(entry)) {
       ids.add(entry.id);
     }
   }

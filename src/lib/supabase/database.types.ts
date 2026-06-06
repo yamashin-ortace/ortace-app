@@ -175,6 +175,13 @@ export type AnswerHistoryRow = {
   display_number: number;
   major_category: string;
   confidence: "high" | "mid" | "guess" | null;
+  answer_feeling:
+    | "confident"
+    | "unsure"
+    | "no_basis"
+    | "careless"
+    | "stuck"
+    | null;
   duration_ms: number | null;
   created_at: string;
 };
@@ -192,6 +199,13 @@ export type AnswerHistoryInsert = {
   display_number: number;
   major_category?: string;
   confidence?: "high" | "mid" | "guess" | null;
+  answer_feeling?:
+    | "confident"
+    | "unsure"
+    | "no_basis"
+    | "careless"
+    | "stuck"
+    | null;
   duration_ms?: number | null;
   created_at?: string;
 };
@@ -207,6 +221,13 @@ export type AnswerHistoryUpdate = {
   display_number?: number;
   major_category?: string;
   confidence?: "high" | "mid" | "guess" | null;
+  answer_feeling?:
+    | "confident"
+    | "unsure"
+    | "no_basis"
+    | "careless"
+    | "stuck"
+    | null;
   duration_ms?: number | null;
 };
 

@@ -1,4 +1,7 @@
-import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import {
+  isConfidentAnswer,
+  type AnswerHistoryEntry,
+} from "@/lib/answer-history";
 import { getLatestEntryByQuestionId } from "@/lib/answer-history/status";
 import { classifyAnswerDuration } from "@/lib/ai-coach/recommendation";
 import type { Question } from "@/lib/questions";
@@ -101,7 +104,7 @@ export function analyzeMidCategoryWeakness(
       const correct = recent.filter((entry) => entry.result === "correct").length;
       const incorrect = recent.filter((entry) => entry.result === "incorrect").length;
       const highConfidenceMisses = recent.filter(
-        (entry) => entry.result === "incorrect" && entry.confidence === "high",
+        (entry) => entry.result === "incorrect" && isConfidentAnswer(entry),
       ).length;
       const slowAnswers = recent.filter(
         (entry) => classifyAnswerDuration(entry.durationMs) === "deliberate",
@@ -127,7 +130,7 @@ export function analyzeMidCategoryWeakness(
         latestHighConfidenceMissQuestionIds: recent
           .filter(
             (entry) =>
-              entry.result === "incorrect" && entry.confidence === "high",
+              entry.result === "incorrect" && isConfidentAnswer(entry),
           )
           .map((entry) => entry.id),
       };

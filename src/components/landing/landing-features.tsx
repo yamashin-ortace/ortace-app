@@ -32,7 +32,7 @@ const ITEMS = [
   {
     icon: Sparkles,
     title: "AIおすすめ20問",
-    body: "回答履歴・正答率・自信度・解答時間から、今やる問題をMiLu先生が整理します。",
+    body: "回答履歴・正答率・解いた感覚・解答時間から、今やる問題をMiLu先生が整理します。",
   },
   {
     icon: BookOpenText,
@@ -42,7 +42,7 @@ const ITEMS = [
   {
     icon: RotateCcw,
     title: "復習キュー",
-    body: "間違い・迷い・勘かもを、少し時間を空けて復習できます。",
+    body: "間違い・迷い・根拠なしを、少し時間を空けて復習できます。",
   },
   {
     icon: Target,
@@ -97,7 +97,7 @@ const ITEMS = [
 ] as const;
 
 const COACH_STEPS = [
-  ["1", "解答履歴を蓄積", "正誤・自信度・解答時間を記録"],
+  ["1", "解答履歴を蓄積", "正誤・解いた感覚・解答時間を記録"],
   ["2", "優先度を整理", "復習・弱点・思い込み・未回答を判定"],
   ["3", "次の一歩へ", "おすすめ20問や確認テーマを提案"],
 ] as const;
@@ -160,7 +160,7 @@ export function LandingFeatures() {
             </h2>
             <p className="text-[14px] leading-[1.9] text-[var(--text-2)]">
               国試前に足りないのは、教材ではなく、整理かもしれません。
-              ORT ACEのAIコーチMiLu先生は、回答履歴・正答率・自信度・解答時間をもとに、
+              ORT ACEのAIコーチMiLu先生は、回答履歴・正答率・解いた感覚・解答時間をもとに、
               復習・弱点・思い込み・未回答を整理。今のあなたに必要な演習へつなげます。
             </p>
             <div className="grid gap-2 pt-2">

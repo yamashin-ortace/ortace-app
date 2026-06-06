@@ -190,7 +190,7 @@ describe("study sync helpers", () => {
     expect(merged.entries).toHaveLength(2);
   });
 
-  it("解答履歴の自信度と解答時間をremoteから復元する", () => {
+  it("解答履歴の解いた感覚・自信度・解答時間をremoteから復元する", () => {
     const remote: AnswerHistoryRow = {
       id: "00000000-0000-0000-0000-000000000001",
       user_id: "user-1",
@@ -204,6 +204,7 @@ describe("study sync helpers", () => {
       display_number: 3,
       major_category: "眼科疾患・神経眼科",
       confidence: "high",
+      answer_feeling: "confident",
       duration_ms: 12_345,
       created_at: "2026-05-08T02:00:00.000Z",
     };
@@ -212,6 +213,7 @@ describe("study sync helpers", () => {
 
     expect(merged.entries[0]).toMatchObject({
       id: "52-103",
+      answerFeeling: "confident",
       confidence: "high",
       durationMs: 12_345,
     });

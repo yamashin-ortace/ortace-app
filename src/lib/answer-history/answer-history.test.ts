@@ -9,6 +9,7 @@ import {
   recordAnswerHistory,
   serializeAnswerHistoryStore,
   updateAnswerConfidence,
+  updateAnswerFeeling,
 } from ".";
 
 const question: Question = {
@@ -254,6 +255,46 @@ describe("answer-history", () => {
     expect(unsure.entries[0]).toMatchObject({
       confidence: "mid",
       nextReviewAt: "2026-05-15",
+    });
+  });
+
+  it("解いた感覚は旧自信度に変換しつつ復習日を調整する", () => {
+    const correct = recordAnswerHistory(createAnswerHistoryStore(), {
+      question,
+      result: "correct",
+      selectedAnswers: ["1"],
+      now: new Date("2026-05-01T01:00:00.000Z"),
+    });
+
+    const noBasis = updateAnswerFeeling(correct, {
+      questionId: question.id,
+      answeredAt: correct.entries[0].answeredAt,
+      answerFeeling: "no_basis",
+    });
+
+    expect(noBasis.entries[0]).toMatchObject({
+      answerFeeling: "no_basis",
+      confidence: "guess",
+      nextReviewAt: "2026-05-08",
+    });
+
+    const incorrect = recordAnswerHistory(createAnswerHistoryStore(), {
+      question,
+      result: "incorrect",
+      selectedAnswers: ["2"],
+      now: new Date("2026-05-01T01:00:00.000Z"),
+    });
+
+    const careless = updateAnswerFeeling(incorrect, {
+      questionId: question.id,
+      answeredAt: incorrect.entries[0].answeredAt,
+      answerFeeling: "careless",
+    });
+
+    expect(careless.entries[0]).toMatchObject({
+      answerFeeling: "careless",
+      confidence: "mid",
+      nextReviewAt: "2026-05-02",
     });
   });
 

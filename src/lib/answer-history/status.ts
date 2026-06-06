@@ -5,7 +5,7 @@ import {
   EXAM_FIELD_DISTRIBUTION_TOTAL,
   MAX_EXAM_SCORE,
 } from "@/lib/exam/distribution";
-import type { AnswerHistoryEntry } from ".";
+import { isConfidentAnswer, type AnswerHistoryEntry } from ".";
 import { isDueForReview } from "./spaced-repetition";
 
 export type QuestionStatus =
@@ -137,12 +137,16 @@ function getReviewPriorityScore(
 
   if (latest.result === "incorrect") {
     score += 1000;
-    if (latest.confidence === "high") score += 400;
+    if (isConfidentAnswer(latest)) score += 400;
+    if (latest.answerFeeling === "stuck") score += 320;
+    if (latest.answerFeeling === "careless") score += 160;
     if (isFastIncorrect(latest)) score += 260;
     if (incorrectCount >= 2) score += 180 + incorrectCount * 20;
   } else if (latest.result === "correct") {
-    if (latest.confidence === "guess") score += 180;
-    if (latest.confidence === "mid") score += 120;
+    if (latest.answerFeeling === "no_basis") score += 180;
+    else if (!latest.answerFeeling && latest.confidence === "guess") score += 180;
+    if (latest.answerFeeling === "unsure") score += 120;
+    else if (!latest.answerFeeling && latest.confidence === "mid") score += 120;
   }
 
   return score;

@@ -12,7 +12,9 @@ import {
   recordAnswerHistory,
   serializeAnswerHistoryStore,
   updateAnswerConfidence,
+  updateAnswerFeeling,
   type AnswerHistoryStore,
+  type AnswerFeeling,
   type ConfidenceLevel,
 } from ".";
 import {
@@ -38,6 +40,7 @@ export function useAnswerHistory() {
       result: AnswerJudgement;
       selectedAnswers: readonly ChoiceKey[];
       confidence?: ConfidenceLevel | null;
+      answerFeeling?: AnswerFeeling | null;
       durationMs?: number | null;
     }) => {
       const now = new Date();
@@ -88,7 +91,32 @@ export function useAnswerHistory() {
     [],
   );
 
-  return { recordAnswer, setConfidence };
+  const setAnswerFeeling = useCallback(
+    (params: {
+      questionId: string;
+      answeredAt?: string;
+      answerFeeling: AnswerFeeling | null;
+    }) => {
+      const current = readAnswerHistoryStore();
+      const next = updateAnswerFeeling(current, params);
+      if (next === current) return;
+      writeAnswerHistoryStore(next);
+      notifyAnswerHistoryUpdated();
+      const updated = next.entries.find(
+        (entry) =>
+          entry.id === params.questionId &&
+          (!params.answeredAt || entry.answeredAt === params.answeredAt),
+      );
+      if (updated) {
+        void pushAnswerHistoryEntryToDatabase(updated).then((ok) => {
+          if (!ok) void runAnswerHistorySync();
+        });
+      }
+    },
+    [],
+  );
+
+  return { recordAnswer, setConfidence, setAnswerFeeling };
 }
 
 export function useAnswerHistoryList() {

@@ -5,7 +5,7 @@ export function TodayRecommendedSelectionCopy() {
   return (
     <div className="space-y-2 text-[12px] leading-relaxed text-[var(--text-2)]">
       <p>
-        回答履歴・正答率・自信度・解答時間をもとに、その日の20問を自動で組み立てます。固定の内訳ではなく、今の履歴に合わせて次の優先度で調整します。
+        回答履歴・正答率・解いた感覚・解答時間をもとに、その日の20問を自動で組み立てます。固定の内訳ではなく、今の履歴に合わせて次の優先度で調整します。
       </p>
       <ol className="list-decimal space-y-1 pl-5">
         <li>

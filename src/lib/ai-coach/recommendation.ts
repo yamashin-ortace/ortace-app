@@ -1,4 +1,9 @@
-import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import {
+  isCarelessAnswer,
+  isConfidentAnswer,
+  isUncertainAnswer,
+  type AnswerHistoryEntry,
+} from "@/lib/answer-history";
 import { FIELDS, isScorableQuestion, type Question } from "@/lib/questions";
 import {
   getFieldStats,
@@ -312,8 +317,10 @@ export function countMisconceptionCandidates(
   let count = 0;
   for (const entry of latest.values()) {
     if (entry.result !== "incorrect") continue;
-    const isHighConfidence = entry.confidence === "high";
-    const isFast = classifyAnswerDuration(entry.durationMs) === "fast";
+    const isHighConfidence = isConfidentAnswer(entry);
+    const isFast =
+      classifyAnswerDuration(entry.durationMs) === "fast" &&
+      !isCarelessAnswer(entry);
     if (isHighConfidence || isFast) count += 1;
   }
   return count;
@@ -366,8 +373,8 @@ function buildFocusPool(
 
       const durationBucket = classifyAnswerDuration(entry.durationMs);
       let score = 150;
-      if (entry.confidence === "high") score += 50;
-      if (entry.confidence === "mid" || entry.confidence === "guess") score += 15;
+      if (isConfidentAnswer(entry)) score += 50;
+      if (isUncertainAnswer(entry)) score += 15;
       if (durationBucket === "deliberate") score += 35;
       if (durationBucket === "fast") score += 10;
       return { question, score };
@@ -436,7 +443,8 @@ function buildMisconceptionPool(
       const themeMistakes = mistakeCountByTheme.get(makeThemeKey(question) ?? "") ?? 0;
       const durationBucket = classifyAnswerDuration(entry.durationMs);
       let score = 0;
-      if (entry.confidence === "high") score += 100;
+      if (isCarelessAnswer(entry)) return { question, score: 0 };
+      if (isConfidentAnswer(entry)) score += 100;
       if (durationBucket === "fast") score += 60;
       if (themeMistakes >= 2) score += 35;
       return { question, score };

@@ -11,6 +11,12 @@ export const ANSWER_HISTORY_UPDATED_EVENT = "ortace:answer-history-updated";
 const MAX_ANSWER_HISTORY_ENTRIES = 10_000;
 
 export type ConfidenceLevel = "high" | "mid" | "guess";
+export type AnswerFeeling =
+  | "confident"
+  | "unsure"
+  | "no_basis"
+  | "careless"
+  | "stuck";
 
 export type AnswerHistoryEntry = {
   id: string;
@@ -23,6 +29,8 @@ export type AnswerHistoryEntry = {
   majorCategory: string;
   /** 解答時の自信度（任意・未入力なら null） */
   confidence?: ConfidenceLevel | null;
+  /** 解答後の感覚・誤答理由（任意・未入力なら null） */
+  answerFeeling?: AnswerFeeling | null;
   /** 問題表示から解答確定までの時間（ミリ秒・未計測なら null） */
   durationMs?: number | null;
   /** この問題での連続正解数（0=未連続、誤答でリセット） */
@@ -77,6 +85,7 @@ export function recordAnswerHistory(
     result: AnswerJudgement;
     selectedAnswers: readonly ChoiceKey[];
     confidence?: ConfidenceLevel | null;
+    answerFeeling?: AnswerFeeling | null;
     durationMs?: number | null;
     now?: Date;
   },
@@ -87,6 +96,7 @@ export function recordAnswerHistory(
     result,
     selectedAnswers,
     confidence = null,
+    answerFeeling = null,
     durationMs = null,
     now = new Date(),
   } = params;
@@ -101,21 +111,31 @@ export function recordAnswerHistory(
     previousStreak,
     now,
   });
+  const normalizedConfidence =
+    answerFeeling === null ? confidence : mapAnswerFeelingToConfidence(answerFeeling);
+  const answeredAt = now.toISOString();
 
   const entry: AnswerHistoryEntry = {
     id: question.id,
-    answeredAt: now.toISOString(),
+    answeredAt,
     result,
     selectedAnswers: uniqueChoiceKeys(selectedAnswers),
     round: question.round,
     session: question.session,
     displayNumber: question.displayNumber,
     majorCategory: question.majorCategory,
-    confidence,
+    confidence: normalizedConfidence,
+    answerFeeling,
     durationMs: normalizeDurationMs(durationMs),
     streak,
     nextReviewAt,
   };
+  if (answerFeeling !== null) {
+    entry.nextReviewAt = computeAnswerFeelingAdjustedNextReviewAt(
+      entry,
+      answerFeeling,
+    );
+  }
 
   return normalizeAnswerHistoryStore({
     version: 1,
@@ -151,6 +171,73 @@ export function updateAnswerConfidence(
   });
   if (!updated) return current;
   return normalizeAnswerHistoryStore({ version: 1, entries });
+}
+
+export function updateAnswerFeeling(
+  store: AnswerHistoryStore,
+  params: {
+    questionId: string;
+    answerFeeling: AnswerFeeling | null;
+    answeredAt?: string;
+  },
+): AnswerHistoryStore {
+  const current = normalizeAnswerHistoryStore(store);
+  const targetAnsweredAt = params.answeredAt;
+  let updated = false;
+  const entries = current.entries.map((entry) => {
+    if (updated) return entry;
+    if (entry.id !== params.questionId) return entry;
+    if (targetAnsweredAt && entry.answeredAt !== targetAnsweredAt) return entry;
+    updated = true;
+    const confidence = mapAnswerFeelingToConfidence(params.answerFeeling);
+    return {
+      ...entry,
+      answerFeeling: params.answerFeeling,
+      confidence,
+      nextReviewAt: computeAnswerFeelingAdjustedNextReviewAt(
+        entry,
+        params.answerFeeling,
+      ),
+    };
+  });
+  if (!updated) return current;
+  return normalizeAnswerHistoryStore({ version: 1, entries });
+}
+
+export function mapAnswerFeelingToConfidence(
+  answerFeeling: AnswerFeeling | null,
+): ConfidenceLevel | null {
+  if (answerFeeling === "confident") return "high";
+  if (answerFeeling === "unsure" || answerFeeling === "careless") return "mid";
+  if (answerFeeling === "no_basis" || answerFeeling === "stuck") return "guess";
+  return null;
+}
+
+export function isConfidentAnswer(entry: AnswerHistoryEntry | undefined | null) {
+  if (!entry) return false;
+  return (
+    entry.answerFeeling === "confident" ||
+    (!entry.answerFeeling && entry.confidence === "high")
+  );
+}
+
+export function isUncertainAnswer(entry: AnswerHistoryEntry | undefined | null) {
+  if (!entry) return false;
+  if (
+    entry.answerFeeling === "unsure" ||
+    entry.answerFeeling === "no_basis" ||
+    entry.answerFeeling === "stuck"
+  ) {
+    return true;
+  }
+  return (
+    !entry.answerFeeling &&
+    (entry.confidence === "mid" || entry.confidence === "guess")
+  );
+}
+
+export function isCarelessAnswer(entry: AnswerHistoryEntry | undefined | null) {
+  return entry?.answerFeeling === "careless";
 }
 
 export function getSortedAnswerHistoryEntries(store: AnswerHistoryStore) {
@@ -206,6 +293,27 @@ function computeConfidenceAdjustedNextReviewAt(
   return formatLocalDate(addDays(answeredAt, intervalDays));
 }
 
+function computeAnswerFeelingAdjustedNextReviewAt(
+  entry: AnswerHistoryEntry,
+  answerFeeling: AnswerFeeling | null,
+): string | null {
+  if (entry.result === "no_answer") return null;
+  const answeredAt = new Date(entry.answeredAt);
+  if (!Number.isFinite(answeredAt.getTime())) return entry.nextReviewAt ?? null;
+
+  if (entry.result === "incorrect") {
+    const delayDays = answerFeeling === "careless" ? 1 : INCORRECT_REVIEW_DELAY_DAYS;
+    return formatLocalDate(addDays(answeredAt, delayDays));
+  }
+
+  const streak = typeof entry.streak === "number" ? entry.streak : 1;
+  if (streak >= STREAK_GRADUATION) return null;
+
+  if (answerFeeling === "no_basis") return formatLocalDate(addDays(answeredAt, 7));
+  if (answerFeeling === "unsure") return formatLocalDate(addDays(answeredAt, 14));
+  return null;
+}
+
 function getCorrectConfidenceIntervalDays(
   confidence: ConfidenceLevel | null,
 ): number | null {
@@ -243,6 +351,9 @@ function isAnswerHistoryEntry(value: unknown): value is AnswerHistoryEntry {
     (value.confidence === undefined ||
       value.confidence === null ||
       isConfidenceLevel(value.confidence)) &&
+    (value.answerFeeling === undefined ||
+      value.answerFeeling === null ||
+      isAnswerFeeling(value.answerFeeling)) &&
     (value.durationMs === undefined ||
       value.durationMs === null ||
       isValidDurationMs(value.durationMs)) &&
@@ -257,6 +368,16 @@ function isAnswerHistoryEntry(value: unknown): value is AnswerHistoryEntry {
 
 function isConfidenceLevel(value: unknown): value is ConfidenceLevel {
   return value === "high" || value === "mid" || value === "guess";
+}
+
+function isAnswerFeeling(value: unknown): value is AnswerFeeling {
+  return (
+    value === "confident" ||
+    value === "unsure" ||
+    value === "no_basis" ||
+    value === "careless" ||
+    value === "stuck"
+  );
 }
 
 function normalizeDurationMs(value: number | null): number | null {

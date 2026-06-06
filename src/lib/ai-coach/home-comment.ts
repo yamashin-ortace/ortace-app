@@ -44,7 +44,7 @@ export function buildHomeAiCoachComment(
     return {
       kind: "onboarding",
       message:
-        "問題を解くと、AIコーチMiLu先生が回答履歴・正答率・自信度・解答時間を分析して、今日のおすすめを組み立て始めます。まずは数問から。",
+        "問題を解くと、AIコーチMiLu先生が回答履歴・正答率・解いた感覚・解答時間を分析して、今日のおすすめを組み立て始めます。まずは数問から。",
     };
   }
 

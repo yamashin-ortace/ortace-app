@@ -1,4 +1,8 @@
-import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import {
+  isConfidentAnswer,
+  isUncertainAnswer,
+  type AnswerHistoryEntry,
+} from "@/lib/answer-history";
 import { getLatestEntryByQuestionId } from "@/lib/answer-history/status";
 import type { Question } from "@/lib/questions";
 import { isScorableQuestion } from "@/lib/questions";
@@ -88,11 +92,11 @@ export function analyzeAiCoachSession(
         summary.deliberateIncorrect += 1;
         summary.score += 35;
       }
-      if (entry?.confidence === "high") {
+      if (isConfidentAnswer(entry)) {
         summary.highConfidenceIncorrect += 1;
         summary.score += 45;
       }
-      if (entry?.confidence === "mid" || entry?.confidence === "guess") {
+      if (isUncertainAnswer(entry)) {
         summary.uncertainIncorrect += 1;
         summary.score += 15;
       }
@@ -107,11 +111,11 @@ export function analyzeAiCoachSession(
         summary.deliberateCorrect += 1;
         summary.score += 18;
       }
-      if (entry?.confidence === "high") {
+      if (isConfidentAnswer(entry)) {
         summary.confidentCorrect += 1;
         summary.score += 10;
       }
-      if (entry?.confidence === "mid" || entry?.confidence === "guess") {
+      if (isUncertainAnswer(entry)) {
         summary.uncertainCorrect += 1;
         summary.score += 16;
       }

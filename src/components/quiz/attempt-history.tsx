@@ -2,7 +2,11 @@
 
 import { useMemo } from "react";
 import { AlertTriangle, CheckCircle2, History, XCircle } from "lucide-react";
-import type { AnswerHistoryEntry, ConfidenceLevel } from "@/lib/answer-history";
+import type {
+  AnswerFeeling,
+  AnswerHistoryEntry,
+  ConfidenceLevel,
+} from "@/lib/answer-history";
 import {
   ATTEMPT_HISTORY_RECENT_LIMIT,
   getAttemptHistory,
@@ -14,10 +18,12 @@ type Props = {
   questionId: string;
 };
 
-const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
-  high: "自信あり",
-  mid: "迷った",
-  guess: "勘かも",
+const ANSWER_FEELING_LABEL: Record<AnswerFeeling, string> = {
+  confident: "自信あり",
+  unsure: "迷った",
+  no_basis: "根拠なし",
+  careless: "ケアレス",
+  stuck: "お手上げ",
 };
 
 /**
@@ -78,9 +84,11 @@ function AttemptRow({
         ? `選択肢${entry.selectedAnswers[0]}`
         : `選択肢${entry.selectedAnswers.join("・")}`
       : "未選択";
-  const confidence = entry.confidence
-    ? `（${CONFIDENCE_LABEL[entry.confidence]}）`
-    : "";
+  const feelingLabel = entry.answerFeeling
+    ? `（${ANSWER_FEELING_LABEL[entry.answerFeeling]}）`
+    : entry.confidence
+      ? `（${getLegacyConfidenceLabel(entry.confidence, entry.result)}）`
+      : "";
 
   return (
     <li
@@ -100,14 +108,23 @@ function AttemptRow({
             : "未確定"}
       </span>
       <span className="text-[var(--text-2)]">{choiceLabel}</span>
-      {confidence ? (
-        <span className="text-[var(--text-3)]">{confidence}</span>
+      {feelingLabel ? (
+        <span className="text-[var(--text-3)]">{feelingLabel}</span>
       ) : null}
       <span className="ml-auto text-[10px] font-medium text-[var(--text-3)]">
         {isLatest ? "今回" : dateLabel}
       </span>
     </li>
   );
+}
+
+function getLegacyConfidenceLabel(
+  confidence: ConfidenceLevel,
+  result: AnswerHistoryEntry["result"],
+): string {
+  if (confidence === "high") return "自信あり";
+  if (confidence === "mid") return "迷った";
+  return result === "correct" ? "根拠なし" : "お手上げ";
 }
 
 function ResultIcon({ result }: { result: AnswerHistoryEntry["result"] }) {

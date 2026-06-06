@@ -593,6 +593,7 @@ function answerHistoryEntryToRow(
     display_number: entry.displayNumber,
     major_category: entry.majorCategory,
     confidence: entry.confidence ?? null,
+    answer_feeling: entry.answerFeeling ?? null,
     duration_ms: entry.durationMs ?? null,
   };
 }
@@ -637,6 +638,14 @@ function answerHistoryRowToEntry(row: AnswerHistoryRow): AnswerHistoryEntry | nu
       row.confidence === "mid" ||
       row.confidence === "guess"
         ? row.confidence
+        : null,
+    answerFeeling:
+      row.answer_feeling === "confident" ||
+      row.answer_feeling === "unsure" ||
+      row.answer_feeling === "no_basis" ||
+      row.answer_feeling === "careless" ||
+      row.answer_feeling === "stuck"
+        ? row.answer_feeling
         : null,
     durationMs:
       typeof row.duration_ms === "number" &&

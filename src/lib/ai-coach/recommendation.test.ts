@@ -102,6 +102,29 @@ describe("AI coach recommendation", () => {
     expect(countMisconceptionCandidates(entries)).toBe(2);
   });
 
+  it("ケアレスミスは短時間誤答でも思い込み候補にしない", () => {
+    const questions = makeQuestions(3);
+    const entries: AnswerHistoryEntry[] = [
+      makeEntry("56-1", {
+        result: "incorrect",
+        answerFeeling: "careless",
+        confidence: "mid",
+        durationMs: 8_000,
+      }),
+      makeEntry("56-2", {
+        result: "incorrect",
+        answerFeeling: "confident",
+        confidence: "high",
+        durationMs: 45_000,
+      }),
+    ];
+
+    expect(countMisconceptionCandidates(entries)).toBe(1);
+    expect(pickMisconceptionQuestions(questions, entries, 10).map((q) => q.id)).toEqual([
+      "56-2",
+    ]);
+  });
+
   it("countMisconceptionCandidates は同じ問題は最新エントリだけで判定", () => {
     const entries: AnswerHistoryEntry[] = [
       makeEntry("56-5", {

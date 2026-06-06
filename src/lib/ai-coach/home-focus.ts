@@ -1,4 +1,9 @@
-import type { AnswerHistoryEntry } from "@/lib/answer-history";
+import {
+  isCarelessAnswer,
+  isConfidentAnswer,
+  isUncertainAnswer,
+  type AnswerHistoryEntry,
+} from "@/lib/answer-history";
 import { getLatestEntryByQuestionId } from "@/lib/answer-history/status";
 import {
   analyzeClusterWeakness,
@@ -62,10 +67,10 @@ export function pickHomeAiCoachFocus(
     current.incorrect += 1;
     current.score += 100;
 
-    if (entry.confidence === "high") {
+    if (isConfidentAnswer(entry)) {
       current.highConfidenceIncorrect += 1;
       current.score += 55;
-    } else if (entry.confidence === "mid" || entry.confidence === "guess") {
+    } else if (isUncertainAnswer(entry)) {
       current.uncertainIncorrect += 1;
       current.score += 20;
     }
@@ -73,7 +78,7 @@ export function pickHomeAiCoachFocus(
     if (isDeliberate(entry.durationMs)) {
       current.deliberateIncorrect += 1;
       current.score += 45;
-    } else if (isFast(entry.durationMs)) {
+    } else if (isFast(entry.durationMs) && !isCarelessAnswer(entry)) {
       current.fastIncorrect += 1;
       current.score += 14;
     }
