@@ -26,6 +26,7 @@ import {
 } from "@/lib/study-goal/lifetime-answer-count";
 import {
   getAccountStorageKey,
+  getAccountStorageUserId,
   isCurrentAccountStorageKey,
 } from "@/lib/auth/account-storage";
 
@@ -122,7 +123,11 @@ async function runAnswerHistorySync() {
 }
 
 function useEnsureAnswerHistorySynced() {
-  useDataSync({ key: "answer-history", run: runAnswerHistorySync });
+  const accountUserId = getAccountStorageUserId() ?? "unscoped";
+  useDataSync({
+    key: `answer-history:${accountUserId}`,
+    run: runAnswerHistorySync,
+  });
 }
 
 function subscribeAnswerHistory(onStoreChange: () => void): () => void {

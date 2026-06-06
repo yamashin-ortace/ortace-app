@@ -1,5 +1,4 @@
 import { BackLink } from "@/components/study/back-link";
-import { DataReadinessHint } from "@/components/study/data-readiness-hint";
 import { QuestionCountSelector } from "@/components/study/question-count-selector";
 import { RecommendedPlayClient } from "@/components/study/recommended-play-client";
 import { getEffectivePlanForProfile } from "@/lib/billing/plans";
@@ -26,11 +25,6 @@ export default async function MisconceptionPage() {
       </div>
 
       <QuestionCountSelector defaultCount={10} />
-
-      <DataReadinessHint
-        threshold={30}
-        benefitMessage="自信度と解答履歴が増えるほど、思い込みの検出が安定します。"
-      />
 
       <RecommendedPlayClient
         questions={questions}

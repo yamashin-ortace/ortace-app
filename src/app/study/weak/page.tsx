@@ -1,5 +1,4 @@
 import { BackLink } from "@/components/study/back-link";
-import { DataReadinessHint } from "@/components/study/data-readiness-hint";
 import { ExamPackLockedCard } from "@/components/study/exam-pack-locked-card";
 import { QuestionCountSelector } from "@/components/study/question-count-selector";
 import { RecommendedPlayClient } from "@/components/study/recommended-play-client";
@@ -37,15 +36,6 @@ export default async function WeakPage() {
           description="国試対策パックでは、中分類の弱点分析、MiLu先生コメント、克服順に沿った集中演習を利用できます。"
         />
       )}
-
-      <DataReadinessHint
-        threshold={isExamPlan ? 30 : 15}
-        benefitMessage={
-          isExamPlan
-            ? "テーマごとの苦手判定とMiLu先生コメントの精度が上がります。"
-            : "苦手分野の判定がぐっと精度を増します。"
-        }
-      />
 
       <RecommendedPlayClient
         questions={questions}

@@ -1,5 +1,4 @@
 import { BackLink } from "@/components/study/back-link";
-import { DataReadinessHint } from "@/components/study/data-readiness-hint";
 import { QuestionCountSelector } from "@/components/study/question-count-selector";
 import { RecommendedPlayClient } from "@/components/study/recommended-play-client";
 import { getEffectivePlanForProfile } from "@/lib/billing/plans";
@@ -26,11 +25,6 @@ export default async function TodayPage() {
       </div>
 
       <QuestionCountSelector defaultCount={20} />
-
-      <DataReadinessHint
-        threshold={30}
-        benefitMessage="あと少し解くと、復習・弱点・思い込みの判定が効くようになり、おすすめの的中度が上がります。"
-      />
 
       <RecommendedPlayClient
         questions={questions}

@@ -24,6 +24,7 @@ import {
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
 import {
   getAccountStorageKey,
+  getAccountStorageUserId,
   isCurrentAccountStorageKey,
 } from "@/lib/auth/account-storage";
 
@@ -98,14 +99,22 @@ function useEnsureDailyLimitSynced(_record: DailyLimitRecord, plan: PlanType) {
   // 上限がある無料プラン・基礎定着パスはDB同期対象。
   // key に plan と日付を含めて、日付が変わったら別の同期サイクルとして扱う
   const today = getTokyoDateString();
+  const accountUserId = getAccountStorageUserId() ?? "unscoped";
   const shouldSync = plan !== "exam";
   const key = shouldSync
-    ? `daily-limit:${plan}:${today}`
+    ? `daily-limit:${accountUserId}:${plan}:${today}`
     : "daily-limit:disabled";
   useDataSync({
     key,
     run: shouldSync ? runDailyLimitSync : async () => {},
   });
+}
+
+export function resetDailyLimitForToday() {
+  const next = createDailyLimitRecord(getTokyoDateString());
+  writeDailyLimitRecord(next);
+  notifyDailyLimitUpdated();
+  void pushDailyLimitToDatabase(next);
 }
 
 function subscribeDailyLimit(onStoreChange: () => void): () => void {

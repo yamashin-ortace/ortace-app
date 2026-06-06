@@ -31,6 +31,7 @@ import {
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
 import {
   getAccountStorageKey,
+  getAccountStorageUserId,
   isCurrentAccountStorageKey,
 } from "@/lib/auth/account-storage";
 
@@ -166,7 +167,11 @@ async function runStudyItemsSync() {
 }
 
 function useEnsureStudyItemsSynced() {
-  useDataSync({ key: "study-items", run: runStudyItemsSync });
+  const accountUserId = getAccountStorageUserId() ?? "unscoped";
+  useDataSync({
+    key: `study-items:${accountUserId}`,
+    run: runStudyItemsSync,
+  });
 }
 
 function subscribeStudyItems(onStoreChange: () => void): () => void {

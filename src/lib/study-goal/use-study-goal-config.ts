@@ -16,6 +16,7 @@ import {
 import { useDataSync } from "@/lib/study-sync/use-data-sync";
 import {
   getAccountStorageKey,
+  getAccountStorageUserId,
   isCurrentAccountStorageKey,
 } from "@/lib/auth/account-storage";
 
@@ -67,7 +68,11 @@ export function useStudyGoalConfig() {
     () => DEFAULT_STUDY_GOAL,
   );
 
-  useDataSync({ key: "study-goal", run: runStudyGoalConfigSync });
+  const accountUserId = getAccountStorageUserId() ?? "unscoped";
+  useDataSync({
+    key: `study-goal:${accountUserId}`,
+    run: runStudyGoalConfigSync,
+  });
 
   const setConfig = useCallback((next: StudyGoalConfig) => {
     if (typeof window === "undefined") return;

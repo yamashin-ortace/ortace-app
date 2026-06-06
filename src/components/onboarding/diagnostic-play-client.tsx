@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
 import type { PlanType } from "@/lib/daily-limit";
+import { resetDailyLimitForToday } from "@/lib/daily-limit/use-daily-limit";
 import type { Question } from "@/lib/questions";
 import {
   hasDiagnosticBaseline,
@@ -29,8 +30,9 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
   const [bypassDailyLimit, setBypassDailyLimit] = useState<boolean | null>(null);
 
   const handleComplete = useCallback(() => {
+    if (bypassDailyLimit) resetDailyLimitForToday();
     setStatus("completed");
-  }, [setStatus]);
+  }, [bypassDailyLimit, setStatus]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- LocalStorage 由来の値を SSR と分離するための hydration ガード
@@ -79,6 +81,7 @@ export function DiagnosticPlayClient({ questions, plan }: Props) {
       resumeLabel="初回診断"
       bypassDailyLimit={bypassDailyLimit}
       onSessionComplete={handleComplete}
+      saveProgress={!bypassDailyLimit}
       hideRestartOnResult
       resultBackHref="/"
       resultBackLabel="ホームへ戻る"
