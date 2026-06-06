@@ -24,7 +24,7 @@ export default async function MisconceptionPage() {
         </p>
       </div>
 
-      <QuestionCountSelector defaultCount={10} />
+      <QuestionCountSelector defaultCount={10} plan={plan} />
 
       <RecommendedPlayClient
         questions={questions}

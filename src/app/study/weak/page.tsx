@@ -28,7 +28,7 @@ export default async function WeakPage() {
         </p>
       </div>
 
-      {isExamPlan ? null : <QuestionCountSelector defaultCount={20} />}
+      {isExamPlan ? null : <QuestionCountSelector defaultCount={20} plan={plan} />}
 
       {isExamPlan ? null : (
         <ExamPackLockedCard

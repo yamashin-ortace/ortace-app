@@ -24,7 +24,7 @@ export default async function ReviewPage() {
         </p>
       </div>
 
-      <QuestionCountSelector defaultCount={20} />
+      <QuestionCountSelector defaultCount={20} plan={plan} />
 
       <RecommendedPlayClient
         questions={questions}

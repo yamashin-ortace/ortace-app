@@ -78,3 +78,20 @@ export function DailyLimitBanner({ used, plan = "free" }: Props) {
     </div>
   );
 }
+
+export function DailyLimitInlineStatus({ plan = "free" }: { plan?: PlanType }) {
+  const dailyLimit = useDailyLimit(plan);
+  const limit = getDailyLimitForPlan(plan);
+
+  if (limit === null) return null;
+  if (!dailyLimit.isLoaded) return null;
+
+  const remaining = Math.max(0, limit - dailyLimit.used);
+  const planLabel = plan === "low" ? "基礎定着" : "無料";
+
+  return (
+    <span className="inline-flex items-center rounded-full border border-border bg-[var(--bg-muted)] px-2.5 py-1 text-[10px] font-bold tabular-nums text-[var(--text-2)]">
+      今日あと{remaining}問 / {planLabel}{limit}問
+    </span>
+  );
+}
