@@ -439,14 +439,36 @@ export async function syncAnswerHistoryWithDatabase(
       }
     }
   }
+  const fetchedRows = await fetchAnswerHistoryRows(userId, supabase);
+  if (!fetchedRows) return null;
+  const merged = mergeAnswerHistoryStores(localStore, fetchedRows);
+
+  if (typeof window !== "undefined") {
+    console.info(
+      `[answer-history sync] push成功 ${successCount} / push失敗 ${failureCount} / DB fetch ${fetchedRows.length}件 / merge後 ${merged.entries.length}件（ローカル ${localRows.length}件）`,
+    );
+  }
+
+  return merged;
+}
+
+const UPSERT_CHUNK_SIZE = 50;
+const FETCH_PAGE_SIZE = 1000;
+
+async function fetchAnswerHistoryRows(
+  userId: string,
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+): Promise<AnswerHistoryRow[] | null> {
+  const fromApi = await fetchAnswerHistoryRowsFromApi();
+  if (fromApi) return fromApi;
+
   // PostgREST / Supabase の1リクエスト当たり最大1000件制限を超えて取るために
   // ページネーションで取得する。
-  const PAGE_SIZE = 1000;
   const fetchedRows: AnswerHistoryRow[] = [];
   let pageFrom = 0;
   while (fetchedRows.length < ANSWER_HISTORY_DISPLAY_LIMIT) {
     const pageTo = Math.min(
-      pageFrom + PAGE_SIZE - 1,
+      pageFrom + FETCH_PAGE_SIZE - 1,
       ANSWER_HISTORY_DISPLAY_LIMIT - 1,
     );
     const { data, error } = await supabase
@@ -465,21 +487,32 @@ export async function syncAnswerHistoryWithDatabase(
     }
     if (!data || data.length === 0) break;
     fetchedRows.push(...data);
-    if (data.length < PAGE_SIZE) break;
-    pageFrom += PAGE_SIZE;
+    if (data.length < FETCH_PAGE_SIZE) break;
+    pageFrom += FETCH_PAGE_SIZE;
   }
-  const merged = mergeAnswerHistoryStores(localStore, fetchedRows);
-
-  if (typeof window !== "undefined") {
-    console.info(
-      `[answer-history sync] push成功 ${successCount} / push失敗 ${failureCount} / DB fetch ${fetchedRows.length}件 / merge後 ${merged.entries.length}件（ローカル ${localRows.length}件）`,
-    );
-  }
-
-  return merged;
+  return fetchedRows;
 }
 
-const UPSERT_CHUNK_SIZE = 50;
+async function fetchAnswerHistoryRowsFromApi(): Promise<AnswerHistoryRow[] | null> {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const response = await fetch("/api/study-sync/answer-history", {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const payload = (await response.json().catch(() => null)) as
+      | { rows?: unknown }
+      | null;
+    if (!payload || !Array.isArray(payload.rows)) return null;
+    return payload.rows as AnswerHistoryRow[];
+  } catch {
+    return null;
+  }
+}
 
 function dedupeAnswerHistoryRows(
   rows: readonly AnswerHistoryInsert[],
