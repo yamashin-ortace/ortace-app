@@ -1,5 +1,5 @@
 import type { AnswerHistoryEntry } from "@/lib/answer-history";
-import { isScorableQuestion, type Question } from "@/lib/questions";
+import { FIELDS, isScorableQuestion, type Question } from "@/lib/questions";
 import {
   getFieldStats,
   getLatestEntryByQuestionId,
@@ -7,6 +7,7 @@ import {
   getStagedWeakFields,
   getUntouchedQuestions,
 } from "@/lib/answer-history/status";
+import { getTokyoDateString } from "@/lib/daily-limit";
 import { pickHomeAiCoachFocus } from "./home-focus";
 import { getAiThemeCluster, getAiThemeKey } from "./theme-cluster";
 
@@ -20,6 +21,11 @@ export const AI_COACH_TARGETS = {
   misconception: 3,
   unanswered: 5,
 } as const;
+
+const MATURITY_UNANSWERED_ONLY_UNIQUE_ANSWERS = 300;
+const MATURITY_LIGHT_REVIEW_UNIQUE_ANSWERS = 500;
+const MATURITY_BALANCED_UNIQUE_ANSWERS = 1000;
+const LOW_UNTOUCHED_REMAINING_THRESHOLD = 40;
 
 export type AnswerDurationBucket = "fast" | "standard" | "deliberate";
 export type AiCoachBucket =
@@ -61,6 +67,7 @@ export function pickAiCoachRecommended(
   const questionById = new Map(
     scorableQuestions.map((question) => [question.id, question]),
   );
+  const answeredTodayIds = getAnsweredTodayIds(entries, options.now);
   const buckets: Record<AiCoachBucket, Question[]> = {
     focus: [],
     review: [],
@@ -82,32 +89,44 @@ export function pickAiCoachRecommended(
     }
   };
 
-  const focusPool = buildFocusPool(scorableQuestions, entries, latest, options.now);
-  const reviewPool = getReviewQuestions(scorableQuestions, entries);
-  const weakPool = buildWeakPool(scorableQuestions, entries, latest);
-  const misconceptionPool = buildMisconceptionPool(
+  const filterToday = (pool: readonly Question[]) =>
+    pool.filter((question) => !answeredTodayIds.has(question.id));
+  const focusPool = filterToday(
+    buildFocusPool(scorableQuestions, entries, latest, options.now),
+  );
+  const reviewPool = filterToday(
+    getReviewQuestions(scorableQuestions, entries, options.now),
+  );
+  const weakPool = filterToday(buildWeakPool(scorableQuestions, entries, latest));
+  const misconceptionPool = filterToday(buildMisconceptionPool(
     scorableQuestions,
     entries,
     latest,
     questionById,
-  );
-  const unansweredPool = rankBySourceOrder(
+  ));
+  const unansweredPool = pickBalancedUntouchedQuestions(
     getUntouchedQuestions(scorableQuestions, entries),
+    entries,
+    questionById,
+    cappedLimit,
   );
+  const mix = getRecommendationMix(latest.size, unansweredPool.length, cappedLimit);
 
-  add("focus", focusPool, AI_COACH_TARGETS.focus);
-  add("review", reviewPool, AI_COACH_TARGETS.review);
-  add("weak", weakPool, AI_COACH_TARGETS.weak);
-  add("misconception", misconceptionPool, AI_COACH_TARGETS.misconception);
-  add("unanswered", unansweredPool, AI_COACH_TARGETS.unanswered);
+  if (mix.focus > 0) add("focus", focusPool, mix.focus);
+  add("unanswered", unansweredPool, mix.unanswered);
+  if (mix.review > 0) add("review", reviewPool, mix.review);
+  if (mix.weak > 0) add("weak", weakPool, mix.weak);
+  if (mix.misconception > 0) {
+    add("misconception", misconceptionPool, mix.misconception);
+  }
 
   const fillPool = [
     ...unansweredPool,
     ...reviewPool,
-    ...focusPool,
     ...weakPool,
     ...misconceptionPool,
-    ...rankBySourceOrder(scorableQuestions),
+    ...focusPool,
+    ...filterToday(rankBySourceOrder(scorableQuestions)),
   ];
   add("fill", fillPool, cappedLimit);
 
@@ -117,6 +136,168 @@ export function pickAiCoachRecommended(
     dataReadiness:
       latest.size >= AI_COACH_DATA_READINESS_THRESHOLD ? "ready" : "collecting",
   };
+}
+
+function getRecommendationMix(
+  uniqueAnsweredCount: number,
+  untouchedCount: number,
+  limit: number,
+): Record<Exclude<AiCoachBucket, "fill">, number> {
+  if (limit <= 0) {
+    return { focus: 0, review: 0, weak: 0, misconception: 0, unanswered: 0 };
+  }
+  if (untouchedCount < Math.min(limit, LOW_UNTOUCHED_REMAINING_THRESHOLD)) {
+    return {
+      focus: Math.min(3, limit),
+      review: Math.min(5, limit),
+      weak: Math.min(5, limit),
+      misconception: Math.min(3, limit),
+      unanswered: Math.min(untouchedCount, limit),
+    };
+  }
+  if (uniqueAnsweredCount < MATURITY_UNANSWERED_ONLY_UNIQUE_ANSWERS) {
+    return { focus: 0, review: 0, weak: 0, misconception: 0, unanswered: limit };
+  }
+  if (uniqueAnsweredCount < MATURITY_LIGHT_REVIEW_UNIQUE_ANSWERS) {
+    const support = Math.min(2, Math.max(0, limit - 1));
+    const review = Math.min(1, support);
+    const weak = Math.max(0, support - review);
+    return {
+      focus: 0,
+      review,
+      weak,
+      misconception: 0,
+      unanswered: limit - support,
+    };
+  }
+  if (uniqueAnsweredCount < MATURITY_BALANCED_UNIQUE_ANSWERS) {
+    const support = Math.min(Math.ceil(limit * 0.2), Math.max(0, limit - 1));
+    const review = Math.min(2, support);
+    const weak = Math.min(2, Math.max(0, support - review));
+    const misconception = Math.max(0, support - review - weak);
+    return {
+      focus: 0,
+      review,
+      weak,
+      misconception,
+      unanswered: limit - support,
+    };
+  }
+  return {
+    focus: AI_COACH_TARGETS.focus,
+    review: AI_COACH_TARGETS.review,
+    weak: AI_COACH_TARGETS.weak,
+    misconception: AI_COACH_TARGETS.misconception,
+    unanswered: AI_COACH_TARGETS.unanswered,
+  };
+}
+
+function pickBalancedUntouchedQuestions(
+  questions: readonly Question[],
+  entries: readonly AnswerHistoryEntry[],
+  questionById: Map<string, Question>,
+  limit: number,
+): Question[] {
+  const touchedMinorByField = new Map<string, Set<string>>();
+  const touchedThemeByField = new Map<string, Set<string>>();
+  const recentFieldCount = new Map<string, number>();
+  const recentEntries = [...entries]
+    .sort((a, b) => b.answeredAt.localeCompare(a.answeredAt))
+    .slice(0, 60);
+
+  for (const entry of entries) {
+    const question = questionById.get(entry.id);
+    if (!question) continue;
+    addToNestedSet(touchedMinorByField, question.majorCategory, question.minorCategory);
+    addToNestedSet(touchedThemeByField, question.majorCategory, question.theme);
+  }
+  for (const entry of recentEntries) {
+    recentFieldCount.set(
+      entry.majorCategory,
+      (recentFieldCount.get(entry.majorCategory) ?? 0) + 1,
+    );
+  }
+
+  const fieldBuckets = new Map<string, Question[]>();
+  for (const question of questions) {
+    const list = fieldBuckets.get(question.majorCategory) ?? [];
+    list.push(question);
+    fieldBuckets.set(question.majorCategory, list);
+  }
+  for (const [field, list] of fieldBuckets) {
+    const touchedMinor = touchedMinorByField.get(field) ?? new Set<string>();
+    const touchedTheme = touchedThemeByField.get(field) ?? new Set<string>();
+    list.sort((a, b) => {
+      const aScore = getUntouchedNoveltyScore(a, touchedMinor, touchedTheme);
+      const bScore = getUntouchedNoveltyScore(b, touchedMinor, touchedTheme);
+      if (aScore !== bScore) return bScore - aScore;
+      return compareQuestionSource(a, b);
+    });
+  }
+
+  const knownFields = new Set<string>(FIELDS);
+  const fieldOrder = [...FIELDS, ...[...fieldBuckets.keys()].filter((field) => !knownFields.has(field))]
+    .filter((field) => (fieldBuckets.get(field)?.length ?? 0) > 0)
+    .sort((a, b) => {
+      const recentDiff = (recentFieldCount.get(a) ?? 0) - (recentFieldCount.get(b) ?? 0);
+      if (recentDiff !== 0) return recentDiff;
+      const remainingDiff = (fieldBuckets.get(b)?.length ?? 0) - (fieldBuckets.get(a)?.length ?? 0);
+      if (remainingDiff !== 0) return remainingDiff;
+      return getFieldIndex(a) - getFieldIndex(b);
+    });
+
+  const picked: Question[] = [];
+  while (picked.length < limit && fieldOrder.length > 0) {
+    let addedInRound = false;
+    for (const field of fieldOrder) {
+      if (picked.length >= limit) break;
+      const bucket = fieldBuckets.get(field);
+      const question = bucket?.shift();
+      if (!question) continue;
+      picked.push(question);
+      addedInRound = true;
+    }
+    if (!addedInRound) break;
+  }
+  return picked;
+}
+
+function getFieldIndex(field: string): number {
+  const index = (FIELDS as readonly string[]).indexOf(field);
+  return index >= 0 ? index : FIELDS.length;
+}
+
+function getUntouchedNoveltyScore(
+  question: Question,
+  touchedMinor: Set<string>,
+  touchedTheme: Set<string>,
+): number {
+  let score = 0;
+  if (!touchedMinor.has(question.minorCategory)) score += 20;
+  if (!touchedTheme.has(question.theme)) score += 10;
+  return score;
+}
+
+function addToNestedSet(
+  map: Map<string, Set<string>>,
+  key: string,
+  value: string,
+) {
+  const set = map.get(key) ?? new Set<string>();
+  set.add(value);
+  map.set(key, set);
+}
+
+function getAnsweredTodayIds(
+  entries: readonly AnswerHistoryEntry[],
+  now: Date = new Date(),
+): Set<string> {
+  const today = getTokyoDateString(now);
+  return new Set(
+    entries
+      .filter((entry) => getTokyoDateString(new Date(entry.answeredAt)) === today)
+      .map((entry) => entry.id),
+  );
 }
 
 /**
