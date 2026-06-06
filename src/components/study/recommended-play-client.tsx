@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Inbox } from "lucide-react";
@@ -136,11 +136,11 @@ export function RecommendedPlayClient({
         },
       )
     : [];
-  const sessionQuestions = isExamWeakMode
-    ? examWeakPool
-    : frozenPool
-      ? frozenPool.slice(0, Math.min(limit, frozenPool.length))
-      : null;
+  const sessionQuestions = useMemo(() => {
+    if (isExamWeakMode) return examWeakPool;
+    if (!frozenPool) return null;
+    return frozenPool.slice(0, Math.min(limit, frozenPool.length));
+  }, [examWeakPool, frozenPool, isExamWeakMode, limit]);
 
   if (!isExamWeakMode && sessionQuestions === null) {
     return (

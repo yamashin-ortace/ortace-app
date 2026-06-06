@@ -124,6 +124,7 @@ export function QuizPlayer({
   const quizTopRef = useRef<HTMLDivElement | null>(null);
   const feedbackAnchorRef = useRef<HTMLDivElement | null>(null);
   const sessionCompleteOnceRef = useRef(false);
+  const restoredProgressKeyRef = useRef<string | null>(null);
   const realDailyLimit = useDailyLimit(plan);
   const dailyLimit = useMemo(
     () =>
@@ -153,8 +154,6 @@ export function QuizPlayer({
   );
   const isAnswered = currentState.judgement !== undefined;
   const expectedCount = current ? getExpectedSelectionCount(current) : 1;
-  const selectedCount = currentState.selected.length;
-  const remainingSelectionCount = Math.max(0, expectedCount - selectedCount);
 
   // Try #N の N を、解答前は「履歴件数 + 1（今回分）」、解答後は履歴件数で表示。
   // 解答後は recordAnswer により履歴が +1 されるため、引き算しないと番号が進んでしまう。
@@ -226,6 +225,11 @@ export function QuizPlayer({
       }
 
       if (expectedCount === 1) {
+        submitAnswer(next);
+        return;
+      }
+
+      if (next.length === expectedCount) {
         submitAnswer(next);
         return;
       }
@@ -356,14 +360,16 @@ export function QuizPlayer({
 
   useEffect(() => {
     if (!saveProgress) return;
+    const currentQuestionIds = questions.map((question) => question.id);
+    const restoreKey = `${quizHref}::${currentQuestionIds.join("|")}`;
+    if (restoredProgressKeyRef.current === restoreKey) return;
+    restoredProgressKeyRef.current = restoreKey;
+
     const progress = readLastQuizProgress();
     if (!progress || progress.href !== quizHref) return;
     if (
       progress.questionIds &&
-      !hasSameQuestionOrder(
-        progress.questionIds,
-        questions.map((question) => question.id),
-      )
+      !hasSameQuestionOrder(progress.questionIds, currentQuestionIds)
     ) {
       return;
     }
@@ -504,16 +510,6 @@ export function QuizPlayer({
           );
         })}
       </div>
-
-      {expectedCount > 1 && !isAnswered ? (
-        <MultiSelectSubmit
-          expectedCount={expectedCount}
-          selectedCount={selectedCount}
-          remainingCount={remainingSelectionCount}
-          disabled={isNewAnswerBlocked || selectedCount !== expectedCount}
-          onSubmit={() => submitAnswer(currentState.selected)}
-        />
-      ) : null}
 
       <div ref={feedbackAnchorRef} className="space-y-3">
         {isAnswered && currentState.judgement ? (
@@ -805,41 +801,6 @@ function restoreSavedStates(
   }
 
   return Object.keys(restored).length > 0 ? restored : null;
-}
-
-function MultiSelectSubmit({
-  expectedCount,
-  selectedCount,
-  remainingCount,
-  disabled,
-  onSubmit,
-}: {
-  expectedCount: number;
-  selectedCount: number;
-  remainingCount: number;
-  disabled: boolean;
-  onSubmit: () => void;
-}) {
-  const message =
-    selectedCount === 0
-      ? `${expectedCount}つ選んでください`
-      : remainingCount > 0
-        ? `あと${remainingCount}つ選んでください`
-        : `${selectedCount}つ選択済み`;
-
-  return (
-    <div className="space-y-2 rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] p-3">
-      <p className="text-[12px] font-bold text-[var(--text-2)]">{message}</p>
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={disabled}
-        className="choice-pressable flex min-h-[3rem] w-full items-center justify-center rounded-[12px] bg-[var(--primary)] px-4 text-[14px] font-bold text-white shadow-[0_4px_14px_var(--primary-shadow-soft)] disabled:cursor-not-allowed disabled:opacity-45"
-      >
-        判定する
-      </button>
-    </div>
-  );
 }
 
 function hasSameQuestionOrder(
