@@ -17,7 +17,7 @@ import {
 import { GoogleIcon } from "@/components/auth/google-icon";
 import { LineIcon } from "@/components/auth/line-icon";
 import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
-import { ChevronDown, ChevronUp, Mail } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, Mail } from "lucide-react";
 
 type EmailMode = "login" | "signup" | "magic";
 
@@ -41,6 +41,10 @@ export function LoginCard({
   const [emailMode, setEmailMode] = useState<EmailMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [sentEmail, setSentEmail] = useState<{
+    mode: Extract<EmailMode, "signup" | "magic">;
+    email: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(
     initialError ? translateOAuthError(initialError) : null,
   );
@@ -89,8 +93,11 @@ export function LoginCard({
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setSentEmail(null);
 
-    if (!email) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
       setError("メールアドレスを入力してください。");
       return;
     }
@@ -104,20 +111,22 @@ export function LoginCard({
 
     startTransition(async () => {
       if (emailMode === "magic") {
-        const result = await sendMagicLinkAction(email);
+        const result = await sendMagicLinkAction(normalizedEmail);
         if (!result.ok) {
           setError(result.message);
         } else {
+          setSentEmail({ mode: "magic", email: normalizedEmail });
           setInfo("ログイン用リンクをメールで送信しました。受信トレイをご確認ください。");
         }
         return;
       }
 
       if (emailMode === "signup") {
-        const result = await signUpWithPasswordAction(email, password);
+        const result = await signUpWithPasswordAction(normalizedEmail, password);
         if (!result.ok) {
           setError(result.message);
         } else {
+          setSentEmail({ mode: "signup", email: normalizedEmail });
           setInfo(
             "確認メールを送信しました。メール内のリンクから登録を完了してください。",
           );
@@ -125,7 +134,7 @@ export function LoginCard({
         return;
       }
 
-      const result = await signInWithPasswordAction(email, password);
+      const result = await signInWithPasswordAction(normalizedEmail, password);
       if (!result.ok) {
         setError(result.message);
       } else {
@@ -134,6 +143,11 @@ export function LoginCard({
       }
     });
   }
+
+  const sentForCurrentEmail =
+    sentEmail?.mode === emailMode &&
+    sentEmail.email === email.trim().toLowerCase();
+  const emailSubmitDisabled = pending || sentForCurrentEmail;
 
   return (
     <Card className="w-full">
@@ -222,7 +236,10 @@ export function LoginCard({
                 type="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setSentEmail(null);
+                }}
                 disabled={pending}
                 required
               />
@@ -240,7 +257,10 @@ export function LoginCard({
                     emailMode === "signup" ? "new-password" : "current-password"
                   }
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (emailMode === "signup") setSentEmail(null);
+                  }}
                   disabled={pending}
                   required
                   minLength={6}
@@ -259,16 +279,23 @@ export function LoginCard({
 
             <Button
               type="submit"
-              disabled={pending}
-              className="h-10 w-full text-[14px]"
+              disabled={emailSubmitDisabled}
+              className="h-10 w-full gap-2 text-[14px]"
             >
-              {pending
-                ? "送信中..."
-                : emailMode === "login"
-                  ? "ログイン"
-                  : emailMode === "signup"
-                    ? "登録する"
-                    : "リンクを送る"}
+              {sentForCurrentEmail ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  {emailMode === "signup" ? "確認メールを送信済み" : "リンク送信済み"}
+                </>
+              ) : pending ? (
+                "送信中..."
+              ) : emailMode === "login" ? (
+                "ログイン"
+              ) : emailMode === "signup" ? (
+                "登録する"
+              ) : (
+                "リンクを送る"
+              )}
             </Button>
           </form>
         ) : null}
