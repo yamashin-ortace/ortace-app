@@ -41,7 +41,7 @@ export default async function FieldStudyPage({ params }: Props) {
         </p>
       </div>
 
-      <QuestionCountSelector defaultCount={20} plan={plan} />
+      <QuestionCountSelector defaultCount={20} />
 
       <FieldStudyClient
         fieldQuestions={fieldQuestions}

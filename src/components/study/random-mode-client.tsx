@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shuffle } from "lucide-react";
 import { BackLink } from "@/components/study/back-link";
-import { DailyLimitInlineStatus } from "@/components/study/daily-limit-banner";
 import { PrimaryCta } from "@/components/ui/primary-cta";
 import {
   getDailyLimitForPlan,
@@ -45,7 +44,6 @@ export function RandomModeClient({ plan }: { plan: PlanType }) {
         <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
           問題数
         </h2>
-        <DailyLimitInlineStatus plan={plan} />
         <div className="grid grid-cols-2 gap-2">
           {availableCounts.map((opt) => (
             <button

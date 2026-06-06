@@ -25,7 +25,7 @@ export default async function UnansweredPlayPage() {
         </p>
       </div>
 
-      <QuestionCountSelector defaultCount={20} plan={plan} />
+      <QuestionCountSelector defaultCount={20} />
 
       <UnansweredPlayClient
         questions={questions}

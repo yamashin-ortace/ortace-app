@@ -34,7 +34,6 @@ import { ConfidenceRating } from "./confidence-rating";
 import { QuizControls } from "./quiz-controls";
 import { QuizProgress } from "./quiz-progress";
 import { QuizResultScreen } from "./quiz-result-screen";
-import { DailyLimitInlineStatus } from "@/components/study/daily-limit-banner";
 
 type Props = {
   questions: Question[];
@@ -477,9 +476,6 @@ export function QuizPlayer({
         </div>
         <div className="space-y-1">
           <QuizProgress current={currentIndex + 1} total={questions.length} />
-          <div className="flex justify-end">
-            <DailyLimitInlineStatus plan={plan} />
-          </div>
         </div>
       </div>
 

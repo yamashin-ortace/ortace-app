@@ -24,7 +24,7 @@ export default async function TodayPage() {
         </p>
       </div>
 
-      <QuestionCountSelector defaultCount={20} plan={plan} />
+      <QuestionCountSelector defaultCount={20} />
 
       <RecommendedPlayClient
         questions={questions}

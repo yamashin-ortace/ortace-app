@@ -3,8 +3,6 @@
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { PlanType } from "@/lib/daily-limit";
-import { DailyLimitInlineStatus } from "./daily-limit-banner";
 
 export const ALLOWED_COUNTS = [10, 15, 20] as const;
 export type AllowedCount = (typeof ALLOWED_COUNTS)[number];
@@ -29,7 +27,6 @@ type Props = {
   /** 既定値（URL に count が無いときに有効になる値） */
   defaultCount?: AllowedCount;
   className?: string;
-  plan?: PlanType;
 };
 
 /**
@@ -40,7 +37,6 @@ type Props = {
 export function QuestionCountSelector({
   defaultCount = DEFAULT_COUNT,
   className,
-  plan = "free",
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -100,9 +96,6 @@ export function QuestionCountSelector({
           );
         })}
       </div>
-      <span className="ml-auto text-[10px] text-[var(--text-3)]">
-        <DailyLimitInlineStatus plan={plan} />
-      </span>
     </div>
   );
 }

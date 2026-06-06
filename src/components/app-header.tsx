@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Settings } from "lucide-react";
 import { HeaderUserMenu } from "@/components/header-user-menu";
+import { HeaderDailyLimitBadge } from "@/components/header-daily-limit-badge";
 import { OrtAceLogo } from "@/components/brand/ort-ace-logo";
 import { getSessionContext } from "@/lib/auth/profile";
-import { getEffectivePlanForProfile, PLAN_DEFINITIONS } from "@/lib/billing/plans";
+import { getEffectivePlanForProfile } from "@/lib/billing/plans";
 
 export async function AppHeader() {
   const session = await getSessionContext();
@@ -11,7 +12,6 @@ export async function AppHeader() {
   const plan = session?.profile
     ? getEffectivePlanForProfile(session.profile)
     : "free";
-  const planLabel = getHeaderPlanLabel(plan);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-[var(--bg-base)]/90 px-5 backdrop-blur">
@@ -19,13 +19,7 @@ export async function AppHeader() {
         <Link href="/" aria-label="ORT ACE トップへ" className="flex items-center">
           <OrtAceLogo size="sm" />
         </Link>
-        <Link
-          href="/plans"
-          className="shrink-0 rounded-full border border-[var(--primary)]/30 bg-[var(--primary-soft)] px-2 py-1 text-[10px] font-bold text-[var(--primary-dark)]"
-          aria-label={`現在のプラン: ${PLAN_DEFINITIONS[plan].name}`}
-        >
-          {planLabel}
-        </Link>
+        <HeaderDailyLimitBadge plan={plan} />
       </div>
       <div className="flex items-center gap-1">
         {nickname ? <HeaderUserMenu nickname={nickname} /> : null}
@@ -39,8 +33,4 @@ export async function AppHeader() {
       </div>
     </header>
   );
-}
-
-function getHeaderPlanLabel(plan: keyof typeof PLAN_DEFINITIONS): string {
-  return PLAN_DEFINITIONS[plan].name;
 }
