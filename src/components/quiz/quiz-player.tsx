@@ -349,7 +349,7 @@ export function QuizPlayer({
     const id = requestAnimationFrame(() => {
       feedbackAnchorRef.current?.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
+        block: "start",
       });
     });
     return () => cancelAnimationFrame(id);
@@ -517,7 +517,10 @@ export function QuizPlayer({
         })}
       </div>
 
-      <div ref={feedbackAnchorRef} className="space-y-3">
+      <div
+        ref={feedbackAnchorRef}
+        className="scroll-mt-[calc(env(safe-area-inset-top)+96px)] space-y-3"
+      >
         {isAnswered && currentState.judgement ? (
           <AnswerFeedback
             question={current}
