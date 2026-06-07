@@ -29,9 +29,12 @@ export default async function MePage() {
     ? getEffectivePlanForProfile(profile)
     : "free";
   const planName = PLAN_DEFINITIONS[effectivePlan].name;
-  const expiresAt = profile?.plan_expires_at
-    ? formatDate(profile.plan_expires_at)
-    : null;
+  const planDateLabel = getPlanDateLabel({
+    status: profile?.plan_status,
+    trialEndsAt: profile?.trial_ends_at ?? null,
+    expiresAt: profile?.plan_expires_at ?? null,
+    isFree: effectivePlan === "free",
+  });
 
   return (
     <div className="space-y-5 pt-2">
@@ -84,8 +87,7 @@ export default async function MePage() {
       <PlanStatusBanner
         planName={planName}
         statusLabel={getPlanStatusLabel(profile?.plan_status)}
-        expiresAt={expiresAt}
-        isFree={effectivePlan === "free"}
+        dateLabel={planDateLabel}
       />
 
       <section className="overflow-hidden rounded-[18px] border border-border bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -131,13 +133,11 @@ export default async function MePage() {
 function PlanStatusBanner({
   planName,
   statusLabel,
-  expiresAt,
-  isFree,
+  dateLabel,
 }: {
   planName: string;
   statusLabel: string;
-  expiresAt: string | null;
-  isFree: boolean;
+  dateLabel: string;
 }) {
   return (
     <section className="rounded-[18px] border border-[var(--primary)]/30 bg-[var(--primary-soft)]/55 p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -156,11 +156,7 @@ function PlanStatusBanner({
             <span>{statusLabel}</span>
             <span className="inline-flex items-center gap-1 text-[var(--text-3)]">
               <CalendarClock className="h-3.5 w-3.5" strokeWidth={2.3} />
-              {expiresAt
-                ? `${expiresAt}まで`
-                : isFree
-                  ? "無料プランとして利用中"
-                  : "期限なし"}
+              {dateLabel}
             </span>
           </p>
         </div>
@@ -218,6 +214,26 @@ function getPlanStatusLabel(status: BillingPlanStatus | undefined): string {
   if (status === "expired") return "期限切れ";
   if (status === "canceled") return "キャンセル済み";
   return "利用中";
+}
+
+function getPlanDateLabel({
+  status,
+  trialEndsAt,
+  expiresAt,
+  isFree,
+}: {
+  status: BillingPlanStatus | undefined;
+  trialEndsAt: string | null;
+  expiresAt: string | null;
+  isFree: boolean;
+}): string {
+  if (status === "trialing" && trialEndsAt) {
+    return `無料トライアルは${formatDate(trialEndsAt)}まで`;
+  }
+  if (expiresAt) return `${formatDate(expiresAt)}まで`;
+  if (isFree) return "無料プランとして利用中";
+  if (status === "trialing") return "無料トライアル中";
+  return "期限なし";
 }
 
 function formatDate(value: string): string {

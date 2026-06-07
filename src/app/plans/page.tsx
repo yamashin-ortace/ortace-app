@@ -236,7 +236,10 @@ function getCurrentPlanDescription({
   trial: TrialState | null;
 }): string {
   if (isTrialActive && trial?.isActive) {
-    return `あと${trial.remainingDays}日、選択したプランの機能を利用できます。`;
+    const endLabel = trial.endsAt
+      ? `無料トライアルは${formatDate(trial.endsAt)}まで。`
+      : "無料トライアル中です。";
+    return `${endLabel}あと${trial.remainingDays}日、選択したプランの機能を利用できます。`;
   }
   if (isExpiredPaidPlan) {
     return "以前の有料プランは期限切れです。必要な場合は再購入できます。";
