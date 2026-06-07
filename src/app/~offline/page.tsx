@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CloudOff, RotateCcw } from "lucide-react";
+import { CloudOff } from "lucide-react";
+import { OfflineRetryButton } from "@/components/offline-retry-button";
 
 export const metadata: Metadata = {
   title: "オフラインです",
@@ -20,19 +20,13 @@ export default function OfflinePage() {
           ネットワークに接続されていません
         </h1>
         <p className="mt-2 text-[14px] leading-[1.85] text-[var(--text-2)]">
-          通信が回復してから、もう一度開いてみてください。
+          通信が回復してから、下のボタンでトップへ戻ってください。
           <br />
           一度開いた問題やノートは、オフラインでも見られることがあります。
         </p>
       </div>
 
-      <Link
-        href="/"
-        className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[var(--primary)] px-6 py-3 text-[14px] font-bold text-white shadow-[0_8px_20px_var(--primary-shadow-soft)] transition-opacity hover:opacity-95"
-      >
-        <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
-        トップを再読み込み
-      </Link>
+      <OfflineRetryButton />
     </div>
   );
 }
