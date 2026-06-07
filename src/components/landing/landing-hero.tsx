@@ -36,8 +36,8 @@ export function LandingHero() {
         sizes="(min-width: 960px) 960px, 100vw"
         className="object-cover object-[68%_center] opacity-[0.84] md:opacity-[0.94] dark:opacity-[0.45]"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(253,248,246,0.98)_0%,rgba(253,248,246,0.92)_32%,rgba(253,248,246,0.68)_56%,rgba(253,248,246,0.34)_78%,rgba(253,248,246,0.14)_100%)] md:hidden" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_18%_40%,rgba(253,248,246,0.92)_0%,rgba(253,248,246,0.72)_42%,rgba(253,248,246,0.32)_70%,rgba(253,248,246,0)_100%)] md:hidden" />
+      <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(253,248,246,0.98)_0%,rgba(253,248,246,0.92)_32%,rgba(253,248,246,0.68)_56%,rgba(253,248,246,0.34)_78%,rgba(253,248,246,0.14)_100%)] dark:bg-[linear-gradient(105deg,rgba(10,16,24,0.96)_0%,rgba(10,16,24,0.88)_42%,rgba(10,16,24,0.50)_72%,rgba(10,16,24,0.22)_100%)] md:hidden" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_18%_40%,rgba(253,248,246,0.92)_0%,rgba(253,248,246,0.72)_42%,rgba(253,248,246,0.32)_70%,rgba(253,248,246,0)_100%)] dark:bg-[radial-gradient(ellipse_at_22%_42%,rgba(10,16,24,0.86)_0%,rgba(10,16,24,0.58)_48%,rgba(10,16,24,0.20)_78%,rgba(10,16,24,0)_100%)] md:hidden" />
       <div className="absolute inset-0 hidden bg-[linear-gradient(104deg,rgba(253,248,246,0.98)_0%,rgba(253,248,246,0.90)_34%,rgba(253,248,246,0.58)_58%,rgba(253,248,246,0.18)_80%,rgba(253,248,246,0)_100%)] dark:bg-[linear-gradient(104deg,rgba(17,24,39,0.96)_0%,rgba(17,24,39,0.78)_42%,rgba(17,24,39,0.22)_78%,rgba(17,24,39,0.10)_100%)] md:block" />
       <div className="absolute inset-x-0 bottom-0 h-36 bg-linear-to-t from-[var(--bg-base)] via-[var(--bg-base)]/70 to-transparent" />
 
@@ -74,7 +74,7 @@ export function LandingHero() {
               無料ではじめる
               <ArrowRight className="size-4" strokeWidth={2.5} aria-hidden />
             </Link>
-            <p className="rounded-[10px] bg-white/58 px-3 py-2 text-center text-[12px] font-medium leading-relaxed text-[var(--text-2)] shadow-[0_8px_24px_rgba(255,255,255,0.42)] backdrop-blur-sm sm:max-w-[230px] sm:text-left">
+            <p className="rounded-[10px] bg-white/58 px-3 py-2 text-center text-[12px] font-medium leading-relaxed text-[var(--text-2)] shadow-[0_8px_24px_rgba(255,255,255,0.42)] backdrop-blur-sm dark:bg-black/36 dark:text-white sm:max-w-[230px] sm:text-left">
               まずは無料で。登録3分・カード不要。10問だけ解いてみる。
             </p>
           </div>

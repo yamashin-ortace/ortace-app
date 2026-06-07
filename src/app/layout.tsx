@@ -65,17 +65,24 @@ export const metadata: Metadata = {
     locale: "ja_JP",
     url: SITE_URL,
     siteName: "ORT ACE",
-    title: "ORT ACE — 視能訓練士国家試験対策アプリ",
+    title: "ORT ACE｜何から解くべきか、もう迷わない。",
     description:
       "視能訓練士国家試験対策アプリ。第47〜56回・10年分・1,500問の過去問と、AIコーチMiLu先生があなたの学習履歴から次の一歩を提案。",
-    // OG画像は opengraph-image.tsx で動的生成（/opengraph-image）
+    images: [
+      {
+        url: `${SITE_URL}/opengraph-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "ORT ACE。何から解くべきか、もう迷わない。視能訓練士国家試験対策アプリ。",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ORT ACE — 視能訓練士国家試験対策アプリ",
+    title: "ORT ACE｜何から解くべきか、もう迷わない。",
     description:
       "視能訓練士国家試験対策アプリ。第47〜56回・10年分・1,500問とAIコーチMiLu先生で合格まで伴走。",
-    images: [`${SITE_URL}/opengraph-image`],
+    images: [`${SITE_URL}/twitter-image.png`],
   },
   robots: {
     index: true,
