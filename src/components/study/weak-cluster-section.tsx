@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   clusters: readonly { id: string; clusterId: string; clusterLabel: string }[];
+  heading?: string;
 };
 
 /**
@@ -19,7 +20,10 @@ type Props = {
  * 各行タップでテーマごとの「3問だけ確認」へ遷移。
  * 苦手克服（明確な苦手テーマの集中演習）に対して、こちらは「気になるテーマをサクッと3問」のミニ確認用。
  */
-export function WeakClusterSection({ clusters }: Props) {
+export function WeakClusterSection({
+  clusters,
+  heading = "テーマ別 3問チェック",
+}: Props) {
   const { entries } = useAnswerHistoryList();
   const [hydrated, setHydrated] = useState(false);
 
@@ -48,7 +52,7 @@ export function WeakClusterSection({ clusters }: Props) {
   return (
     <section className="space-y-2">
       <h2 className="text-[13px] font-semibold text-[var(--text-3)]">
-        テーマ別 3問チェック
+        {heading}
       </h2>
       <div className="rounded-[14px] border border-border bg-[var(--bg-card)] px-3 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <p className="mb-2 px-1 text-[11px] text-[var(--text-3)]">
