@@ -5,7 +5,7 @@ import { LegalPageLayout } from "@/components/legal/legal-page-layout";
 export const metadata: Metadata = {
   title: "お問い合わせ｜ORT ACE",
   description:
-    "ORT ACE（オルトエース）へのお問い合わせ。不具合・ご要望・料金についてのご質問など、お気軽にお寄せください。",
+    "ORT ACE（オルトエース）へのお問い合わせ。問題・解説の不備、表示不具合、ご要望、料金についてのご質問などを受け付けています。",
 };
 
 export default function ContactPage() {
@@ -15,7 +15,7 @@ export default function ContactPage() {
     <LegalPageLayout
       title="お問い合わせ"
       lastUpdated="2026-05-15"
-      intro="ORT ACE についてのご質問・ご要望・不具合報告などをお寄せください。通常、3営業日以内にご返信します。"
+      intro="問題・解説の不備、表示不具合、ご要望などをお寄せください。いただいた指摘をもとに、ORT ACEの内容と使いやすさを継続的に改善します。通常、3営業日以内にご返信します。"
     >
       <p>
         <strong>※返信は登録いただいたメールアドレス宛にお送りします。</strong>

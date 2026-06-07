@@ -10,10 +10,11 @@ type Status =
   | { kind: "error"; message: string };
 
 const CATEGORIES = [
-  { value: "general", label: "一般的なご質問" },
+  { value: "content", label: "問題・解説の不備" },
+  { value: "bug", label: "表示・動作の不具合" },
   { value: "billing", label: "プラン・お支払い" },
-  { value: "bug", label: "不具合のご報告" },
-  { value: "feedback", label: "ご要望・フィードバック" },
+  { value: "feedback", label: "改善提案・ご要望" },
+  { value: "general", label: "その他のご質問" },
   { value: "other", label: "その他" },
 ] as const;
 
@@ -26,7 +27,7 @@ export function ContactForm({ turnstileSiteKey }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]["value"]>(
-    "general",
+    "content",
   );
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -117,7 +118,7 @@ export function ContactForm({ turnstileSiteKey }: Props) {
       setStatus({ kind: "success" });
       setName("");
       setEmail("");
-      setCategory("general");
+      setCategory("content");
       setMessage("");
     } catch (error) {
       setStatus({
@@ -221,7 +222,7 @@ export function ContactForm({ turnstileSiteKey }: Props) {
           onChange={(event) => setMessage(event.target.value)}
           disabled={isSubmitting}
           className="legal-form-input"
-          placeholder="具体的な状況・端末・ブラウザ等を添えていただくと、ご返信がスムーズです。"
+          placeholder="問題番号・解説の該当箇所・正しいと思う内容、または発生した画面や端末名を添えてください。"
         />
       </div>
 

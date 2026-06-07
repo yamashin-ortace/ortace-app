@@ -9,10 +9,11 @@ type ContactPayload = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  general: "一般的なご質問",
+  content: "問題・解説の不備",
+  bug: "表示・動作の不具合",
   billing: "プラン・お支払い",
-  bug: "不具合のご報告",
-  feedback: "ご要望・フィードバック",
+  feedback: "改善提案・ご要望",
+  general: "その他のご質問",
   other: "その他",
 };
 

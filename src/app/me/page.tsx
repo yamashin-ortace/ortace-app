@@ -6,6 +6,7 @@ import {
   CreditCard,
   LogOut,
   Mail,
+  MessageSquareText,
   Settings,
   ShieldCheck,
   Target,
@@ -102,6 +103,12 @@ export default async function MePage() {
           icon={<Settings className="h-4 w-4" strokeWidth={2.3} />}
           title="設定"
           description="学習プリセット・表示・同期"
+        />
+        <SettingsLink
+          href="/contact"
+          icon={<MessageSquareText className="h-4 w-4" strokeWidth={2.3} />}
+          title="お問い合わせ・不備報告"
+          description="問題・解説の誤りや不具合を送る"
           last
         />
       </section>
