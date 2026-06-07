@@ -6,12 +6,13 @@ import {
 import { hasCompletedOnboarding } from "@/lib/auth/onboarding-profile";
 import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware";
 
-/** 未ログインでも閲覧可（LP・ログイン・法務ページ・問い合わせ） */
+/** 未ログインでも閲覧可（LP・ログイン・法務ページ・問い合わせ・オフライン） */
 const PUBLIC_PATHS = new Set([
   "/",
   "/login",
   "/contact",
   "/plans",
+  "/~offline",
   "/opengraph-image",
   "/twitter-image",
   "/legal/privacy",
@@ -97,9 +98,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Next.js 内部・静的アセット・PWA manifest・metadata 画像などを除外。
+     * Next.js 内部・静的アセット・PWA manifest・Service Worker・metadata 画像などを除外。
      * /api ルートは現状なしだが将来のため除外。
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon|opengraph-image|twitter-image|robots.txt|sitemap.xml|api/|landing/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|icon|apple-icon|opengraph-image|twitter-image|robots.txt|sitemap.xml|api/|landing/).*)",
   ],
 };
