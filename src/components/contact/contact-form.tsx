@@ -21,8 +21,7 @@ const CATEGORIES = [
   { value: "bug", label: "表示・動作の不具合" },
   { value: "billing", label: "プラン・お支払い" },
   { value: "feedback", label: "改善提案・ご要望" },
-  { value: "general", label: "その他のご質問" },
-  { value: "other", label: "その他" },
+  { value: "general", label: "その他のご質問やご依頼" },
 ] as const;
 
 type CategoryValue = (typeof CATEGORIES)[number]["value"];
@@ -35,7 +34,7 @@ type AttachmentPayload = {
 
 const CATEGORY_GUIDES: Record<
   CategoryValue,
-  { placeholder: string; helper: string }
+  { placeholder: string; helper?: string }
 > = {
   content: {
     placeholder:
@@ -62,13 +61,7 @@ const CATEGORY_GUIDES: Record<
       "どんな場面で困ったか、どう変わると使いやすいかを書いてください。",
   },
   general: {
-    placeholder:
-      "例）無料プランと基礎定着パスで、解説を見られる範囲の違いを確認したいです。",
-    helper: "使い方やプラン内容など、確認したいことを書いてください。",
-  },
-  other: {
-    placeholder: "例）上記に当てはまらない内容ですが、確認をお願いします。",
-    helper: "できるだけ具体的に状況を書いてください。",
+    placeholder: "",
   },
 };
 
@@ -338,9 +331,11 @@ export function ContactForm({ turnstileSiteKey }: Props) {
           className="legal-form-input"
           placeholder={selectedGuide.placeholder}
         />
-        <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--text-3)]">
-          {selectedGuide.helper}
-        </p>
+        {selectedGuide.helper ? (
+          <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--text-3)]">
+            {selectedGuide.helper}
+          </p>
+        ) : null}
       </div>
 
       <div>

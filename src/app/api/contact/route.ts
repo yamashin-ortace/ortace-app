@@ -14,8 +14,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   bug: "表示・動作の不具合",
   billing: "プラン・お支払い",
   feedback: "改善提案・ご要望",
-  general: "その他のご質問",
-  other: "その他",
+  general: "その他のご質問やご依頼",
+  other: "その他のご質問やご依頼",
 };
 
 const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
