@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { NavigationPendingIndicator } from "@/components/navigation-pending-indicator";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { DeviceSessionGuard } from "@/components/auth/device-session-guard";
+import { AccountStorageBridge } from "@/components/auth/account-storage-bridge";
 import { AppHeader } from "@/components/app-header";
 import { MarketingHeader } from "@/components/marketing-header";
 import { ACCOUNT_STORAGE_USER_ID_KEY } from "@/lib/auth/account-storage";
@@ -131,6 +132,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full">
         <ThemeProvider>
+          <AccountStorageBridge userId={session?.userId ?? null} />
           <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col md:max-w-[960px]">
             {showAppChrome ? <AppHeader /> : <MarketingHeader />}
             <main
