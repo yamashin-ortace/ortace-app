@@ -6,6 +6,7 @@ type ContactPayload = {
   category?: unknown;
   message?: unknown;
   turnstileToken?: unknown;
+  attachment?: unknown;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -15,6 +16,16 @@ const CATEGORY_LABELS: Record<string, string> = {
   feedback: "改善提案・ご要望",
   general: "その他のご質問",
   other: "その他",
+};
+
+const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
+const MAX_ATTACHMENT_BASE64_LENGTH = Math.ceil(MAX_ATTACHMENT_BYTES / 3) * 4 + 4;
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+type ContactAttachment = {
+  filename: string;
+  content: string;
+  content_type: string;
+  size: number;
 };
 
 /**
@@ -40,6 +51,7 @@ export async function POST(request: Request) {
   const category = sanitize(body.category, 24);
   const message = sanitize(body.message, 4000);
   const turnstileToken = sanitize(body.turnstileToken, 2048);
+  const attachment = parseAttachment(body.attachment);
 
   if (!name) {
     return NextResponse.json(
@@ -59,6 +71,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  if (attachment instanceof Response) return attachment;
 
   // Cloudflare Turnstile 検証（設定時のみ）
   const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
@@ -107,6 +120,11 @@ export async function POST(request: Request) {
     `メール: ${email}`,
     `種別: ${categoryLabel}`,
     `送信日時: ${new Date().toISOString()}`,
+    attachment
+      ? `添付: ${attachment.filename} (${attachment.content_type}, ${formatBytes(
+          attachment.size,
+        )})`
+      : `添付: なし`,
     ``,
     `--- 本文 ---`,
     message,
@@ -129,6 +147,15 @@ export async function POST(request: Request) {
         reply_to: email,
         subject,
         text: textBody,
+        attachments: attachment
+          ? [
+              {
+                filename: attachment.filename,
+                content: attachment.content,
+                content_type: attachment.content_type,
+              },
+            ]
+          : undefined,
       }),
     });
     if (!resendResponse.ok) {
@@ -158,6 +185,60 @@ export async function POST(request: Request) {
 function sanitize(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, maxLength);
+}
+
+function parseAttachment(value: unknown): ContactAttachment | null | Response {
+  if (!value) return null;
+  if (!isRecord(value)) {
+    return NextResponse.json(
+      { error: "添付画像の形式が不正です。" },
+      { status: 400 },
+    );
+  }
+
+  const filename = sanitizeFileName(sanitize(value.name, 160));
+  const contentType = sanitize(value.type, 80);
+  const content = sanitize(value.data, MAX_ATTACHMENT_BASE64_LENGTH + 1);
+  const size = typeof value.size === "number" ? value.size : 0;
+
+  if (!filename || !content || !ALLOWED_IMAGE_TYPES.has(contentType)) {
+    return NextResponse.json(
+      { error: "添付できる画像は PNG / JPEG / WebP のみです。" },
+      { status: 400 },
+    );
+  }
+  if (
+    size <= 0 ||
+    size > MAX_ATTACHMENT_BYTES ||
+    content.length > MAX_ATTACHMENT_BASE64_LENGTH ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(content)
+  ) {
+    return NextResponse.json(
+      { error: "添付画像は3MB以内にしてください。" },
+      { status: 400 },
+    );
+  }
+
+  return {
+    filename,
+    content,
+    content_type: contentType,
+    size,
+  };
+}
+
+function sanitizeFileName(value: string): string {
+  return value.replace(/[^\w.\-ぁ-んァ-ン一-龥ー]/g, "_").slice(0, 160);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) return `${value}B`;
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)}KB`;
+  return `${(value / 1024 / 1024).toFixed(1)}MB`;
 }
 
 async function verifyTurnstile(secret: string, token: string): Promise<boolean> {

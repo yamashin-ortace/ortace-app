@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { CheckCircle2, LoaderCircle, Send, TriangleAlert } from "lucide-react";
+import {
+  CheckCircle2,
+  LoaderCircle,
+  Paperclip,
+  Send,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 
 type Status =
   | { kind: "idle" }
@@ -18,6 +25,56 @@ const CATEGORIES = [
   { value: "other", label: "その他" },
 ] as const;
 
+type CategoryValue = (typeof CATEGORIES)[number]["value"];
+type AttachmentPayload = {
+  name: string;
+  type: string;
+  size: number;
+  data: string;
+};
+
+const CATEGORY_GUIDES: Record<
+  CategoryValue,
+  { placeholder: string; helper: string }
+> = {
+  content: {
+    placeholder:
+      "例）第56回 午前 問12 の解説で「○○」とありますが、教科書では「△△」と理解しています。確認をお願いします。",
+    helper:
+      "問題番号、該当する選択肢や解説文、正しいと思う内容があると確認しやすくなります。",
+  },
+  bug: {
+    placeholder:
+      "例）学習タブで「復習する」を押すと読み込み中のまま止まります。再読み込みしても同じでした。",
+    helper:
+      "どの画面で、何を押したあと、どうなったかを書いてください。スクショがあると助かります。",
+  },
+  billing: {
+    placeholder:
+      "例）基礎定着パスを購入しましたが、マイページでは無料プランのまま表示されています。",
+    helper:
+      "購入したプラン、決済後の表示、確認したい内容を書いてください。カード番号は入力しないでください。",
+  },
+  feedback: {
+    placeholder:
+      "例）復習で、直近で間違えた問題だけを先に見られる切り替えがあると使いやすいです。",
+    helper:
+      "どんな場面で困ったか、どう変わると使いやすいかを書いてください。",
+  },
+  general: {
+    placeholder:
+      "例）無料プランと基礎定着パスで、解説を見られる範囲の違いを確認したいです。",
+    helper: "使い方やプラン内容など、確認したいことを書いてください。",
+  },
+  other: {
+    placeholder: "例）上記に当てはまらない内容ですが、確認をお願いします。",
+    helper: "できるだけ具体的に状況を書いてください。",
+  },
+};
+
+const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+
 type Props = {
   /** Cloudflare Turnstile のサイトキー。未設定ならスパム対策チャレンジを省略 */
   turnstileSiteKey: string | null;
@@ -30,9 +87,11 @@ export function ContactForm({ turnstileSiteKey }: Props) {
     "content",
   );
   const [message, setMessage] = useState("");
+  const [attachment, setAttachment] = useState<AttachmentPayload | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!turnstileSiteKey) return;
@@ -62,6 +121,57 @@ export function ContactForm({ turnstileSiteKey }: Props) {
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [turnstileSiteKey]);
+
+  const handleAttachmentChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      setAttachment(null);
+      return;
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type as (typeof ALLOWED_IMAGE_TYPES)[number])) {
+      setStatus({
+        kind: "error",
+        message: "添付できる画像は PNG / JPEG / WebP のみです。",
+      });
+      event.target.value = "";
+      setAttachment(null);
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setStatus({
+        kind: "error",
+        message: "添付画像は3MB以内にしてください。",
+      });
+      event.target.value = "";
+      setAttachment(null);
+      return;
+    }
+
+    try {
+      const data = await readFileAsBase64(file);
+      setAttachment({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data,
+      });
+      setStatus({ kind: "idle" });
+    } catch {
+      setStatus({
+        kind: "error",
+        message: "画像を読み込めませんでした。別の画像でお試しください。",
+      });
+      event.target.value = "";
+      setAttachment(null);
+    }
+  };
+
+  const clearAttachment = () => {
+    setAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -104,6 +214,7 @@ export function ContactForm({ turnstileSiteKey }: Props) {
           category,
           message: message.trim(),
           turnstileToken,
+          attachment,
         }),
       });
       if (!response.ok) {
@@ -120,6 +231,8 @@ export function ContactForm({ turnstileSiteKey }: Props) {
       setEmail("");
       setCategory("content");
       setMessage("");
+      setAttachment(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       setStatus({
         kind: "error",
@@ -155,6 +268,7 @@ export function ContactForm({ turnstileSiteKey }: Props) {
   }
 
   const isSubmitting = status.kind === "submitting";
+  const selectedGuide = CATEGORY_GUIDES[category];
 
   return (
     <form onSubmit={submit} className="my-6 space-y-4" noValidate>
@@ -197,7 +311,7 @@ export function ContactForm({ turnstileSiteKey }: Props) {
         <select
           value={category}
           onChange={(event) =>
-            setCategory(event.target.value as (typeof CATEGORIES)[number]["value"])
+            setCategory(event.target.value as CategoryValue)
           }
           disabled={isSubmitting}
           className="legal-form-input"
@@ -222,8 +336,50 @@ export function ContactForm({ turnstileSiteKey }: Props) {
           onChange={(event) => setMessage(event.target.value)}
           disabled={isSubmitting}
           className="legal-form-input"
-          placeholder="問題番号・解説の該当箇所・正しいと思う内容、または発生した画面や端末名を添えてください。"
+          placeholder={selectedGuide.placeholder}
         />
+        <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--text-3)]">
+          {selectedGuide.helper}
+        </p>
+      </div>
+
+      <div>
+        <label className="legal-form-label">画像添付（任意）</label>
+        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[12px] border border-dashed border-border bg-[var(--bg-muted)]/35 px-3 py-3 text-[12px] text-[var(--text-2)] transition-colors hover:bg-[var(--bg-muted)]">
+          <span className="flex min-w-0 items-center gap-2">
+            <Paperclip
+              className="h-4 w-4 shrink-0 text-[var(--primary-dark)]"
+              strokeWidth={2.5}
+            />
+            <span className="min-w-0 truncate">
+              {attachment
+                ? attachment.name
+                : "スクショを1枚添付できます（PNG / JPEG / WebP、3MB以内）"}
+            </span>
+          </span>
+          <span className="shrink-0 text-[11px] font-bold text-[var(--primary-dark)]">
+            選択
+          </span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={isSubmitting}
+            onChange={handleAttachmentChange}
+            className="sr-only"
+          />
+        </label>
+        {attachment ? (
+          <button
+            type="button"
+            onClick={clearAttachment}
+            disabled={isSubmitting}
+            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-3)] hover:text-[var(--text-1)]"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+            添付を外す
+          </button>
+        ) : null}
       </div>
 
       {turnstileSiteKey ? (
@@ -269,4 +425,21 @@ export function ContactForm({ turnstileSiteKey }: Props) {
       </button>
     </form>
   );
+}
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const [, base64 = ""] = result.split(",");
+      if (!base64) {
+        reject(new Error("empty file"));
+        return;
+      }
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
