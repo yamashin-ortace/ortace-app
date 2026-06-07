@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight, Sparkles } from "lucide-react";
+import type { PlanType } from "@/lib/daily-limit";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
 import { useAnswerHistoryList } from "@/lib/answer-history/use-answer-history";
@@ -13,6 +14,7 @@ type Props = {
   judgements: Readonly<Record<string, AnswerJudgement>>;
   selectedAnswers: Readonly<Record<string, ChoiceKey[]>>;
   canUseAiThemeCheck: boolean;
+  plan?: PlanType;
 };
 
 export function AiCoachResultAnalysis({
@@ -20,6 +22,7 @@ export function AiCoachResultAnalysis({
   judgements,
   selectedAnswers,
   canUseAiThemeCheck,
+  plan = "free",
 }: Props) {
   const { entries } = useAnswerHistoryList();
   const answeredCount = useMemo(
@@ -36,12 +39,17 @@ export function AiCoachResultAnalysis({
     [entries, judgements, questions],
   );
   const isAiThemeCheck = analysis.actionHref?.startsWith("/study/ai-theme/");
-  const actionHref =
-    isAiThemeCheck && !canUseAiThemeCheck ? "/plans" : analysis.actionHref;
-  const actionLabel =
-    isAiThemeCheck && !canUseAiThemeCheck
-      ? "国試対策パックで3問確認"
-      : analysis.actionLabel;
+  const gatedAiThemeAction = isAiThemeCheck && !canUseAiThemeCheck;
+  const actionHref = gatedAiThemeAction
+    ? plan === "low"
+      ? "/study/review"
+      : "/plans"
+    : analysis.actionHref;
+  const actionLabel = gatedAiThemeAction
+    ? plan === "low"
+      ? "復習でこのテーマを確認"
+      : "国試対策パックで3問確認"
+    : analysis.actionLabel;
 
   return (
     <section className="relative overflow-hidden rounded-[16px] border border-[var(--primary)]/25 bg-[var(--bg-card)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">

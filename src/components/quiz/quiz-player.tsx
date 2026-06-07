@@ -442,6 +442,7 @@ export function QuizPlayer({
         onBack={onResultBack}
         showAiCoachAnalysis={showAiCoachResultAnalysis}
         canUseAiThemeCheck={plan === "exam"}
+        plan={plan}
         weakPracticeTheme={weakPracticeTheme}
       />
     );

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { ChoiceKey, Question } from "@/lib/questions";
 import type { AnswerJudgement } from "@/lib/quiz";
+import type { PlanType } from "@/lib/daily-limit";
 import { AiCoachResultAnalysis } from "./ai-coach-result-analysis";
 import { QuestionReviewItem } from "./question-review-item";
 
@@ -33,6 +34,7 @@ type Props = {
   onBack?: () => void;
   showAiCoachAnalysis?: boolean;
   canUseAiThemeCheck?: boolean;
+  plan?: PlanType;
   /** 苦手克服の集中演習で、専用フィードバックを表示するテーマ名 */
   weakPracticeTheme?: string;
 };
@@ -47,6 +49,7 @@ export function QuizResultScreen({
   onBack,
   showAiCoachAnalysis = true,
   canUseAiThemeCheck = false,
+  plan = "free",
   weakPracticeTheme,
 }: Props) {
   const [reviewOpen, setReviewOpen] = useState(true);
@@ -164,6 +167,7 @@ export function QuizResultScreen({
           judgements={judgements}
           selectedAnswers={selectedAnswers}
           canUseAiThemeCheck={canUseAiThemeCheck}
+          plan={plan}
         />
       ) : null}
 
