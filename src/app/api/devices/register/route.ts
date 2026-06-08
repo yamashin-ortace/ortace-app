@@ -60,16 +60,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (existingDevice?.revoked_at) {
-    return NextResponse.json(
-      {
-        revoked: true,
-        error: "他の端末からログインされたため切断されました",
-      },
-      { status: 409 },
-    );
-  }
-
   const now = new Date().toISOString();
 
   if (existingDevice) {
@@ -79,6 +69,9 @@ export async function POST(request: Request) {
         user_agent: userAgent,
         device_label: deviceLabel,
         last_seen_at: now,
+        revoked_at: null,
+        revoked_reason: null,
+        revoked_by_device_fingerprint: null,
       })
       .eq("id", existingDevice.id);
 
