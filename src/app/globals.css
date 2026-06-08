@@ -27,7 +27,9 @@
   --color-input: var(--border);
   --color-ring: var(--primary);
 
-  --font-sans: var(--font-noto-sans-jp), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", "Meiryo", ui-sans-serif,
+    system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-sm: 6px;

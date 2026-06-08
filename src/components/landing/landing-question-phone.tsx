@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 const SCREENS = [
@@ -31,39 +28,6 @@ const SCREENS = [
  * 画面領域を横スワイプ／矢印キーで切り替えられるカルーセル形式。
  */
 export function LandingQuestionPhone() {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const update = () => {
-      const slides = container.querySelectorAll<HTMLElement>("[data-screen]");
-      if (slides.length === 0) return;
-      const scrollLeft = container.scrollLeft;
-      const slideWidth = container.clientWidth;
-      const index = Math.round(scrollLeft / Math.max(slideWidth, 1));
-      setActiveIndex(Math.max(0, Math.min(slides.length - 1, index)));
-    };
-    update();
-    container.addEventListener("scroll", update, { passive: true });
-    const ro = new ResizeObserver(update);
-    ro.observe(container);
-    return () => {
-      container.removeEventListener("scroll", update);
-      ro.disconnect();
-    };
-  }, []);
-
-  const goTo = (index: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.scrollTo({
-      left: index * container.clientWidth,
-      behavior: "smooth",
-    });
-  };
-
   return (
     <div className="mx-auto flex w-full max-w-[330px] flex-col items-center gap-4">
       {/* iPhone フレーム */}
@@ -84,7 +48,6 @@ export function LandingQuestionPhone() {
         <div className="absolute inset-[9px] overflow-hidden rounded-[35px] bg-[#fbf6f4]">
           {/* 画面カルーセル */}
           <div
-            ref={containerRef}
             role="region"
             aria-label="アプリ画面ギャラリー"
             className="flex h-full snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -99,10 +62,8 @@ export function LandingQuestionPhone() {
                   src={screen.src}
                   alt={screen.alt}
                   fill
-                  unoptimized
                   sizes="330px"
                   className="object-cover object-top"
-                  priority={screen.src.includes("home-overview")}
                 />
               </div>
             ))}
@@ -113,17 +74,12 @@ export function LandingQuestionPhone() {
 
       {/* カルーセル下のドット + ラベル */}
       <div className="flex w-full flex-col items-center gap-2">
-        <div className="flex items-center gap-1.5" role="tablist" aria-label="画面を切り替え">
+        <div className="flex items-center gap-1.5" aria-hidden="true">
           {SCREENS.map((screen, index) => (
-            <button
+            <span
               key={screen.src}
-              type="button"
-              onClick={() => goTo(index)}
-              role="tab"
-              aria-selected={activeIndex === index}
-              aria-label={`${screen.caption} 画面を表示`}
               className={
-                activeIndex === index
+                index === 0
                   ? "h-1.5 w-6 rounded-full bg-[var(--primary)] transition-all"
                   : "h-1.5 w-1.5 rounded-full bg-[var(--text-3)]/30 transition-all hover:bg-[var(--text-3)]/55"
               }
@@ -131,7 +87,7 @@ export function LandingQuestionPhone() {
           ))}
         </div>
         <p className="text-[11px] font-bold text-[var(--text-3)]">
-          {SCREENS[activeIndex].caption}
+          {SCREENS[0].caption}
         </p>
       </div>
     </div>

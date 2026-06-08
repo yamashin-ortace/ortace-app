@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_JP } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -15,19 +14,6 @@ import { MarketingHeader } from "@/components/marketing-header";
 import { ACCOUNT_STORAGE_USER_ID_KEY } from "@/lib/auth/account-storage";
 import { getSessionContext } from "@/lib/auth/profile";
 import { cn } from "@/lib/utils";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const notoSansJp = Noto_Sans_JP({
-  variable: "--font-noto-sans-jp",
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
-  display: "swap",
-});
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://ortace.jp";
@@ -127,7 +113,7 @@ export default async function RootLayout({
     <html
       lang="ja"
       suppressHydrationWarning
-      className={`${inter.variable} ${notoSansJp.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: COLOR_THEME_SCRIPT }} />

@@ -33,7 +33,6 @@ export function OrtAceLogo({
         src="/landing/ort-ace-logo-final.png"
         alt={showWordmark ? "ORT ACE" : ""}
         fill
-        priority={size !== "sm"}
         sizes={size === "sm" ? "100px" : size === "lg" ? "198px" : "148px"}
         className={cn(
           "object-cover",

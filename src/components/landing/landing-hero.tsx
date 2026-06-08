@@ -32,7 +32,6 @@ export function LandingHero() {
         alt=""
         fill
         priority
-        unoptimized
         sizes="(min-width: 960px) 960px, 100vw"
         className="object-cover object-[68%_center] opacity-[0.84] md:opacity-[0.94] dark:opacity-[0.45]"
       />
