@@ -42,12 +42,12 @@ export function LandingHero() {
 
       <div className="relative min-h-[560px] md:min-h-[610px]">
         <div className="max-w-[900px] pt-6 md:pt-10">
-          <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--text-3)]">
+          <p className="inline-flex items-center rounded-full border border-[#16717c]/18 bg-white/72 px-3.5 py-1.5 text-[13px] font-extrabold text-[#16717c] shadow-[0_10px_26px_rgba(44,62,93,0.08)] backdrop-blur dark:border-white/10 dark:bg-white/10 dark:text-[#9ee8e0] md:text-[15px]">
             視能訓練士国家試験対策アプリ
           </p>
           <h1
             id="landing-hero-heading"
-            className="max-w-[560px] text-[34px] font-extrabold leading-[1.12] text-[var(--text-1)] sm:text-[48px] md:text-[62px]"
+            className="mt-3 max-w-[560px] text-[34px] font-extrabold leading-[1.12] text-[var(--text-1)] sm:text-[48px] md:mt-4 md:text-[62px]"
           >
             何から解くべきか、
             <br />

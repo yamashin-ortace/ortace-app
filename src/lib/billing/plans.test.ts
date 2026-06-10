@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calculatePlanExpiresAt, getEffectivePlan } from "./plans";
+import {
+  calculatePlanExpiresAt,
+  getEffectivePlan,
+  getPlanDisplayName,
+} from "./plans";
 
 describe("billing plans", () => {
   it("期限内の有料プランだけ有効扱いにする", () => {
@@ -63,6 +67,38 @@ describe("billing plans", () => {
     expect(calculatePlanExpiresAt("low", new Date("2026-05-09T12:00:00.000Z"), "1y")).toBe(
       "2027-05-09T12:00:00.000Z",
     );
+  });
+
+  it("決済後の基礎定着パス名に期間を表示する", () => {
+    expect(getPlanDisplayName({ plan: "low", durationId: "3m" })).toBe(
+      "基礎定着パス（3ヶ月）",
+    );
+    expect(getPlanDisplayName({ plan: "low", durationId: "1y" })).toBe(
+      "基礎定着パス（1年）",
+    );
+    expect(getPlanDisplayName({ plan: "low" })).toBe("基礎定着パス（3ヶ月）");
+    expect(
+      getPlanDisplayName({
+        plan: "low",
+        paidStartedAt: "2026-06-10T00:00:00.000Z",
+        expiresAt: "2026-09-10T00:00:00.000Z",
+      }),
+    ).toBe("基礎定着パス（3ヶ月）");
+    expect(
+      getPlanDisplayName({
+        plan: "low",
+        planUpdatedAt: "2026-06-10T00:00:00.000Z",
+        expiresAt: "2026-09-10T00:00:00.000Z",
+      }),
+    ).toBe("基礎定着パス（3ヶ月）");
+    expect(
+      getPlanDisplayName({
+        plan: "low",
+        paidStartedAt: "2026-06-10T00:00:00.000Z",
+        expiresAt: "2027-06-10T00:00:00.000Z",
+      }),
+    ).toBe("基礎定着パス（1年）");
+    expect(getPlanDisplayName({ plan: "exam" })).toBe("国試対策パック");
   });
 
   it("国試対策パックは受験年度の3月31日までにする", () => {

@@ -81,6 +81,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
     stripe_subscription_id: subscription.id,
     stripe_subscription_status: subscription.status,
     stripe_subscription_cancel_at: toIsoString(subscription.cancel_at),
+    plan_duration_id: metadata.durationId ?? null,
     plan_updated_at: now.toISOString(),
     ...(subscription.status === "trialing" && subscription.trial_end
       ? {
@@ -132,6 +133,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
       plan: metadata.plan,
       plan_status: "active",
       plan_expires_at: planExpiresAt,
+      plan_duration_id: metadata.durationId ?? null,
       stripe_customer_id: getStripeId(invoice.customer),
       stripe_subscription_id: subscription.id,
       stripe_subscription_status: updatedSubscription.status,
@@ -174,6 +176,7 @@ async function syncSubscription(subscription: Stripe.Subscription) {
       stripe_subscription_id: subscription.id,
       stripe_subscription_status: subscription.status,
       stripe_subscription_cancel_at: toIsoString(subscription.cancel_at),
+      plan_duration_id: metadata.durationId ?? null,
       plan_updated_at: new Date().toISOString(),
     },
     "sync subscription",
@@ -211,6 +214,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
             plan: "free" as const,
             plan_status: "canceled" as const,
             plan_expires_at: null,
+            plan_duration_id: null,
             trial_plan: null,
           }),
       stripe_subscription_status: subscription.status,

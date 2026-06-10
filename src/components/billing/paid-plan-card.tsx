@@ -34,6 +34,7 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
   const displayPriceLabel = selectedDuration?.priceLabel ?? definition.priceLabel ?? "";
   const displayPeriodLabel = selectedDuration?.label ?? definition.periodLabel ?? "";
   const displayPerMonth = selectedDuration?.perMonthLabel;
+  const showTrialLabel = !trial?.hasUsed || Boolean(trial.isActive);
 
   return (
     <article
@@ -48,7 +49,7 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
       <div className="flex h-full flex-col gap-4">
         <div className="space-y-2">
           <div className="flex min-h-7 justify-end">
-            {!trial?.hasUsed ? <TrialBadge /> : null}
+            {showTrialLabel ? <TrialBadge /> : null}
           </div>
           <h2 className="text-[17px] font-bold text-[var(--text-1)]">
             {definition.name}

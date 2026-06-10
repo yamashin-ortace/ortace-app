@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -26,6 +27,15 @@ export function HorizontalSnapRow({
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const scrollToIndex = (index: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const cards = container.querySelectorAll<HTMLElement>("[data-snap-item]");
+    const next = cards[Math.max(0, Math.min(index, cards.length - 1))];
+    if (!next) return;
+    container.scrollTo({ left: next.offsetLeft, behavior: "smooth" });
+  };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -68,28 +78,50 @@ export function HorizontalSnapRow({
 
   return (
     <div className="space-y-2">
-      <div
-        ref={containerRef}
-        role="region"
-        aria-label={ariaLabel}
-        // 横スワイプ：
-        // - snap-proximity：自由スクロール優先 + 近くまで来たらやさしくスナップ（mandatory より滑らか）
-        // - 親の幅からはみ出さない：周囲のカードと左右端を揃える
-        // - scroll-smooth：プログラム的なスクロール時の補間をオン
-        className={cn(
-          "flex snap-x snap-proximity scroll-smooth gap-3 overflow-x-auto overflow-y-visible py-1",
-          "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        )}
-      >
-        {items.map((item, i) => (
-          <div
-            key={i}
-            data-snap-item
-            className={cn("flex [&>*]:w-full", itemClassName)}
-          >
-            {item}
-          </div>
-        ))}
+      <div className="relative">
+        {items.length > 1 ? (
+          <>
+            <SnapButton
+              label="前のカードへ"
+              side="left"
+              disabled={activeIndex === 0}
+              onClick={() => scrollToIndex(activeIndex - 1)}
+            >
+              <ChevronLeft className="size-4.5" strokeWidth={2.6} />
+            </SnapButton>
+            <SnapButton
+              label="次のカードへ"
+              side="right"
+              disabled={activeIndex >= items.length - 1}
+              onClick={() => scrollToIndex(activeIndex + 1)}
+            >
+              <ChevronRight className="size-4.5" strokeWidth={2.6} />
+            </SnapButton>
+          </>
+        ) : null}
+        <div
+          ref={containerRef}
+          role="region"
+          aria-label={ariaLabel}
+          // 横スワイプ：
+          // - snap-proximity：自由スクロール優先 + 近くまで来たらやさしくスナップ（mandatory より滑らか）
+          // - 親の幅からはみ出さない：周囲のカードと左右端を揃える
+          // - scroll-smooth：プログラム的なスクロール時の補間をオン
+          className={cn(
+            "flex snap-x snap-proximity scroll-smooth gap-3 overflow-x-auto overflow-y-visible py-1",
+            "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          )}
+        >
+          {items.map((item, i) => (
+            <div
+              key={i}
+              data-snap-item
+              className={cn("flex [&>*]:w-full", itemClassName)}
+            >
+              {item}
+            </div>
+          ))}
+        </div>
       </div>
       {showDots && items.length > 1 ? (
         <div
@@ -106,5 +138,34 @@ export function HorizontalSnapRow({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function SnapButton({
+  label,
+  side,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  side: "left" | "right";
+  disabled: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "btn-pressable absolute top-1/2 z-10 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-[var(--bg-card)]/92 text-[var(--text-1)] shadow-[0_14px_34px_rgba(44,62,93,0.16)] backdrop-blur transition hover:bg-[var(--bg-base)] disabled:pointer-events-none disabled:opacity-0 md:flex",
+        side === "left" ? "-left-3" : "-right-3",
+      )}
+    >
+      {children}
+    </button>
   );
 }

@@ -42,6 +42,7 @@ export type ProfilesRow = {
   stripe_subscription_status: string | null;
   stripe_subscription_cancel_at: string | null;
   stripe_first_invoice_paid_at: string | null;
+  plan_duration_id: string | null;
   plan_updated_at: string;
   trial_started_at: string | null;
   trial_ends_at: string | null;
@@ -68,6 +69,7 @@ export type ProfilesInsert = {
   stripe_subscription_status?: string | null;
   stripe_subscription_cancel_at?: string | null;
   stripe_first_invoice_paid_at?: string | null;
+  plan_duration_id?: string | null;
   plan_updated_at?: string;
   trial_started_at?: string | null;
   trial_ends_at?: string | null;
@@ -91,6 +93,7 @@ export type ProfilesUpdate = {
   stripe_subscription_status?: string | null;
   stripe_subscription_cancel_at?: string | null;
   stripe_first_invoice_paid_at?: string | null;
+  plan_duration_id?: string | null;
   plan_updated_at?: string;
   trial_started_at?: string | null;
   trial_ends_at?: string | null;

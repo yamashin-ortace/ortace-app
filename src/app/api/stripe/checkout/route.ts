@@ -107,12 +107,13 @@ export async function POST(request: Request) {
       })
     ).id;
 
-  if (!profile.stripe_customer_id) {
-    await createSupabaseAdminClient()
-      .from("profiles")
-      .update({ stripe_customer_id: customerId })
-      .eq("id", user.id);
-  }
+  await createSupabaseAdminClient()
+    .from("profiles")
+    .update({
+      stripe_customer_id: customerId,
+      plan_duration_id: plan === "low" ? durationId ?? null : null,
+    })
+    .eq("id", user.id);
 
   const appUrl = getAppUrl();
   const metadata = {

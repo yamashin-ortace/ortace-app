@@ -209,6 +209,70 @@ export function calculatePlanExpiresAt(
   return getExamYearExpiresAt(now).toISOString();
 }
 
+export function getPlanDisplayName({
+  plan,
+  durationId,
+  expiresAt,
+  paidStartedAt,
+  planUpdatedAt,
+}: {
+  plan: BillingPlan;
+  durationId?: string | null;
+  expiresAt?: string | null;
+  paidStartedAt?: string | null;
+  planUpdatedAt?: string | null;
+}): string {
+  const definition = PLAN_DEFINITIONS[plan];
+  const durationLabel = getLowPlanDurationLabel({
+    plan,
+    durationId,
+    expiresAt,
+    paidStartedAt,
+    planUpdatedAt,
+  });
+  return durationLabel ? `${definition.name}（${durationLabel}）` : definition.name;
+}
+
+export function getLowPlanDurationLabel({
+  plan,
+  durationId,
+  expiresAt,
+  paidStartedAt,
+  planUpdatedAt,
+}: {
+  plan: BillingPlan;
+  durationId?: string | null;
+  expiresAt?: string | null;
+  paidStartedAt?: string | null;
+  planUpdatedAt?: string | null;
+}): string | null {
+  if (plan !== "low") return null;
+
+  const duration = PLAN_DEFINITIONS.low.durations?.find(
+    (item) => item.id === durationId,
+  );
+  if (duration) return duration.label;
+
+  if (!expiresAt) {
+    const defaultDurationId = PLAN_DEFINITIONS.low.defaultDurationId;
+    return PLAN_DEFINITIONS.low.durations?.find(
+      (item) => item.id === defaultDurationId,
+    )?.label ?? null;
+  }
+
+  const startSource = paidStartedAt ?? planUpdatedAt;
+  if (!startSource) return null;
+
+  const start = new Date(startSource).getTime();
+  const end = new Date(expiresAt).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+    return null;
+  }
+
+  const durationDays = (end - start) / (1000 * 60 * 60 * 24);
+  return durationDays >= 300 ? "1年" : "3ヶ月";
+}
+
 function getExamYearExpiresAt(now: Date): Date {
   const year = getTokyoYear(now);
   const month = getTokyoMonth(now);

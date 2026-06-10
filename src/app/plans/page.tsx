@@ -16,6 +16,7 @@ import {
   PAID_PLANS,
   PLAN_DEFINITIONS,
   getEffectivePlanForProfile,
+  getPlanDisplayName,
 } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/profile";
 import type { TrialState } from "@/lib/billing/trial";
@@ -74,7 +75,10 @@ export default async function PlansPage({ searchParams }: Props) {
         <CurrentPlanCard
           plan={learningPlan}
           rawPlan={profile.plan}
+          durationId={profile.plan_duration_id}
           expiresAt={profile.plan_expires_at}
+          paidStartedAt={profile.stripe_first_invoice_paid_at}
+          planUpdatedAt={profile.plan_updated_at}
           trial={session?.trial ?? null}
         />
       ) : null}
@@ -84,7 +88,7 @@ export default async function PlansPage({ searchParams }: Props) {
       <section className="grid gap-3 md:grid-cols-3">
         <FreePlanCard
           currentPlan={currentPlan}
-          showTrialSpacer={!session?.trial?.hasUsed}
+          showTrialSpacer={shouldShowTrialLabel(session?.trial ?? null)}
         />
         {PAID_PLANS.map((plan) => (
           <PaidPlanCard
@@ -186,17 +190,29 @@ function LimitCell({
 function CurrentPlanCard({
   plan,
   rawPlan,
+  durationId,
   expiresAt,
+  paidStartedAt,
+  planUpdatedAt,
   trial,
 }: {
   plan: BillingPlan;
   rawPlan: BillingPlan;
+  durationId: string | null;
   expiresAt: string | null;
+  paidStartedAt: string | null;
+  planUpdatedAt: string | null;
   trial: TrialState | null;
 }) {
-  const definition = PLAN_DEFINITIONS[plan];
   const isExpiredPaidPlan = rawPlan !== "free" && plan === "free";
   const isTrialActive = Boolean(trial?.isActive && plan !== "free");
+  const planDisplayName = getPlanDisplayName({
+    plan,
+    durationId,
+    expiresAt,
+    paidStartedAt,
+    planUpdatedAt,
+  });
 
   return (
     <section className="rounded-[14px] border border-border bg-[var(--bg-card)] p-4">
@@ -207,7 +223,7 @@ function CurrentPlanCard({
         />
         <div className="space-y-1">
           <p className="text-[13px] font-bold text-[var(--text-1)]">
-            現在のプラン：{definition.name}
+            現在のプラン：{planDisplayName}
             {isTrialActive ? "（トライアル）" : null}
           </p>
           <p className="text-[12px] leading-relaxed text-[var(--text-3)]">
@@ -309,6 +325,10 @@ function FreePlanCard({
       </div>
     </FreePlanShell>
   );
+}
+
+function shouldShowTrialLabel(trial: TrialState | null): boolean {
+  return !trial?.hasUsed || Boolean(trial.isActive);
 }
 
 function FreePlanShell({

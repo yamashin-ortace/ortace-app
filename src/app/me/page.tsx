@@ -15,8 +15,8 @@ import {
 import { getSessionContext } from "@/lib/auth/profile";
 import { signOutAction } from "@/lib/auth/actions";
 import {
-  PLAN_DEFINITIONS,
   getEffectivePlanForProfile,
+  getPlanDisplayName,
 } from "@/lib/billing/plans";
 import type { BillingPlanStatus } from "@/lib/supabase/database.types";
 
@@ -29,7 +29,13 @@ export default async function MePage() {
   const effectivePlan = profile
     ? getEffectivePlanForProfile(profile)
     : "free";
-  const planName = PLAN_DEFINITIONS[effectivePlan].name;
+  const planName = getPlanDisplayName({
+    plan: effectivePlan,
+    durationId: profile?.plan_duration_id ?? null,
+    expiresAt: profile?.plan_expires_at ?? null,
+    paidStartedAt: profile?.stripe_first_invoice_paid_at ?? null,
+    planUpdatedAt: profile?.plan_updated_at ?? null,
+  });
   const planDateLabel = getPlanDateLabel({
     status: profile?.plan_status,
     trialEndsAt: profile?.trial_ends_at ?? null,
