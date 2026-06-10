@@ -31,7 +31,7 @@ export function LandingPricing() {
           あなたのフェーズで選ぶ料金プラン
         </h2>
         <p className="text-[14px] leading-relaxed text-[var(--text-3)] md:text-[15px]">
-          まずは無料で。続けたくなったら、学習フェーズに合わせてアップグレード。
+          今年度受験を迎えない人は基礎定着パス、今年度受験を迎える人は国試対策パック。
         </p>
       </div>
 
@@ -85,6 +85,11 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
         <CardTitle className="text-[17px] font-bold text-[var(--text-1)]">
           {plan.name}
         </CardTitle>
+        {plan.targetLabel ? (
+          <p className="inline-flex w-fit items-center rounded-[999px] bg-[var(--primary-soft)] px-2.5 py-1 text-[11px] font-extrabold text-[var(--primary-dark)]">
+            対象：{plan.targetLabel}
+          </p>
+        ) : null}
         <p className="min-h-[60px] text-[13px] leading-relaxed text-[var(--text-3)]">
           {plan.description}
         </p>

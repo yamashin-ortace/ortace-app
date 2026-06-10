@@ -23,6 +23,7 @@ export type PlanDuration = {
 export type PlanDefinition = {
   id: BillingPlan;
   name: string;
+  targetLabel?: string;
   description: string;
   checkoutLabel: string;
   dailyLimit: number | null;
@@ -60,6 +61,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
   low: {
     id: "low",
     name: "基礎定着パス",
+    targetLabel: "今年度受験を迎えない人",
     description: "授業の復習から苦手確認まで、毎日の演習を続けやすくするプランです。",
     checkoutLabel: "基礎定着パスを購入",
     dailyLimit: 50,
@@ -93,6 +95,7 @@ export const PLAN_DEFINITIONS: Record<BillingPlan, PlanDefinition> = {
   exam: {
     id: "exam",
     name: "国試対策パック",
+    targetLabel: "今年度受験を迎える人",
     priceLabel: "¥9,800",
     periodLabel: "受験年度3月31日まで",
     description: "過去問を無制限に解き、弱点分析・模試・予想問題で本番まで仕上げるプランです。",

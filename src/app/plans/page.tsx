@@ -51,7 +51,7 @@ export default async function PlansPage({ searchParams }: Props) {
           合格点まで仕上げる学習パス
         </h1>
         <p className="text-[14px] leading-relaxed text-[var(--text-2)]">
-          基礎定着パスは日々の復習、国試対策パックは受験年度の総仕上げ。支払いはStripeの安全な決済画面で行います。
+          今年度受験を迎えない人は基礎定着パス、今年度受験を迎える人は国試対策パック。支払いはStripeの安全な決済画面で行います。
         </p>
       </div>
 
