@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://ortace.jp";
+const SOCIAL_CARD_IMAGE = `${SITE_URL}/landing/ortace-og-card-20260611.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -56,7 +57,7 @@ export const metadata: Metadata = {
       "視能訓練士国家試験対策アプリ。第47〜56回・10年分・1,500問の過去問と、AIコーチMiLu先生があなたの学習履歴から次の一歩を提案。",
     images: [
       {
-        url: `${SITE_URL}/opengraph-image.png`,
+        url: SOCIAL_CARD_IMAGE,
         width: 1200,
         height: 630,
         alt: "ORT ACE。何から解くべきか、もう迷わない。視能訓練士国家試験対策アプリ。",
@@ -68,7 +69,7 @@ export const metadata: Metadata = {
     title: "ORT ACE｜何から解くべきか、もう迷わない。",
     description:
       "視能訓練士国家試験対策アプリ。第47〜56回・10年分・1,500問とAIコーチMiLu先生で合格まで伴走。",
-    images: [`${SITE_URL}/twitter-image.png`],
+    images: [SOCIAL_CARD_IMAGE],
   },
   robots: {
     index: true,

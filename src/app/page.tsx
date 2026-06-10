@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
   return {
-    title: "ORT ACE — 視能訓練士国家試験対策",
+    title: "ORT ACE｜何から解くべきか、もう迷わない。",
     description:
       "合格の、一歩上へ。過去問1,500問（第47〜56回）、解説・ノート・ブックマーク・連続学習と分野別統計でORT国家試験の学習をサポート。無料プランですぐにはじめられます。",
   };
