@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalPageLayout
       title="プライバシーポリシー"
       lastUpdated="2026-05-15"
-      intro="ORT ACE（以下「本サービス」）を運営する [代表者氏名]（以下「運営者」）は、ユーザーの個人情報を適切に取り扱うため、本プライバシーポリシーを定めます。"
+      intro="ORT ACE（以下「本サービス」）を運営する 山中慎也（以下「運営者」）は、ユーザーの個人情報を適切に取り扱うため、本プライバシーポリシーを定めます。"
     >
       <section>
         <h2 className="legal-h2">1. 取得する情報</h2>

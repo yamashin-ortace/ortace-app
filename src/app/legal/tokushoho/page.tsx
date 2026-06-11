@@ -17,11 +17,11 @@ export default function TokushohoPage() {
         <tbody>
           <tr>
             <th>販売業者</th>
-            <td>[代表者氏名]</td>
+            <td>山中慎也</td>
           </tr>
           <tr>
             <th>運営統括責任者</th>
-            <td>[代表者氏名]</td>
+            <td>山中慎也</td>
           </tr>
           <tr>
             <th>所在地</th>
