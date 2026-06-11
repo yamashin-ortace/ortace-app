@@ -11,7 +11,7 @@ export default function TokushohoPage() {
   return (
     <LegalPageLayout
       title="特定商取引法に基づく表記"
-      lastUpdated="2026-06-01"
+      lastUpdated="2026-06-11"
     >
       <table className="legal-table">
         <tbody>
@@ -25,11 +25,11 @@ export default function TokushohoPage() {
           </tr>
           <tr>
             <th>所在地</th>
-            <td>請求があった場合に遅滞なく開示します。</td>
+            <td>請求があった場合、遅滞なく電子メールにて開示します。開示請求は <code className="legal-code">info@ortace.jp</code> までご連絡ください。</td>
           </tr>
           <tr>
             <th>電話番号</th>
-            <td>請求があった場合に遅滞なく開示します。</td>
+            <td>請求があった場合、遅滞なく電子メールにて開示します。開示請求は <code className="legal-code">info@ortace.jp</code> までご連絡ください。</td>
           </tr>
           <tr>
             <th>メールアドレス</th>

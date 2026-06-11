@@ -11,7 +11,7 @@ export default function PrivacyPage() {
   return (
     <LegalPageLayout
       title="プライバシーポリシー"
-      lastUpdated="2026-05-15"
+      lastUpdated="2026-06-11"
       intro="ORT ACE（以下「本サービス」）を運営する 山中慎也（以下「運営者」）は、ユーザーの個人情報を適切に取り扱うため、本プライバシーポリシーを定めます。"
     >
       <section>
@@ -61,7 +61,8 @@ export default function PrivacyPage() {
             <tr><td>Vercel, Inc.</td><td>Webアプリのホスティング</td></tr>
             <tr><td>Stripe, Inc.</td><td>決済の代行処理</td></tr>
             <tr><td>Google LLC</td><td>外部認証（Googleログイン）・アクセス解析（Google Analytics 4）</td></tr>
-            <tr><td>Cloudflare, Inc.</td><td>メール配信・ドメイン管理・スパム対策</td></tr>
+            <tr><td>Cloudflare, Inc.</td><td>ドメイン管理・スパム対策</td></tr>
+            <tr><td>Resend, Inc.</td><td>問い合わせメール等の送信処理</td></tr>
           </tbody>
         </table>
       </section>
@@ -77,7 +78,9 @@ export default function PrivacyPage() {
 
       <section>
         <h2 className="legal-h2">5. 外国にある第三者への情報提供</h2>
-        <p>本サービスで利用するクラウドサービス（Supabase・Vercel・Stripe等）の一部は、サーバーが日本国外に設置されている場合があります。ユーザーは、本サービスを利用することにより、これらの国外への個人情報の移転に同意するものとします。</p>
+        <p>本サービスでは、上記の業務委託先に対し、本サービスの提供に必要な範囲で個人情報を取り扱わせることがあります。外国にある主な提供先は、Supabase, Inc.、Vercel, Inc.、Stripe, Inc.、Google LLC、Cloudflare, Inc.、Resend, Inc. であり、主な所在国はいずれも米国です。</p>
+        <p>米国における個人情報保護制度は日本と異なる場合がありますが、運営者は、各委託先が公表するプライバシーポリシー、データ処理契約、セキュリティ文書等を確認し、個人情報の保護に関する適切な措置が講じられている事業者を利用します。</p>
+        <p>各委託先は、アクセス制御、通信の暗号化、ログ管理、権限管理等の安全管理措置を講じています。運営者は、委託先の変更や利用状況に応じて、必要な範囲でこれらの情報を確認します。</p>
       </section>
 
       <section>
