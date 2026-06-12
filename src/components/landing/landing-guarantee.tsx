@@ -53,10 +53,10 @@ export function LandingGuarantee() {
         {GUARANTEE_CARDS.map(({ icon: Icon, eyebrow, title, body, fineprint }) => (
           <article
             key={eyebrow}
-            className="relative overflow-hidden rounded-[16px] border border-[#9ee8e0]/45 bg-[var(--bg-card)] p-5 shadow-[0_14px_36px_rgba(44,62,93,0.07)]"
+            className="relative flex flex-col overflow-hidden rounded-[16px] border border-[#9ee8e0]/45 bg-[var(--bg-card)] p-5 shadow-[0_14px_36px_rgba(44,62,93,0.07)]"
           >
             <div className="absolute -right-12 -top-14 size-36 rounded-full bg-[#d8fff6]/45 blur-3xl" />
-            <div className="relative space-y-2.5">
+            <div className="relative flex flex-1 flex-col gap-2.5">
               <div className="flex items-center gap-2">
                 <span className="grid size-9 shrink-0 place-items-center rounded-[11px] bg-[#e8f7f5] text-[#16717c]">
                   <Icon className="size-4.5" strokeWidth={2.4} aria-hidden />
@@ -68,7 +68,7 @@ export function LandingGuarantee() {
               <h3 className="text-[16px] font-extrabold leading-[1.45] text-[var(--text-1)] md:text-[17px]">
                 {title}
               </h3>
-              <p className="text-[13px] font-medium leading-[1.85] text-[var(--text-2)]">
+              <p className="flex-1 text-[13px] font-medium leading-[1.85] text-[var(--text-2)]">
                 {body}
               </p>
               {fineprint ? (

@@ -70,6 +70,8 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
         "relative h-full",
         isHighlighted &&
           "border-[var(--primary)] shadow-[0_4px_16px_var(--primary-shadow-soft)] ring-1 ring-[var(--primary)]/25",
+        plan.id === "low" && !isHighlighted &&
+          "border-[#9ee8e0]/55",
       )}
     >
       <CardHeader className="border-b border-border pb-4">
@@ -89,7 +91,13 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
           <p className="inline-flex w-fit items-center rounded-[999px] bg-[var(--primary-soft)] px-2.5 py-1 text-[11px] font-extrabold text-[var(--primary-dark)]">
             対象：{plan.targetLabel}
           </p>
-        ) : null}
+        ) : (
+          <div className="invisible" aria-hidden="true">
+            <p className="inline-flex w-fit items-center rounded-[999px] bg-[var(--primary-soft)] px-2.5 py-1 text-[11px] font-extrabold text-[var(--primary-dark)]">
+              対象：placeholder
+            </p>
+          </div>
+        )}
         <p className="min-h-[60px] text-[13px] leading-relaxed text-[var(--text-3)]">
           {plan.description}
         </p>
@@ -114,7 +122,9 @@ function PlanCard({ plan }: { plan: PlanDefinition }) {
                       className={cn(
                         "inline-flex h-7 items-center rounded-[999px] px-2.5 text-[11px] font-bold transition-colors",
                         isActive
-                          ? "bg-[var(--navy)] text-white shadow-sm"
+                          ? plan.id === "low"
+                            ? "bg-[#16717c] text-white shadow-sm"
+                            : "bg-[var(--navy)] text-white shadow-sm"
                           : "bg-[var(--bg-card)] text-[var(--text-3)] hover:bg-[var(--bg-base)]",
                       )}
                     >
@@ -184,9 +194,9 @@ function getLandingCtaClassName(plan: PlanDefinition): string {
     return `${base} btn-pressable btn-primary-shadow bg-[var(--primary)] text-white`;
   }
   if (plan.id === "low") {
-    return `${base} btn-pressable bg-[var(--navy)] text-white`;
+    return `${base} btn-pressable bg-[#16717c] text-white`;
   }
-  return `${base} border border-border bg-[var(--bg-muted)] text-[var(--text-1)] hover:bg-[var(--primary-soft)]`;
+  return `${base} btn-pressable bg-[var(--navy)] text-white`;
 }
 
 function getLandingPeriodLabel(
