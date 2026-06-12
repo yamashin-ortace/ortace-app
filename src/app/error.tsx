@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Home, RotateCcw, TriangleAlert } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * App Router の汎用エラーバウンダリ。
@@ -16,8 +17,7 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Sentry が設定されていれば後で自動的に拾われる。
-    // ここではコンソールに残しておく程度に。
+    Sentry.captureException(error);
     if (process.env.NODE_ENV !== "production") {
       console.error("[error.tsx]", error);
     }
