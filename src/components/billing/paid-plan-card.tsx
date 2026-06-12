@@ -83,7 +83,9 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
                         className={cn(
                           "inline-flex h-7 items-center rounded-[999px] px-2.5 text-[11px] font-bold transition-colors",
                           isActive
-                            ? "bg-[var(--navy)] text-white shadow-sm"
+                            ? plan === "low"
+                              ? "bg-[#16717c] text-white shadow-sm"
+                              : "bg-[var(--navy)] text-white shadow-sm"
                             : "bg-[var(--bg-card)] text-[var(--text-3)] hover:bg-[var(--bg-base)]",
                         )}
                       >
@@ -136,7 +138,7 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
               plan={plan}
               durationId={hasDurations ? selectedDurationId : undefined}
               disabled={isCurrent}
-              className={cn(!highlighted && "bg-[var(--navy)]")}
+              className={cn(!highlighted && (plan === "low" ? "bg-[#16717c]" : "bg-[var(--navy)]"))}
             >
               {isCurrent
                 ? "現在のプランです"
@@ -149,7 +151,7 @@ export function PaidPlanCard({ plan, currentPlan, isLoggedIn, trial }: Props) {
               href="/login"
               className={cn(
                 "inline-flex h-12 w-full items-center justify-center rounded-[12px] px-4 text-[14px] font-bold text-white",
-                highlighted ? "bg-[var(--primary)]" : "bg-[var(--navy)]",
+                highlighted ? "bg-[var(--primary)]" : plan === "low" ? "bg-[#16717c]" : "bg-[var(--navy)]",
               )}
             >
               ログインして購入

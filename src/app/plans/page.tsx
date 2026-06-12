@@ -286,6 +286,11 @@ function FreePlanCard({
         <h2 className="text-[17px] font-bold text-[var(--text-1)]">
           {definition.name}
         </h2>
+        <div className="invisible" aria-hidden="true">
+          <p className="inline-flex w-fit items-center rounded-[999px] bg-[var(--primary-soft)] px-2.5 py-1 text-[11px] font-extrabold text-[var(--primary-dark)]">
+            対象：placeholder
+          </p>
+        </div>
         <p className="min-h-[60px] text-[12px] leading-relaxed text-[var(--text-3)]">
           {definition.description}
         </p>
