@@ -57,7 +57,7 @@ export function DeviceSessionGuard({ userId }: Props) {
       }
 
       if (response.ok) {
-        window.localStorage.setItem(DEVICE_FINGERPRINT_STORAGE_KEY, fingerprint);
+        window.localStorage.removeItem(DEVICE_FINGERPRINT_STORAGE_KEY);
       }
     } catch {
       // 端末登録に失敗しても学習画面自体は止めない。

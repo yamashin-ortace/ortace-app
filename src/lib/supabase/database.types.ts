@@ -254,36 +254,42 @@ export type StudyGoalSettingsUpdate = {
 export type UserDevicesRow = {
   id: string;
   user_id: string;
-  device_fingerprint: string;
+  device_token: string;
+  device_fingerprint: string | null;
   user_agent: string | null;
   device_label: string | null;
   last_seen_at: string;
   created_at: string;
   revoked_at: string | null;
   revoked_reason: string | null;
+  revoked_by_device_token: string | null;
   revoked_by_device_fingerprint: string | null;
 };
 
 export type UserDevicesInsert = {
   id?: string;
   user_id: string;
-  device_fingerprint: string;
+  device_token: string;
+  device_fingerprint?: string | null;
   user_agent?: string | null;
   device_label?: string | null;
   last_seen_at?: string;
   created_at?: string;
   revoked_at?: string | null;
   revoked_reason?: string | null;
+  revoked_by_device_token?: string | null;
   revoked_by_device_fingerprint?: string | null;
 };
 
 export type UserDevicesUpdate = {
-  device_fingerprint?: string;
+  device_token?: string;
+  device_fingerprint?: string | null;
   user_agent?: string | null;
   device_label?: string | null;
   last_seen_at?: string;
   revoked_at?: string | null;
   revoked_reason?: string | null;
+  revoked_by_device_token?: string | null;
   revoked_by_device_fingerprint?: string | null;
 };
 

@@ -12,13 +12,12 @@ import {
   getLearningWindowStart,
 } from "@/lib/support-claim/eligibility";
 import { isValidEvidencePath } from "@/lib/support-claim/evidence";
-import { countLearningDaysFromAnsweredAts } from "@/lib/support-claim/learning-days";
+import { getSupportClaimEligibilityLearningDays } from "@/lib/support-claim/submit";
 
 type SubmitBody = {
   evidencePath?: unknown;
   userComment?: unknown;
   agreed?: unknown;
-  clientAnsweredAts?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -69,18 +68,13 @@ export async function POST(request: Request) {
     ]);
 
   const databaseLearningDays = countLearningDays(answerRows ?? [], now);
-  const clientLearningDays = Array.isArray(body?.clientAnsweredAts)
-    ? countLearningDaysFromAnsweredAts(
-        body.clientAnsweredAts.filter(
-          (value): value is string => typeof value === "string",
-        ),
-        now,
-      )
-    : 0;
+  const eligibilityLearningDays = getSupportClaimEligibilityLearningDays({
+    databaseLearningDays,
+  });
 
   const eligibility = evaluateSupportClaimEligibility({
     profile: profile ?? null,
-    learningDays: Math.max(databaseLearningDays, clientLearningDays),
+    learningDays: eligibilityLearningDays,
     hasPendingClaim: (pendingClaims?.length ?? 0) > 0,
     now,
   });

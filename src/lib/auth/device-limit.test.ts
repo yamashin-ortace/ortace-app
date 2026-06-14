@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getDeviceLabel, pickDevicesToRevoke, type ActiveDevice } from "./device-limit";
+import {
+  getDeviceLabel,
+  isValidDeviceToken,
+  pickDevicesToRevoke,
+  type ActiveDevice,
+} from "./device-limit";
 
 describe("device-limit", () => {
   it("User-Agent から端末ラベルを作る", () => {
@@ -27,12 +32,36 @@ describe("device-limit", () => {
       "old",
     ]);
   });
+
+  it("現在端末の判定にクライアント生成fingerprintを使わない", () => {
+    const devices = [
+      device("current", "2026-05-01T00:00:00.000Z", "shared"),
+      device("old", "2026-05-02T00:00:00.000Z", "shared"),
+      device("middle", "2026-05-03T00:00:00.000Z", "middle"),
+      device("new", "2026-05-04T00:00:00.000Z", "new"),
+    ];
+
+    expect(
+      pickDevicesToRevoke(devices, "current").map((item) => item.id),
+    ).toEqual(["old"]);
+  });
+
+  it("サーバー発行端末tokenはUUIDだけを受け入れる", () => {
+    expect(isValidDeviceToken("8f7c0a40-6f5e-4a7b-8c08-5a3f4e11d7c0")).toBe(
+      true,
+    );
+    expect(isValidDeviceToken("shared-client-fingerprint")).toBe(false);
+  });
 });
 
-function device(id: string, lastSeenAt: string): ActiveDevice {
+function device(
+  id: string,
+  lastSeenAt: string,
+  fingerprint = id,
+): ActiveDevice {
   return {
     id,
-    device_fingerprint: id,
+    device_fingerprint: fingerprint,
     device_label: id,
     user_agent: null,
     last_seen_at: lastSeenAt,

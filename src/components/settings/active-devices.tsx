@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoaderCircle, LogOut, MonitorSmartphone, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  DEVICE_FINGERPRINT_STORAGE_KEY,
   MAX_ACTIVE_DEVICES,
   createDeviceFingerprint,
   getDeviceFingerprintPayload,
@@ -18,12 +17,13 @@ type Props = {
 
 type RegisterDeviceResponse = {
   error?: string;
+  currentDeviceId?: string;
   devices?: ActiveDevice[];
 };
 
 export function ActiveDevices({ devices }: Props) {
   const [items, setItems] = useState(devices);
-  const [currentFingerprint, setCurrentFingerprint] = useState<string | null>(null);
+  const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(true);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,6 @@ export function ActiveDevices({ devices }: Props) {
     try {
       const fingerprint = await createDeviceFingerprint();
       const payload = getDeviceFingerprintPayload();
-      setCurrentFingerprint(fingerprint);
 
       const response = await fetch("/api/devices/register", {
         method: "POST",
@@ -51,7 +50,9 @@ export function ActiveDevices({ devices }: Props) {
         throw new Error(data?.error ?? "端末情報を登録できませんでした");
       }
 
-      window.localStorage.setItem(DEVICE_FINGERPRINT_STORAGE_KEY, fingerprint);
+      if (data?.currentDeviceId) {
+        setCurrentDeviceId(data.currentDeviceId);
+      }
 
       if (data?.devices) {
         setItems(data.devices);
@@ -138,9 +139,7 @@ export function ActiveDevices({ devices }: Props) {
       ) : (
         <div className="overflow-hidden rounded-[12px] border border-border">
           {items.map((device) => {
-            const isCurrent =
-              Boolean(currentFingerprint) &&
-              device.device_fingerprint === currentFingerprint;
+            const isCurrent = Boolean(currentDeviceId) && device.id === currentDeviceId;
             return (
               <div
                 key={device.id}

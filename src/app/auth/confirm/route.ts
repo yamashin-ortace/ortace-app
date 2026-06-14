@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { normalizeAuthRedirectPath } from "@/lib/auth/redirect";
 import type { Database } from "@/lib/supabase/database.types";
 
 /**
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = normalizeNextPath(searchParams.get("next"));
+  const next = normalizeAuthRedirectPath(searchParams.get("next"), origin);
 
   if (tokenHash && type) {
     const redirectUrl = new URL(next, origin);
@@ -48,11 +49,6 @@ export async function GET(request: NextRequest) {
   }
 
   return redirectToLoginWithError(origin, "email_confirmation_failed");
-}
-
-function normalizeNextPath(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
 }
 
 function redirectToLoginWithError(origin: string, error: string) {

@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/billing/supabase-admin";
 import {
+  DEVICE_TOKEN_COOKIE_NAME,
   MAX_ACTIVE_DEVICES,
+  createDeviceToken,
   getDeviceLabel,
   isValidDeviceFingerprint,
+  isValidDeviceToken,
   pickDevicesToRevoke,
   type ActiveDevice,
 } from "@/lib/auth/device-limit";
@@ -15,7 +18,9 @@ type RegisterDeviceBody = {
   deviceLabel?: unknown;
 };
 
-export async function POST(request: Request) {
+const DEVICE_TOKEN_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
+
+export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -26,11 +31,14 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => null)) as RegisterDeviceBody | null;
-  const deviceFingerprint = body?.deviceFingerprint;
-
-  if (!isValidDeviceFingerprint(deviceFingerprint)) {
-    return NextResponse.json({ error: "端末情報が不正です" }, { status: 400 });
-  }
+  const rawDeviceFingerprint = body?.deviceFingerprint;
+  const deviceFingerprint = isValidDeviceFingerprint(rawDeviceFingerprint)
+    ? rawDeviceFingerprint
+    : null;
+  const cookieToken = request.cookies.get(DEVICE_TOKEN_COOKIE_NAME)?.value;
+  const deviceToken = isValidDeviceToken(cookieToken)
+    ? cookieToken
+    : createDeviceToken();
 
   const userAgent =
     typeof body?.userAgent === "string" ? body.userAgent.slice(0, 500) : "";
@@ -44,7 +52,7 @@ export async function POST(request: Request) {
     .from("user_devices")
     .select("*")
     .eq("user_id", user.id)
-    .eq("device_fingerprint", deviceFingerprint)
+    .eq("device_token", deviceToken)
     .maybeSingle();
 
   if (existingError) {
@@ -61,17 +69,28 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString();
+  let currentDeviceId: string;
 
   if (existingDevice) {
+    if (existingDevice.revoked_at) {
+      const response = NextResponse.json(
+        { error: "この端末はログアウトされました" },
+        { status: 409 },
+      );
+      clearDeviceTokenCookie(response);
+      return response;
+    }
+
+    currentDeviceId = existingDevice.id;
     const { error } = await admin
       .from("user_devices")
       .update({
+        device_fingerprint: deviceFingerprint,
         user_agent: userAgent,
         device_label: deviceLabel,
         last_seen_at: now,
-        revoked_at: null,
-        revoked_reason: null,
         revoked_by_device_fingerprint: null,
+        revoked_by_device_token: null,
       })
       .eq("id", existingDevice.id);
 
@@ -88,13 +107,18 @@ export async function POST(request: Request) {
       );
     }
   } else {
-    const { error } = await admin.from("user_devices").insert({
-      user_id: user.id,
-      device_fingerprint: deviceFingerprint,
-      user_agent: userAgent,
-      device_label: deviceLabel,
-      last_seen_at: now,
-    });
+    const { data: insertedDevice, error } = await admin
+      .from("user_devices")
+      .insert({
+        user_id: user.id,
+        device_token: deviceToken,
+        device_fingerprint: deviceFingerprint,
+        user_agent: userAgent,
+        device_label: deviceLabel,
+        last_seen_at: now,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("[devices/register] failed to insert device", {
@@ -108,6 +132,8 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    currentDeviceId = insertedDevice.id;
   }
 
   let activeDevices = await getActiveDevices(user.id).catch(() => null);
@@ -120,7 +146,7 @@ export async function POST(request: Request) {
 
   const devicesToRevoke = pickDevicesToRevoke(
     activeDevices,
-    deviceFingerprint,
+    currentDeviceId,
   );
 
   if (devicesToRevoke.length > 0) {
@@ -130,6 +156,7 @@ export async function POST(request: Request) {
         revoked_at: now,
         revoked_reason: "device_limit",
         revoked_by_device_fingerprint: deviceFingerprint,
+        revoked_by_device_token: deviceToken,
       })
       .in(
         "id",
@@ -158,12 +185,15 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     maxDevices: MAX_ACTIVE_DEVICES,
+    currentDeviceId,
     revokedDeviceCount: devicesToRevoke.length,
     devices: activeDevices,
   });
+  setDeviceTokenCookie(response, deviceToken);
+  return response;
 }
 
 async function getActiveDevices(userId: string): Promise<ActiveDevice[]> {
@@ -187,4 +217,24 @@ async function getActiveDevices(userId: string): Promise<ActiveDevice[]> {
   }
 
   return data ?? [];
+}
+
+function setDeviceTokenCookie(response: NextResponse, token: string) {
+  response.cookies.set(DEVICE_TOKEN_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: DEVICE_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  });
+}
+
+function clearDeviceTokenCookie(response: NextResponse) {
+  response.cookies.set(DEVICE_TOKEN_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
 }

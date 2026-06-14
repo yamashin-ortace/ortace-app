@@ -1,6 +1,7 @@
 import type { UserDevicesRow } from "@/lib/supabase/database.types";
 
 export const MAX_ACTIVE_DEVICES = 3;
+export const DEVICE_TOKEN_COOKIE_NAME = "ortace_device_token";
 export const DEVICE_FINGERPRINT_STORAGE_KEY = "ortace.deviceFingerprint";
 export const DEVICE_REVOKED_NOTICE_KEY = "ortace.deviceRevokedNotice";
 
@@ -71,15 +72,28 @@ export function isValidDeviceFingerprint(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
+export function createDeviceToken(): string {
+  return crypto.randomUUID();
+}
+
+export function isValidDeviceToken(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+  );
+}
+
 export function pickDevicesToRevoke(
   devices: ActiveDevice[],
-  currentFingerprint: string,
+  currentDeviceId: string,
 ): ActiveDevice[] {
   const overflow = devices.length - MAX_ACTIVE_DEVICES;
   if (overflow <= 0) return [];
 
   return [...devices]
-    .filter((device) => device.device_fingerprint !== currentFingerprint)
+    .filter((device) => device.id !== currentDeviceId)
     .sort(
       (a, b) =>
         new Date(a.last_seen_at).getTime() - new Date(b.last_seen_at).getTime(),

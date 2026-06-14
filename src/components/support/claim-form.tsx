@@ -119,7 +119,6 @@ export function ClaimForm({ userId, eligibility, claims }: Props) {
           evidencePath,
           userComment: comment,
           agreed: true,
-          clientAnsweredAts: answeredAts,
         }),
       });
       const data = (await response.json().catch(() => null)) as
