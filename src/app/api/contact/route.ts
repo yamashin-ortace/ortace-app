@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  buildContactRateLimitBuckets,
+  consumeContactRateLimitBuckets,
+  getClientIpFromHeaders,
+} from "@/lib/contact/rate-limit";
+import { sanitizeContactHeaderText } from "@/lib/contact/input";
 
 type ContactPayload = {
   name?: unknown;
@@ -35,7 +41,7 @@ type ContactAttachment = {
  * - RESEND_API_KEY: Resend で送信する場合に必須。未設定なら受信できない。
  * - CONTACT_FROM_EMAIL: 送信元（既定: noreply@ortace.jp）
  * - CONTACT_TO_EMAIL: 送信先（既定: info@ortace.jp）
- * - TURNSTILE_SECRET_KEY: Cloudflare Turnstile で検証する場合のみ必須
+ * - TURNSTILE_SECRET_KEY: Cloudflare Turnstile で検証する。本番では必須。
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as ContactPayload | null;
@@ -46,7 +52,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const name = sanitize(body.name, 80);
+  const name = sanitizeContactHeaderText(body.name, 80);
   const email = sanitize(body.email, 254);
   const category = sanitize(body.category, 24);
   const message = sanitize(body.message, 4000);
@@ -75,6 +81,16 @@ export async function POST(request: Request) {
 
   // Cloudflare Turnstile 検証（設定時のみ）
   const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+  if (process.env.NODE_ENV === "production" && !turnstileSecret) {
+    console.error("[contact] TURNSTILE_SECRET_KEY is required in production.");
+    return NextResponse.json(
+      {
+        error:
+          "現在お問い合わせを受け付けられない設定になっています。時間を置いて、もう一度お試しください。",
+      },
+      { status: 503 },
+    );
+  }
   if (turnstileSecret) {
     if (!turnstileToken) {
       return NextResponse.json(
@@ -89,6 +105,38 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+  }
+
+  try {
+    const rateLimit = await consumeContactRateLimitBuckets(
+      buildContactRateLimitBuckets({
+        ip: getClientIpFromHeaders(request.headers),
+        email,
+      }),
+    );
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "短時間に送信できる回数を超えました。少し時間を置いてから再度お試しください。",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+          },
+        },
+      );
+    }
+  } catch (error) {
+    console.error("[contact] Rate limit check failed", error);
+    return NextResponse.json(
+      {
+        error:
+          "現在お問い合わせを受け付けられない設定になっています。時間を置いて、もう一度お試しください。",
+      },
+      { status: 503 },
+    );
   }
 
   // Resend でメール送信

@@ -18,6 +18,11 @@ export type BillingPlanStatus =
   | "payment_failed"
   | "canceled";
 export type SupportClaimStatus = "pending" | "approved" | "rejected";
+export type ContactRateLimitResult = {
+  allowed: boolean;
+  request_count: number;
+  retry_after_seconds: number;
+};
 export type Json =
   | string
   | number
@@ -293,6 +298,26 @@ export type UserDevicesUpdate = {
   revoked_by_device_fingerprint?: string | null;
 };
 
+export type ContactRateLimitsRow = {
+  bucket_key: string;
+  request_count: number;
+  window_started_at: string;
+  expires_at: string;
+};
+
+export type ContactRateLimitsInsert = {
+  bucket_key: string;
+  request_count?: number;
+  window_started_at?: string;
+  expires_at?: string;
+};
+
+export type ContactRateLimitsUpdate = {
+  request_count?: number;
+  window_started_at?: string;
+  expires_at?: string;
+};
+
 export type SupportClaimsRow = {
   id: string;
   user_id: string;
@@ -378,12 +403,25 @@ export type Database = {
         Update: SupportClaimsUpdate;
         Relationships: [];
       };
+      contact_rate_limits: {
+        Row: ContactRateLimitsRow;
+        Insert: ContactRateLimitsInsert;
+        Update: ContactRateLimitsUpdate;
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      consume_contact_rate_limit: {
+        Args: {
+          p_bucket_key: string;
+          p_limit: number;
+          p_window_seconds: number;
+        };
+        Returns: ContactRateLimitResult[];
+      };
     };
     Enums: {
       support_claim_status: SupportClaimStatus;
